@@ -1,0 +1,25 @@
+name: "Base Attribution OS"
+description: "Fail pull requests when Base Builder Code attribution is missing from transaction code."
+author: "horn111"
+branding:
+  icon: "check-circle"
+  color: "blue"
+inputs:
+  builder-code:
+    description: "Expected Builder Code, for example bc_abc123."
+    required: true
+  path:
+    description: "Repository root to scan."
+    required: false
+    default: "."
+  paths:
+    description: "Comma-separated subpaths to scan."
+    required: false
+    default: ""
+  fail-on-missing:
+    description: "Fail the workflow when missing attribution is detected."
+    required: false
+    default: "true"
+runs:
+  using: "node20"
+  main: "dist/index.js"

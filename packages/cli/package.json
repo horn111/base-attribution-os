@@ -1,0 +1,31 @@
+{
+  "name": "@base-attribution-os/cli",
+  "version": "0.0.0",
+  "description": "CLI validator for Base Builder Code attribution.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "bao": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@base-attribution-os/core": "workspace:*"
+  }
+}

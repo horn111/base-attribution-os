@@ -1,0 +1,62 @@
+{
+  "name": "base-attribution-os",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Add, validate, and enforce Base Builder Code attribution across viem, wagmi, wallets, agents, and CI.",
+  "license": "MIT",
+  "author": "horn111 <https://github.com/horn111>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/horn111/base-attribution-os.git"
+  },
+  "bugs": {
+    "url": "https://github.com/horn111/base-attribution-os/issues"
+  },
+  "homepage": "https://github.com/horn111/base-attribution-os#readme",
+  "keywords": [
+    "base",
+    "builder-codes",
+    "erc8021",
+    "attribution",
+    "viem",
+    "wagmi",
+    "onchain",
+    "web3",
+    "typescript",
+    "github-action"
+  ],
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev --parallel",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "turbo run typecheck",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "release": "changeset publish",
+    "size": "tsx scripts/check-size.ts",
+    "prepare:release": "tsx scripts/prepare-release.ts"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.12",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "8.60.1",
+    "vitest": "^2.1.8"
+  }
+}

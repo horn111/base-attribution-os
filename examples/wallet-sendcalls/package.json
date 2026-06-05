@@ -1,0 +1,14 @@
+{
+  "name": "@base-attribution-os/example-wallet-sendcalls",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "clean": "rimraf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@base-attribution-os/core": "workspace:*"
+  }
+}

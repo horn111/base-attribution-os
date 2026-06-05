@@ -1,0 +1,29 @@
+name: Attribution case
+description: Share a real-world Builder Code validation case
+title: "[Case]: "
+labels: ["attribution-case"]
+body:
+  - type: input
+    id: app
+    attributes:
+      label: App or repo
+      placeholder: "https://github.com/org/app"
+  - type: input
+    id: builder-code
+    attributes:
+      label: Builder Code
+      placeholder: "bc_abc123 or baseapp"
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Calldata or transaction hash
+      description: Include only public data.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should the validator or SDK catch?
+    validations:
+      required: true
