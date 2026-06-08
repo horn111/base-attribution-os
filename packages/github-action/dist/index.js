@@ -19835,15 +19835,6 @@ var SCHEMA_CANONICAL_REGISTRY = 0;
 var SCHEMA_CUSTOM_REGISTRY = 1;
 var MAX_CODES_BYTE_LENGTH = 255;
 var BUILDER_CODE_PATTERN = /^[A-Za-z0-9._:-]+$/;
-var KNOWN_TRANSACTION_MARKERS = [
-  "sendTransaction",
-  "writeContract",
-  "sendCalls",
-  "useSendTransaction",
-  "useWriteContract",
-  "prepareTransactionRequest",
-  "dataSuffix"
-];
 var encoder = new TextEncoder();
 var decoder = new TextDecoder();
 function isHex(value) {
@@ -20207,6 +20198,45 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
   "node_modules"
 ]);
 var BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
+var BUILDER_CODE_ASSIGNMENT_REGEX = /\b(?:builderCode|builderCodes|builder-code|BUILDER_CODE|BUILDER_CODES)\b[^"'`\n]{0,120}["'`]([^"'`]+)["'`]/gi;
+var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createDataSuffix|dataSuffix|useAttributionSuffix|withAttributionSuffix|withViemDataSuffix)\b/;
+var TRANSACTION_PATTERNS = [
+  {
+    marker: "agentTransactionTool",
+    family: "agent",
+    regex: /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/
+  },
+  {
+    marker: "useSendTransaction",
+    family: "wagmi",
+    regex: /\buseSendTransaction\s*\(/
+  },
+  {
+    marker: "useWriteContract",
+    family: "wagmi",
+    regex: /\buseWriteContract\s*\(/
+  },
+  {
+    marker: "sendTransaction",
+    family: "viem",
+    regex: /\bsendTransaction\s*\(/
+  },
+  {
+    marker: "writeContract",
+    family: "viem",
+    regex: /\bwriteContract\s*\(/
+  },
+  {
+    marker: "prepareTransactionRequest",
+    family: "viem",
+    regex: /\bprepareTransactionRequest\s*\(/
+  },
+  {
+    marker: "sendCalls",
+    family: "wallet",
+    regex: /\bsendCalls\s*\(|["'`]wallet_sendCalls["'`]/
+  }
+];
 async function scanRepo(options) {
   const root = path.resolve(options.path);
   const roots = options.paths && options.paths.length > 0 ? options.paths.map((entry) => path.resolve(root, entry)) : [root];
@@ -20219,23 +20249,23 @@ async function scanRepo(options) {
   let candidateFiles = 0;
   for (const file of files) {
     const source = await fs.readFile(file, "utf8");
-    const marker = KNOWN_TRANSACTION_MARKERS.find((item) => source.includes(item));
-    if (!marker) {
+    const match = findTransactionMatch(source);
+    if (!match) {
       continue;
     }
     candidateFiles += 1;
     const hasExpectedCode = source.includes(options.builderCode);
     const hasExpectedSuffix = source.toLowerCase().includes(expectedSuffix.slice(2));
-    const discoveredCodes = Array.from(source.matchAll(BUILDER_CODE_REGEX)).map(
-      (match) => match[0]
-    );
+    const discoveredCodes = discoverBuilderCodes(source);
     const hasWrongCode = discoveredCodes.some((code) => code !== options.builderCode);
-    const hasAttributionHelper = source.includes("createDataSuffix") || source.includes("builderCodeDataSuffix") || source.includes("useAttributionSuffix") || source.includes("withAttributionSuffix") || source.includes("dataSuffix");
+    const hasAttributionHelper = ATTRIBUTION_HELPER_REGEX.test(source);
     if (hasWrongCode && !hasExpectedCode && !hasExpectedSuffix) {
       findings.push({
         file: path.relative(root, file),
         reason: "wrong-builder-code",
-        marker
+        marker: match.pattern.marker,
+        family: match.pattern.family,
+        line: match.line
       });
       continue;
     }
@@ -20243,7 +20273,9 @@ async function scanRepo(options) {
       findings.push({
         file: path.relative(root, file),
         reason: "missing-attribution",
-        marker
+        marker: match.pattern.marker,
+        family: match.pattern.family,
+        line: match.line
       });
     }
   }
@@ -20262,6 +20294,37 @@ async function scanRepoCommand(options) {
     message: result.ok ? `Attribution scan OK: ${result.candidateFiles} candidate file(s).` : `Attribution scan failed: ${result.findings.length} finding(s).`,
     data: result
   };
+}
+function findTransactionMatch(source) {
+  for (const pattern of TRANSACTION_PATTERNS) {
+    const match = source.match(pattern.regex);
+    if (!match || match.index === void 0) {
+      continue;
+    }
+    return {
+      pattern,
+      line: lineNumberAtIndex(source, match.index)
+    };
+  }
+  return void 0;
+}
+function discoverBuilderCodes(source) {
+  const discovered = /* @__PURE__ */ new Set();
+  for (const match of source.matchAll(BUILDER_CODE_REGEX)) {
+    discovered.add(match[0]);
+  }
+  for (const match of source.matchAll(BUILDER_CODE_ASSIGNMENT_REGEX)) {
+    for (const code of match[1].split(",")) {
+      const normalized = code.trim();
+      if (normalized.length > 0) {
+        discovered.add(normalized);
+      }
+    }
+  }
+  return Array.from(discovered);
+}
+function lineNumberAtIndex(source, index) {
+  return source.slice(0, index).split(/\r?\n/).length;
 }
 async function collectSourceFiles(root) {
   const stat = await fs.stat(root).catch(() => void 0);
