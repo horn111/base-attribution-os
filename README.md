@@ -165,10 +165,10 @@ bao check-tx --hash 0x... --rpc-url https://mainnet.base.org --expect bc_abc123
 bao scan-repo --path . --builder-code bc_abc123
 ```
 
-`scan-repo` looks for common transaction entrypoints such as `sendTransaction`,
-`writeContract`, `sendCalls`, `useSendTransaction`, `useWriteContract`, and
-`dataSuffix`. It is intentionally conservative for the MVP: it flags obvious
-missing or wrong Builder Code usage and gives maintainers a CI guardrail.
+`scan-repo` classifies common transaction entrypoints across viem, wagmi,
+wallet, and agent flows. Findings include the file, line, transaction family,
+and marker that triggered the check. It is intentionally conservative: it flags
+obvious missing or wrong Builder Code usage and gives maintainers a CI guardrail.
 
 ## Use cases
 
@@ -181,7 +181,8 @@ missing or wrong Builder Code usage and gives maintainers a CI guardrail.
 ## Roadmap
 
 - MVP: core, viem, wagmi, CLI, GitHub Action, examples, README.
-- Next: ethers adapter and richer scanner rules.
+- Shipped: scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
+- Next: ethers adapter and scanner profiles for stricter CI.
 - Next: wallet middleware for `sendCalls` and smart account frameworks.
 - Next: Dune query templates for attributed transaction replay.
 - Next: local dashboard, alerts, and shareable progress cards for X.

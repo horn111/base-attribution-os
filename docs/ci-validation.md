@@ -21,15 +21,22 @@ jobs:
           fail-on-missing: "true"
 ```
 
-Scanner MVP rules look for common transaction markers:
+Scanner v0.2 classifies common transaction markers by family:
 
-- `sendTransaction`
-- `writeContract`
-- `sendCalls`
-- `useSendTransaction`
-- `useWriteContract`
-- `prepareTransactionRequest`
-- `dataSuffix`
+| Family   | Markers                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------- |
+| `viem`   | `sendTransaction`, `writeContract`, `prepareTransactionRequest`                                         |
+| `wagmi`  | `useSendTransaction`, `useWriteContract`                                                                |
+| `wallet` | `sendCalls`, `wallet_sendCalls`                                                                         |
+| `agent`  | `transactionTool`, `agentTransactionTool`, `executeTransaction`, `onchainAction`, `sendTransactionTool` |
+
+Findings include:
+
+- relative file path
+- line number
+- transaction family
+- marker
+- reason: `missing-attribution` or `wrong-builder-code`
 
 The scanner is conservative. It should catch obvious regressions without trying
 to replace code review.

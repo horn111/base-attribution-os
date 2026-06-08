@@ -38,6 +38,32 @@ They need a failing PR check.
 
 Shipped: `validate-attribution.yml` for Base apps.
 
+## Scanner v0.2 post
+
+Shipped Base Attribution OS update 1:
+
+`bao scan-repo` now catches more unattributed tx flows before they hit mainnet.
+
+New scanner families:
+
+- viem
+- wagmi
+- wallet sendCalls
+- agent transaction tools
+
+Builder Codes should be enforced like tests.
+
+Repo: https://github.com/horn111/base-attribution-os
+
+## Scanner v0.2 next-update teaser
+
+Next update:
+
+ethers adapter + scanner profiles.
+
+Goal: let teams choose strict CI checks for production paths and lighter local
+checks while integrating Base Builder Codes.
+
 ## Weekly update template
 
 Week N of Base Attribution OS:
