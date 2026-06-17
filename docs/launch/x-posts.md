@@ -89,6 +89,21 @@ wallet `sendCalls` middleware examples + stricter real-world fixtures.
 
 Goal: make batched wallet flows attribution-safe before they hit production.
 
+## Vercel demo post
+
+Shipped a live Base Attribution OS demo.
+
+Try the scanner playground in your browser:
+
+- pick viem, wagmi, ethers, wallet, or agent code
+- switch `local`, `ci`, and `strict` profiles
+- copy the GitHub Action config
+
+Star the repo if Builder Code attribution belongs in CI:
+https://github.com/horn111/base-attribution-os
+
+Demo: [Vercel URL]
+
 ## Weekly update template
 
 Week N of Base Attribution OS:

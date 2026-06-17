@@ -8,6 +8,7 @@
     "build:next": "next build",
     "clean": "rimraf .next",
     "dev": "next dev",
+    "vercel-build": "next build",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
