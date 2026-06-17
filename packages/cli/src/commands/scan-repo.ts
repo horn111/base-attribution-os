@@ -8,6 +8,7 @@ export interface ScanRepoOptions {
   builderCode: string;
   failOnMissing?: boolean;
   paths?: string[];
+  profile?: ScanProfile | string;
 }
 
 export interface ScanFinding {
@@ -21,10 +22,14 @@ export interface ScanFinding {
 export interface ScanRepoResult {
   ok: boolean;
   root: string;
+  profile: ScanProfile;
   checkedFiles: number;
   candidateFiles: number;
   findings: ScanFinding[];
 }
+
+export const SCAN_PROFILES = ["local", "ci", "strict"] as const;
+export type ScanProfile = (typeof SCAN_PROFILES)[number];
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 const SKIPPED_DIRECTORIES = new Set([
@@ -39,9 +44,16 @@ const BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
 const BUILDER_CODE_ASSIGNMENT_REGEX =
   /\b(?:builderCode|builderCodes|builder-code|BUILDER_CODE|BUILDER_CODES)\b[^"'`\n]{0,120}["'`]([^"'`]+)["'`]/gi;
 const ATTRIBUTION_HELPER_REGEX =
-  /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createDataSuffix|dataSuffix|useAttributionSuffix|withAttributionSuffix|withViemDataSuffix)\b/;
+  /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
+const ETHERS_SOURCE_REGEX =
+  /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
 
-type TransactionFamily = "agent" | "viem" | "wagmi" | "wallet";
+type TransactionFamily = "agent" | "ethers" | "viem" | "wagmi" | "wallet";
+
+interface ScanProfileConfig {
+  failOnMissingDefault: boolean;
+  requireExpectedCodeInCandidate: boolean;
+}
 
 interface TransactionPattern {
   marker: string;
@@ -49,12 +61,32 @@ interface TransactionPattern {
   regex: RegExp;
 }
 
+const PROFILE_CONFIGS: Record<ScanProfile, ScanProfileConfig> = {
+  local: {
+    failOnMissingDefault: false,
+    requireExpectedCodeInCandidate: false,
+  },
+  ci: {
+    failOnMissingDefault: true,
+    requireExpectedCodeInCandidate: false,
+  },
+  strict: {
+    failOnMissingDefault: true,
+    requireExpectedCodeInCandidate: true,
+  },
+};
+
 const TRANSACTION_PATTERNS: TransactionPattern[] = [
   {
     marker: "agentTransactionTool",
     family: "agent",
     regex:
       /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/,
+  },
+  {
+    marker: "populateTransaction",
+    family: "ethers",
+    regex: /\bpopulateTransaction\s*\(/,
   },
   {
     marker: "useSendTransaction",
@@ -90,6 +122,9 @@ const TRANSACTION_PATTERNS: TransactionPattern[] = [
 
 export async function scanRepo(options: ScanRepoOptions): Promise<ScanRepoResult> {
   const root = path.resolve(options.path);
+  const profile = normalizeScanProfile(options.profile);
+  const profileConfig = PROFILE_CONFIGS[profile];
+  const failOnMissing = options.failOnMissing ?? profileConfig.failOnMissingDefault;
   const roots =
     options.paths && options.paths.length > 0
       ? options.paths.map((entry) => path.resolve(root, entry))
@@ -119,6 +154,10 @@ export async function scanRepo(options: ScanRepoOptions): Promise<ScanRepoResult
     const discoveredCodes = discoverBuilderCodes(source);
     const hasWrongCode = discoveredCodes.some((code) => code !== options.builderCode);
     const hasAttributionHelper = ATTRIBUTION_HELPER_REGEX.test(source);
+    const hasAcceptableAttribution =
+      hasExpectedCode ||
+      hasExpectedSuffix ||
+      (!profileConfig.requireExpectedCodeInCandidate && hasAttributionHelper);
 
     if (hasWrongCode && !hasExpectedCode && !hasExpectedSuffix) {
       findings.push({
@@ -131,7 +170,7 @@ export async function scanRepo(options: ScanRepoOptions): Promise<ScanRepoResult
       continue;
     }
 
-    if (!hasExpectedCode && !hasExpectedSuffix && !hasAttributionHelper) {
+    if (!hasAcceptableAttribution) {
       findings.push({
         file: path.relative(root, file),
         reason: "missing-attribution",
@@ -143,8 +182,9 @@ export async function scanRepo(options: ScanRepoOptions): Promise<ScanRepoResult
   }
 
   return {
-    ok: findings.length === 0 || options.failOnMissing === false,
+    ok: findings.length === 0 || failOnMissing === false,
     root,
+    profile,
     checkedFiles: files.length,
     candidateFiles,
     findings,
@@ -163,6 +203,18 @@ export async function scanRepoCommand(options: ScanRepoOptions): Promise<Command
   };
 }
 
+export function normalizeScanProfile(profile: ScanProfile | string | undefined): ScanProfile {
+  if (!profile) {
+    return "ci";
+  }
+
+  if ((SCAN_PROFILES as readonly string[]).includes(profile)) {
+    return profile as ScanProfile;
+  }
+
+  throw new Error(`Unknown scan profile: ${profile}`);
+}
+
 function findTransactionMatch(source: string):
   | {
       pattern: TransactionPattern;
@@ -177,12 +229,26 @@ function findTransactionMatch(source: string):
     }
 
     return {
-      pattern,
+      pattern: resolveTransactionPattern(source, pattern),
       line: lineNumberAtIndex(source, match.index),
     };
   }
 
   return undefined;
+}
+
+function resolveTransactionPattern(
+  source: string,
+  pattern: TransactionPattern,
+): TransactionPattern {
+  if (pattern.marker === "sendTransaction" && ETHERS_SOURCE_REGEX.test(source)) {
+    return {
+      ...pattern,
+      family: "ethers",
+    };
+  }
+
+  return pattern;
 }
 
 function discoverBuilderCodes(source: string): string[] {

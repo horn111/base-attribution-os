@@ -15,7 +15,7 @@ break.
 ## MVP deliverables
 
 - TypeScript core package for ERC-8021 suffix encode/decode/validate.
-- viem and wagmi adapters.
+- viem, wagmi, and ethers adapters.
 - `bao` CLI for calldata, transaction, and repo validation.
 - GitHub Action for PR enforcement.
 - Examples for dApps, wallets, and agent flows.

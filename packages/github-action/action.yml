@@ -16,10 +16,13 @@ inputs:
     description: "Comma-separated subpaths to scan."
     required: false
     default: ""
-  fail-on-missing:
-    description: "Fail the workflow when missing attribution is detected."
+  profile:
+    description: "Scanner profile: local reports findings without failing by default, ci fails obvious missing attribution, strict requires the expected Builder Code in candidate files."
     required: false
-    default: "true"
+    default: "ci"
+  fail-on-missing:
+    description: "Override the selected profile's default failure behavior."
+    required: false
 runs:
   using: "node20"
   main: "dist/index.js"

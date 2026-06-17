@@ -9,24 +9,32 @@ async function main(): Promise<void> {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
-  const failOnMissing = core.getInput("fail-on-missing") !== "false";
+  const failOnMissingInput = core.getInput("fail-on-missing");
+  const failOnMissing =
+    failOnMissingInput.length === 0 ? undefined : failOnMissingInput !== "false";
+  const profile = core.getInput("profile") || "ci";
 
   const result = await scanRepo({
     path: repoPath,
     paths,
     builderCode,
     failOnMissing,
+    profile,
   });
 
+  core.info(`Using ${result.profile} scanner profile.`);
   core.info(`Checked ${result.checkedFiles} source file(s).`);
   core.info(`Found ${result.candidateFiles} transaction candidate file(s).`);
 
   for (const finding of result.findings) {
-    core.warning(`${finding.reason} in ${finding.file} near ${finding.marker}`);
+    core.warning(
+      `${finding.reason} in ${finding.file}:${finding.line} near ${finding.marker} (${finding.family})`,
+    );
   }
 
   core.setOutput("checked-files", String(result.checkedFiles));
   core.setOutput("candidate-files", String(result.candidateFiles));
+  core.setOutput("profile", result.profile);
   core.setOutput("findings", JSON.stringify(result.findings));
 
   if (!result.ok) {

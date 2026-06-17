@@ -64,6 +64,31 @@ ethers adapter + scanner profiles.
 Goal: let teams choose strict CI checks for production paths and lighter local
 checks while integrating Base Builder Codes.
 
+## ethers + scanner profiles post
+
+Shipped Base Attribution OS update 2:
+
+ethers adapter + scanner profiles.
+
+Now teams can append Base Builder Code attribution in ethers transaction flows
+and choose how hard CI should enforce it:
+
+- `local`: report while integrating
+- `ci`: fail obvious misses
+- `strict`: require the expected code in tx files
+
+SDK attribution should feel boring, automatic, and hard to forget.
+
+Repo: https://github.com/horn111/base-attribution-os
+
+## ethers + scanner profiles next-update teaser
+
+Next update:
+
+wallet `sendCalls` middleware examples + stricter real-world fixtures.
+
+Goal: make batched wallet flows attribution-safe before they hit production.
+
 ## Weekly update template
 
 Week N of Base Attribution OS:

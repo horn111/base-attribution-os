@@ -127,6 +127,12 @@ importers:
 
   packages/core: {}
 
+  packages/ethers:
+    dependencies:
+      '@base-attribution-os/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/github-action:
     dependencies:
       '@actions/core':

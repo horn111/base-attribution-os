@@ -59,6 +59,8 @@ Install the SDK and CLI:
 
 ```bash
 pnpm add @base-attribution-os/core @base-attribution-os/viem
+# or, for ethers projects:
+pnpm add @base-attribution-os/core @base-attribution-os/ethers
 pnpm add -D @base-attribution-os/cli
 ```
 
@@ -82,6 +84,23 @@ await walletClient.sendTransaction({
   data: "0x",
   dataSuffix,
 });
+```
+
+Use it with ethers:
+
+```ts
+import { withEthersAttribution } from "@base-attribution-os/ethers";
+
+await signer.sendTransaction(
+  withEthersAttribution(
+    {
+      to,
+      value,
+      data: "0x",
+    },
+    { codes: ["bc_abc123"] },
+  ),
+);
 ```
 
 Use it with wagmi:
@@ -142,6 +161,7 @@ jobs:
         with:
           builder-code: bc_abc123
           paths: "src,app,packages,examples"
+          profile: "ci"
           fail-on-missing: "true"
 ```
 
@@ -152,6 +172,7 @@ jobs:
 | `@base-attribution-os/core`          | ERC-8021 encode, decode, append, validate | `pnpm add @base-attribution-os/core`   | MVP      |
 | `@base-attribution-os/viem`          | viem `dataSuffix` and client helpers      | `pnpm add @base-attribution-os/viem`   | MVP      |
 | `@base-attribution-os/wagmi`         | wagmi config and hook helpers             | `pnpm add @base-attribution-os/wagmi`  | MVP      |
+| `@base-attribution-os/ethers`        | ethers transaction and signer helpers     | `pnpm add @base-attribution-os/ethers` | MVP      |
 | `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli` | MVP      |
 | `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                          | MVP      |
 
@@ -162,13 +183,18 @@ bao encode --code bc_abc123
 bao decode --calldata 0x...
 bao check-calldata --calldata 0x... --expect bc_abc123
 bao check-tx --hash 0x... --rpc-url https://mainnet.base.org --expect bc_abc123
-bao scan-repo --path . --builder-code bc_abc123
+bao scan-repo --path . --builder-code bc_abc123 --profile ci
 ```
 
 `scan-repo` classifies common transaction entrypoints across viem, wagmi,
-wallet, and agent flows. Findings include the file, line, transaction family,
-and marker that triggered the check. It is intentionally conservative: it flags
-obvious missing or wrong Builder Code usage and gives maintainers a CI guardrail.
+ethers, wallet, and agent flows. Findings include the file, line, transaction
+family, and marker that triggered the check.
+
+Profiles let teams choose the right enforcement level:
+
+- `local`: report findings while teams are wiring attribution in.
+- `ci`: fail obvious missing or wrong Builder Code usage.
+- `strict`: require the expected Builder Code or suffix in candidate files.
 
 ## Use cases
 
@@ -182,7 +208,7 @@ obvious missing or wrong Builder Code usage and gives maintainers a CI guardrail
 
 - MVP: core, viem, wagmi, CLI, GitHub Action, examples, README.
 - Shipped: scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
-- Next: ethers adapter and scanner profiles for stricter CI.
+- Shipped: ethers adapter and scanner profiles for stricter CI.
 - Next: wallet middleware for `sendCalls` and smart account frameworks.
 - Next: Dune query templates for attributed transaction replay.
 - Next: local dashboard, alerts, and shareable progress cards for X.
