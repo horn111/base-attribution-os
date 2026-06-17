@@ -10,6 +10,7 @@
 - Scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
 - ethers adapter.
 - Scanner profiles for local, CI, and strict enforcement.
+- Vercel scanner playground.
 
 ## v0.1
 
