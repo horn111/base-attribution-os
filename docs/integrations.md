@@ -24,6 +24,16 @@ import { useAttributionSuffix } from "@base-attribution-os/wagmi";
 const dataSuffix = useAttributionSuffix({ codes: ["bc_abc123"] });
 ```
 
+## ethers
+
+```ts
+import { withEthersAttribution } from "@base-attribution-os/ethers";
+
+await signer.sendTransaction(
+  withEthersAttribution({ to, value, data: "0x" }, { codes: ["bc_abc123"] }),
+);
+```
+
 ## wallets
 
 Wallet middleware should wrap the point where `sendTransaction`, `sendCalls`, or

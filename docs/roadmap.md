@@ -8,11 +8,11 @@
 - GitHub Action for CI enforcement.
 - Examples and launch docs.
 - Scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
+- ethers adapter.
+- Scanner profiles for local, CI, and strict enforcement.
 
 ## v0.1
 
-- ethers adapter.
-- Scanner profiles for stricter CI and lower-noise local checks.
 - Better scanner rules with AST parsing.
 - Wallet `sendCalls` middleware examples.
 - Public fixture set for real transaction calldata.

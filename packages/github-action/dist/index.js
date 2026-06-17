@@ -20188,6 +20188,7 @@ function encodeCommand(options) {
     }
   };
 }
+var SCAN_PROFILES = ["local", "ci", "strict"];
 var SOURCE_EXTENSIONS = /* @__PURE__ */ new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
   ".git",
@@ -20199,12 +20200,32 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
 ]);
 var BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
 var BUILDER_CODE_ASSIGNMENT_REGEX = /\b(?:builderCode|builderCodes|builder-code|BUILDER_CODE|BUILDER_CODES)\b[^"'`\n]{0,120}["'`]([^"'`]+)["'`]/gi;
-var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createDataSuffix|dataSuffix|useAttributionSuffix|withAttributionSuffix|withViemDataSuffix)\b/;
+var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
+var ETHERS_SOURCE_REGEX = /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
+var PROFILE_CONFIGS = {
+  local: {
+    failOnMissingDefault: false,
+    requireExpectedCodeInCandidate: false
+  },
+  ci: {
+    failOnMissingDefault: true,
+    requireExpectedCodeInCandidate: false
+  },
+  strict: {
+    failOnMissingDefault: true,
+    requireExpectedCodeInCandidate: true
+  }
+};
 var TRANSACTION_PATTERNS = [
   {
     marker: "agentTransactionTool",
     family: "agent",
     regex: /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/
+  },
+  {
+    marker: "populateTransaction",
+    family: "ethers",
+    regex: /\bpopulateTransaction\s*\(/
   },
   {
     marker: "useSendTransaction",
@@ -20239,6 +20260,9 @@ var TRANSACTION_PATTERNS = [
 ];
 async function scanRepo(options) {
   const root = path.resolve(options.path);
+  const profile = normalizeScanProfile(options.profile);
+  const profileConfig = PROFILE_CONFIGS[profile];
+  const failOnMissing = options.failOnMissing ?? profileConfig.failOnMissingDefault;
   const roots = options.paths && options.paths.length > 0 ? options.paths.map((entry) => path.resolve(root, entry)) : [root];
   const expectedSuffix = createDataSuffix({ codes: [options.builderCode] }).toLowerCase();
   const files = [];
@@ -20259,6 +20283,7 @@ async function scanRepo(options) {
     const discoveredCodes = discoverBuilderCodes(source);
     const hasWrongCode = discoveredCodes.some((code) => code !== options.builderCode);
     const hasAttributionHelper = ATTRIBUTION_HELPER_REGEX.test(source);
+    const hasAcceptableAttribution = hasExpectedCode || hasExpectedSuffix || !profileConfig.requireExpectedCodeInCandidate && hasAttributionHelper;
     if (hasWrongCode && !hasExpectedCode && !hasExpectedSuffix) {
       findings.push({
         file: path.relative(root, file),
@@ -20269,7 +20294,7 @@ async function scanRepo(options) {
       });
       continue;
     }
-    if (!hasExpectedCode && !hasExpectedSuffix && !hasAttributionHelper) {
+    if (!hasAcceptableAttribution) {
       findings.push({
         file: path.relative(root, file),
         reason: "missing-attribution",
@@ -20280,8 +20305,9 @@ async function scanRepo(options) {
     }
   }
   return {
-    ok: findings.length === 0 || options.failOnMissing === false,
+    ok: findings.length === 0 || failOnMissing === false,
     root,
+    profile,
     checkedFiles: files.length,
     candidateFiles,
     findings
@@ -20295,6 +20321,15 @@ async function scanRepoCommand(options) {
     data: result
   };
 }
+function normalizeScanProfile(profile) {
+  if (!profile) {
+    return "ci";
+  }
+  if (SCAN_PROFILES.includes(profile)) {
+    return profile;
+  }
+  throw new Error(`Unknown scan profile: ${profile}`);
+}
 function findTransactionMatch(source) {
   for (const pattern of TRANSACTION_PATTERNS) {
     const match = source.match(pattern.regex);
@@ -20302,11 +20337,20 @@ function findTransactionMatch(source) {
       continue;
     }
     return {
-      pattern,
+      pattern: resolveTransactionPattern(source, pattern),
       line: lineNumberAtIndex(source, match.index)
     };
   }
   return void 0;
+}
+function resolveTransactionPattern(source, pattern) {
+  if (pattern.marker === "sendTransaction" && ETHERS_SOURCE_REGEX.test(source)) {
+    return {
+      ...pattern,
+      family: "ethers"
+    };
+  }
+  return pattern;
 }
 function discoverBuilderCodes(source) {
   const discovered = /* @__PURE__ */ new Set();
@@ -20425,8 +20469,9 @@ async function run(argv) {
     const result = await scanRepoCommand({
       path: options.path ?? ".",
       builderCode: required(options["builder-code"], "--builder-code"),
-      failOnMissing: options["fail-on-missing"] !== "false",
-      paths: options.paths?.split(",").map((entry) => entry.trim()).filter(Boolean)
+      failOnMissing: options["fail-on-missing"] === void 0 ? void 0 : options["fail-on-missing"] !== "false",
+      paths: options.paths?.split(",").map((entry) => entry.trim()).filter(Boolean),
+      profile: options.profile
     });
     printResult(result, json);
     return setExitCode(result.ok);
@@ -20464,11 +20509,12 @@ Usage:
   bao decode --calldata 0x...
   bao check-calldata --calldata 0x... --expect bc_abc123
   bao check-tx --hash 0x... --rpc-url https://... --expect bc_abc123
-  bao scan-repo --path . --builder-code bc_abc123
+  bao scan-repo --path . --builder-code bc_abc123 --profile ci
 
 Options:
   --json                  Print machine-readable JSON
   --codes a,b             Encode multiple Builder Codes
+  --profile local|ci|strict
   --fail-on-missing false Allow scan findings without failing
 `;
 }
@@ -20478,20 +20524,27 @@ async function main() {
   const builderCode = core.getInput("builder-code", { required: true });
   const repoPath = core.getInput("path") || ".";
   const paths = core.getInput("paths").split(",").map((entry) => entry.trim()).filter(Boolean);
-  const failOnMissing = core.getInput("fail-on-missing") !== "false";
+  const failOnMissingInput = core.getInput("fail-on-missing");
+  const failOnMissing = failOnMissingInput.length === 0 ? void 0 : failOnMissingInput !== "false";
+  const profile = core.getInput("profile") || "ci";
   const result = await scanRepo({
     path: repoPath,
     paths,
     builderCode,
-    failOnMissing
+    failOnMissing,
+    profile
   });
+  core.info(`Using ${result.profile} scanner profile.`);
   core.info(`Checked ${result.checkedFiles} source file(s).`);
   core.info(`Found ${result.candidateFiles} transaction candidate file(s).`);
   for (const finding of result.findings) {
-    core.warning(`${finding.reason} in ${finding.file} near ${finding.marker}`);
+    core.warning(
+      `${finding.reason} in ${finding.file}:${finding.line} near ${finding.marker} (${finding.family})`
+    );
   }
   core.setOutput("checked-files", String(result.checkedFiles));
   core.setOutput("candidate-files", String(result.candidateFiles));
+  core.setOutput("profile", result.profile);
   core.setOutput("findings", JSON.stringify(result.findings));
   if (!result.ok) {
     core.setFailed(`Base attribution validation failed with ${result.findings.length} finding(s).`);

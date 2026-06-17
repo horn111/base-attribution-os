@@ -12,8 +12,13 @@ export { checkCalldataCommand } from "./commands/check-calldata.js";
 export { checkTransactionCommand } from "./commands/check-tx.js";
 export { decodeCommand } from "./commands/decode.js";
 export { encodeCommand } from "./commands/encode.js";
-export { scanRepo, scanRepoCommand } from "./commands/scan-repo.js";
-export type { ScanFinding, ScanRepoOptions, ScanRepoResult } from "./commands/scan-repo.js";
+export { normalizeScanProfile, scanRepo, scanRepoCommand } from "./commands/scan-repo.js";
+export type {
+  ScanFinding,
+  ScanProfile,
+  ScanRepoOptions,
+  ScanRepoResult,
+} from "./commands/scan-repo.js";
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   run(process.argv.slice(2)).catch((error) => {
@@ -76,11 +81,15 @@ async function run(argv: string[]): Promise<void> {
     const result = await scanRepoCommand({
       path: options.path ?? ".",
       builderCode: required(options["builder-code"], "--builder-code"),
-      failOnMissing: options["fail-on-missing"] !== "false",
+      failOnMissing:
+        options["fail-on-missing"] === undefined
+          ? undefined
+          : options["fail-on-missing"] !== "false",
       paths: options.paths
         ?.split(",")
         .map((entry) => entry.trim())
         .filter(Boolean),
+      profile: options.profile,
     });
     printResult(result, json);
     return setExitCode(result.ok);
@@ -128,11 +137,12 @@ Usage:
   bao decode --calldata 0x...
   bao check-calldata --calldata 0x... --expect bc_abc123
   bao check-tx --hash 0x... --rpc-url https://... --expect bc_abc123
-  bao scan-repo --path . --builder-code bc_abc123
+  bao scan-repo --path . --builder-code bc_abc123 --profile ci
 
 Options:
   --json                  Print machine-readable JSON
   --codes a,b             Encode multiple Builder Codes
+  --profile local|ci|strict
   --fail-on-missing false Allow scan findings without failing
 `;
 }

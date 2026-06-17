@@ -142,6 +142,72 @@ wallet.writeContract({ address, abi, functionName: "mint", dataSuffix });
     expect(result.ok).toBe(true);
     expect(result.findings).toEqual([]);
   });
+
+  it("reports findings without failing in the local profile by default", async () => {
+    const root = await createFixture(
+      "export function run(wallet) { return wallet.sendTransaction({ to: '0x0', data: '0x' }) }",
+    );
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+      profile: "local",
+    });
+
+    expect(result.profile).toBe("local");
+    expect(result.ok).toBe(true);
+    expect(result.findings).toHaveLength(1);
+  });
+
+  it("requires the expected Builder Code in strict profile candidate files", async () => {
+    const root = await createFixture(`
+import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+
+const dataSuffix = builderCodeDataSuffix(process.env.BUILDER_CODE ?? "");
+wallet.writeContract({ address, abi, functionName: "mint", dataSuffix });
+`);
+
+    const ciResult = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+      profile: "ci",
+    });
+    const strictResult = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+      profile: "strict",
+    });
+
+    expect(ciResult.ok).toBe(true);
+    expect(strictResult.ok).toBe(false);
+    expect(strictResult.findings[0]).toMatchObject({
+      reason: "missing-attribution",
+      marker: "writeContract",
+      family: "viem",
+    });
+  });
+
+  it("classifies ethers transaction files", async () => {
+    const root = await createFixture(`
+import { Wallet } from "ethers";
+
+export function run(wallet: Wallet) {
+  return wallet.sendTransaction({ to: "0x0000000000000000000000000000000000000000", data: "0x" });
+}
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toMatchObject({
+      reason: "missing-attribution",
+      marker: "sendTransaction",
+      family: "ethers",
+    });
+  });
 });
 
 async function createFixture(source: string): Promise<string> {

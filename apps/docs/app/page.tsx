@@ -2,6 +2,7 @@ const packages = [
   ["core", "ERC-8021 encode, decode, append, validate"],
   ["viem", "dataSuffix and client helpers"],
   ["wagmi", "config and hook helpers"],
+  ["ethers", "transaction and signer helpers"],
   ["cli", "bao validation commands"],
   ["github-action", "PR enforcement wrapper"],
 ];

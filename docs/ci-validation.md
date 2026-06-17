@@ -18,13 +18,23 @@ jobs:
         with:
           builder-code: bc_abc123
           paths: "src,app,packages,examples"
+          profile: "ci"
           fail-on-missing: "true"
 ```
 
-Scanner v0.2 classifies common transaction markers by family:
+Use scanner profiles to tune enforcement:
+
+| Profile  | Default behavior                                                 |
+| -------- | ---------------------------------------------------------------- |
+| `local`  | Reports findings without failing, useful during rollout.         |
+| `ci`     | Fails obvious missing or wrong Builder Code usage.               |
+| `strict` | Requires the expected Builder Code or suffix in candidate files. |
+
+Scanner v0.3 classifies common transaction markers by family:
 
 | Family   | Markers                                                                                                 |
 | -------- | ------------------------------------------------------------------------------------------------------- |
+| `ethers` | `sendTransaction`, `populateTransaction` when ethers usage is detected                                  |
 | `viem`   | `sendTransaction`, `writeContract`, `prepareTransactionRequest`                                         |
 | `wagmi`  | `useSendTransaction`, `useWriteContract`                                                                |
 | `wallet` | `sendCalls`, `wallet_sendCalls`                                                                         |
