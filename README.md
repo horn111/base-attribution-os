@@ -14,6 +14,11 @@ turns attribution into a development workflow: SDK helpers append the ERC-8021
 suffix, the CLI validates calldata and transactions, and CI catches missing
 Builder Codes before code ships.
 
+Update 3 expands the project direction into an app and game migration layer:
+Base Pay purchases, server-side verification, internal credits or tickets, and
+Builder Code attribution as one repeatable path for teams moving existing
+products to Base.
+
 ```mermaid
 flowchart LR
   A["App, wallet, or agent"] --> B["Base Attribution OS SDK"]
@@ -49,6 +54,7 @@ Official context:
 - [Base App Developers](https://docs.base.org/apps/builder-codes/app-developers)
 - [Base Wallet Developers](https://docs.base.org/apps/builder-codes/wallet-developers)
 - [Base Agent Developers](https://docs.base.org/apps/builder-codes/agent-developers)
+- [Base Pay](https://docs.base.org/base-account/guides/accept-payments)
 - [Base Rewards](https://docs.base.org/apps/growth/rewards)
 - [Dune EIP-8021 parser](https://docs.dune.com/query-engine/Functions-and-operators/eip-8021)
 - [base/builder-codes](https://github.com/base/builder-codes)
@@ -204,11 +210,42 @@ Profiles let teams choose the right enforcement level:
 - Growth engineers: create a repeatable checklist for Base.dev readiness.
 - Base ecosystem teams: review integration PRs with automated attribution checks.
 
+## App and game migration layer
+
+Base Attribution OS is not a payment processor, hosted backend, or Base.dev
+replacement. The next layer is a thin migration workflow for teams that already
+have an app or game and want Base-native monetization without rebuilding their
+product.
+
+```txt
+existing app or game
+  -> Base Pay USDC purchase
+  -> server-side verification
+  -> internal credits, tickets, or entitlements
+  -> Builder Code attribution
+  -> measurable Base activity
+```
+
+Examples:
+
+- Apps: AI credits, paid exports, premium unlocks, API usage packs, community
+  passes.
+- Games: tickets, continues, lives, boosts, chests, cosmetic unlocks.
+- Backends: shared core first, Nakama adapter for games, Next.js/Hono/Express
+  and Supabase adapters for apps.
+
+See [docs/app-and-game-migration-rfc.md](docs/app-and-game-migration-rfc.md)
+for the RFC.
+
 ## Roadmap
 
 - MVP: core, viem, wagmi, CLI, GitHub Action, examples, README.
 - Shipped: scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
 - Shipped: ethers adapter and scanner profiles for stricter CI.
+- Shipped: Vercel scanner playground.
+- Update 3: app and game migration RFC with a Base Pay and entitlement planning
+  demo.
+- Next: `payments-core` and `entitlements-core` primitives.
 - Next: wallet middleware for `sendCalls` and smart account frameworks.
 - Next: Dune query templates for attributed transaction replay.
 - Next: local dashboard, alerts, and shareable progress cards for X.

@@ -91,7 +91,10 @@ a {
 .nav-links a,
 .copy-button,
 .segmented button,
-.example-list button {
+.example-list button,
+.mode-tabs button,
+.option-grid button,
+.repo-cta {
   border: 1px solid rgba(112, 132, 164, 0.38);
   border-radius: 8px;
   background: rgba(15, 23, 34, 0.86);
@@ -112,7 +115,10 @@ a {
 .nav-links a:hover,
 .copy-button:hover,
 .segmented button:hover,
-.example-list button:hover {
+.example-list button:hover,
+.mode-tabs button:hover,
+.option-grid button:hover,
+.repo-cta:hover {
   border-color: rgba(79, 140, 255, 0.78);
   color: #ffffff;
 }
@@ -131,6 +137,34 @@ a {
   gap: 24px;
   max-width: 1440px;
   margin: 0 auto 18px;
+}
+
+.intro-actions {
+  display: grid;
+  justify-items: end;
+  gap: 14px;
+}
+
+.mode-tabs {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: min(100%, 280px);
+}
+
+.mode-tabs button {
+  min-height: 40px;
+  padding: 9px 12px;
+  color: #c8d4e6;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mode-tabs button.is-active,
+.option-grid button.is-active {
+  border-color: rgba(0, 82, 255, 0.9);
+  background: rgba(0, 82, 255, 0.2);
+  color: #ffffff;
 }
 
 .eyebrow,
@@ -163,15 +197,21 @@ h1 {
   color: #a8b4c7;
   font-size: 16px;
   line-height: 1.55;
+  text-align: right;
 }
 
-.demo-grid {
+.demo-grid,
+.migration-grid {
   display: grid;
   grid-template-columns: minmax(230px, 280px) minmax(0, 1.3fr) minmax(300px, 0.9fr);
   gap: 16px;
   align-items: stretch;
   max-width: 1440px;
   margin: 0 auto;
+}
+
+.migration-grid {
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1.08fr) minmax(300px, 0.92fr);
 }
 
 .panel,
@@ -273,7 +313,8 @@ input:focus,
   gap: 8px;
 }
 
-.example-list button {
+.example-list button,
+.option-grid button {
   display: grid;
   gap: 3px;
   min-height: 56px;
@@ -281,18 +322,87 @@ input:focus,
   text-align: left;
 }
 
-.example-list span {
+.option-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.compact-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.example-list span,
+.option-grid strong {
   color: #f8fbff;
   font-size: 14px;
   font-weight: 800;
 }
 
-.example-list small {
+.example-list small,
+.option-grid small {
   overflow: hidden;
   color: #7f8ea5;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.flow-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: flow;
+}
+
+.flow-list li {
+  position: relative;
+  min-height: 58px;
+  border: 1px solid rgba(112, 132, 164, 0.24);
+  border-radius: 8px;
+  background: #070a0f;
+  padding: 14px 14px 14px 50px;
+  color: #d8e6f8;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.flow-list li::before {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(0, 82, 255, 0.18);
+  color: #69a0ff;
+  content: counter(flow);
+  counter-increment: flow;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.attribution-card {
+  border: 1px solid rgba(79, 140, 255, 0.3);
+  border-radius: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(0, 82, 255, 0.08);
+}
+
+.attribution-card strong {
+  display: block;
+  color: #f8fbff;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .editor-panel {
@@ -420,6 +530,53 @@ input:focus,
   padding: 18px;
 }
 
+.check-list {
+  display: grid;
+  gap: 10px;
+}
+
+.check-list article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid rgba(112, 132, 164, 0.24);
+  border-radius: 8px;
+  background: #070a0f;
+  padding: 12px;
+}
+
+.check-list span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(51, 209, 122, 0.42);
+  border-radius: 999px;
+  color: #33d17a;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.check-list p {
+  margin: 0;
+  color: #c8d4e6;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.repo-cta {
+  display: block;
+  margin-top: 16px;
+  padding: 13px 14px;
+  background: #0052ff;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.3;
+  text-align: center;
+}
+
 .action-panel {
   max-width: 1440px;
   margin: 16px auto 0;
@@ -448,7 +605,17 @@ input:focus,
     flex-direction: column;
   }
 
-  .demo-grid {
+  .intro-actions {
+    justify-items: start;
+    width: 100%;
+  }
+
+  .lede {
+    text-align: left;
+  }
+
+  .demo-grid,
+  .migration-grid {
     grid-template-columns: 1fr;
   }
 
@@ -461,6 +628,18 @@ input:focus,
   .control-panel .panel-heading {
     grid-column: 1 / -1;
     margin-bottom: 0;
+  }
+
+  .migration-controls {
+    display: block;
+  }
+
+  .migration-controls .panel-heading {
+    margin-bottom: 16px;
+  }
+
+  .migration-controls .field {
+    margin-top: 18px;
   }
 
   .field {
@@ -515,6 +694,10 @@ input:focus,
   }
 
   .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-options {
     grid-template-columns: 1fr;
   }
 }

@@ -2,9 +2,13 @@
 
 import { useMemo, useState, type ChangeEvent } from "react";
 
+type DemoMode = "scanner" | "migration";
 type Profile = "local" | "ci" | "strict";
 type Family = "agent" | "ethers" | "viem" | "wagmi" | "wallet";
 type Reason = "missing-attribution" | "wrong-builder-code";
+type ProjectType = "app" | "game";
+type BackendTarget = "custom" | "nakama" | "next" | "supabase";
+type MonetizationUnit = "credits" | "entitlement" | "tickets";
 
 interface Finding {
   line: number;
@@ -30,6 +34,30 @@ interface TransactionPattern {
   marker: string;
   family: Family;
   regex: RegExp;
+}
+
+interface Option<T extends string> {
+  value: T;
+  label: string;
+  note: string;
+}
+
+interface MigrationPlan {
+  title: string;
+  flow: string[];
+  verification: string[];
+  attributionStep: string;
+  adapterPath: string;
+  catalog: {
+    packageId: string;
+    projectType: ProjectType;
+    backend: BackendTarget;
+    unit: MonetizationUnit;
+    amount: number;
+    priceUsd: string;
+    builderCode: string;
+    fulfillment: string;
+  };
 }
 
 const profiles: Record<
@@ -191,6 +219,60 @@ const transactionPatterns: TransactionPattern[] = [
   },
 ];
 
+const projectTypeOptions: Option<ProjectType>[] = [
+  {
+    value: "app",
+    label: "App",
+    note: "credits, paid features, exports",
+  },
+  {
+    value: "game",
+    label: "Game",
+    note: "tickets, continues, boosts",
+  },
+];
+
+const backendOptions: Option<BackendTarget>[] = [
+  {
+    value: "nakama",
+    label: "Nakama",
+    note: "game backend adapter",
+  },
+  {
+    value: "next",
+    label: "Next.js",
+    note: "route handlers",
+  },
+  {
+    value: "supabase",
+    label: "Supabase",
+    note: "SQL + edge functions",
+  },
+  {
+    value: "custom",
+    label: "Custom API",
+    note: "Express, Hono, or any backend",
+  },
+];
+
+const unitOptions: Option<MonetizationUnit>[] = [
+  {
+    value: "credits",
+    label: "Credits",
+    note: "usage packs",
+  },
+  {
+    value: "tickets",
+    label: "Tickets",
+    note: "game actions",
+  },
+  {
+    value: "entitlement",
+    label: "Entitlement",
+    note: "premium unlock",
+  },
+];
+
 const builderCodeRegex = /\bbc_[A-Za-z0-9._:-]+\b/g;
 const attributionHelperRegex =
   /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
@@ -198,10 +280,16 @@ const ethersSourceRegex =
   /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
 
 export default function Page() {
+  const [mode, setMode] = useState<DemoMode>("scanner");
   const [builderCode, setBuilderCode] = useState("bc_abc123");
   const [profile, setProfile] = useState<Profile>("ci");
   const [activeExample, setActiveExample] = useState(examples[0]);
   const [source, setSource] = useState(examples[0].source);
+  const [projectType, setProjectType] = useState<ProjectType>("app");
+  const [backend, setBackend] = useState<BackendTarget>("next");
+  const [unit, setUnit] = useState<MonetizationUnit>("credits");
+  const [packageName, setPackageName] = useState("starter_credits_100");
+  const [packagePrice, setPackagePrice] = useState("0.99");
   const [copied, setCopied] = useState<string | undefined>();
 
   const result = useMemo(
@@ -212,8 +300,26 @@ export default function Page() {
     () => createActionYaml(builderCode.trim(), profile),
     [builderCode, profile],
   );
+  const migrationPlan = useMemo(
+    () =>
+      createMigrationPlan({
+        backend,
+        builderCode: builderCode.trim() || "bc_abc123",
+        packageName: packageName.trim() || defaultPackageName(unit),
+        packagePrice: packagePrice.trim() || "0.99",
+        projectType,
+        unit,
+      }),
+    [backend, builderCode, packageName, packagePrice, projectType, unit],
+  );
   const statusLabel = result.ok ? "passing" : "failing";
   const statusTone = result.ok ? "good" : "bad";
+  const catalogJson = JSON.stringify(migrationPlan.catalog, null, 2);
+  const introTitle = mode === "scanner" ? "Builder Codes in CI" : "App & game migration";
+  const introCopy =
+    mode === "scanner"
+      ? "Try attribution checks across ethers, viem, wagmi, wallet batches, and agent transaction tools."
+      : "Plan Base Pay purchases, internal credits or tickets, server verification, and Builder Code attribution.";
 
   function selectExample(example: Example): void {
     setActiveExample(example);
@@ -255,149 +361,376 @@ export default function Page() {
 
       <section className="intro">
         <div>
-          <p className="eyebrow">Live scanner demo</p>
-          <h1>Builder Codes in CI</h1>
+          <p className="eyebrow">Live OSS demo</p>
+          <h1>{introTitle}</h1>
         </div>
-        <p className="lede">
-          Try attribution checks across ethers, viem, wagmi, wallet batches, and agent transaction
-          tools.
-        </p>
-      </section>
-
-      <section className="demo-grid" aria-label="Base Attribution OS scanner demo">
-        <aside className="panel control-panel">
-          <div className="panel-heading">
-            <p className="panel-kicker">Inputs</p>
-            <h2>Scan setup</h2>
-          </div>
-
-          <label className="field">
-            <span>Builder Code</span>
-            <input value={builderCode} onChange={handleBuilderCode} spellCheck={false} />
-          </label>
-
-          <div className="field">
-            <span>Profile</span>
-            <div className="segmented" role="group" aria-label="Scanner profile">
-              {(Object.keys(profiles) as Profile[]).map((entry) => (
-                <button
-                  key={entry}
-                  className={entry === profile ? "is-active" : undefined}
-                  type="button"
-                  onClick={() => setProfile(entry)}
-                >
-                  {entry}
-                </button>
-              ))}
-            </div>
-            <p className="field-note">{profiles[profile].intent}</p>
-          </div>
-
-          <div className="field">
-            <span>Example</span>
-            <div className="example-list" role="list">
-              {examples.map((example) => (
-                <button
-                  key={example.id}
-                  className={example.id === activeExample.id ? "is-active" : undefined}
-                  type="button"
-                  onClick={() => selectExample(example)}
-                >
-                  <span>{example.label}</span>
-                  <small>{example.file}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        <section className="panel editor-panel">
-          <div className="panel-heading editor-heading">
-            <div>
-              <p className="panel-kicker">Candidate file</p>
-              <h2>{activeExample.file}</h2>
-            </div>
-            <button className="copy-button" type="button" onClick={() => copyText("code", source)}>
-              {copied === "code" ? "Copied" : "Copy"}
+        <div className="intro-actions">
+          <div className="mode-tabs" role="tablist" aria-label="Demo mode">
+            <button
+              aria-selected={mode === "scanner"}
+              className={mode === "scanner" ? "is-active" : undefined}
+              role="tab"
+              type="button"
+              onClick={() => setMode("scanner")}
+            >
+              Scanner
+            </button>
+            <button
+              aria-selected={mode === "migration"}
+              className={mode === "migration" ? "is-active" : undefined}
+              role="tab"
+              type="button"
+              onClick={() => setMode("migration")}
+            >
+              Migration
             </button>
           </div>
-
-          <textarea
-            aria-label="Transaction source"
-            className="code-editor"
-            spellCheck={false}
-            value={source}
-            onChange={handleSource}
-          />
-        </section>
-
-        <section className="panel result-panel">
-          <div className="panel-heading">
-            <p className="panel-kicker">Result</p>
-            <h2>
-              <span className={`status-dot ${statusTone}`} aria-hidden="true" />
-              {statusLabel}
-            </h2>
-          </div>
-
-          <dl className="metric-grid">
-            <div>
-              <dt>profile</dt>
-              <dd>{profile}</dd>
-            </div>
-            <div>
-              <dt>candidates</dt>
-              <dd>{result.candidateFiles}</dd>
-            </div>
-            <div>
-              <dt>findings</dt>
-              <dd>{result.findings.length}</dd>
-            </div>
-          </dl>
-
-          <div className="findings">
-            {result.findings.length === 0 ? (
-              <div className="empty-state">
-                <strong>No findings</strong>
-                <span>Attribution is present for this profile.</span>
-              </div>
-            ) : (
-              result.findings.map((finding) => (
-                <article className="finding-row" key={`${finding.marker}-${finding.line}`}>
-                  <div>
-                    <strong>{finding.reason}</strong>
-                    <span>
-                      line {finding.line} near {finding.marker}
-                    </span>
-                  </div>
-                  <b>{finding.family}</b>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      </section>
-
-      <section className="action-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="panel-kicker">GitHub Action</p>
-            <h2>validate-attribution.yml</h2>
-          </div>
-          <button
-            className="copy-button"
-            type="button"
-            onClick={() => copyText("action", actionYaml)}
-          >
-            {copied === "action" ? "Copied" : "Copy"}
-          </button>
+          <p className="lede">{introCopy}</p>
         </div>
-        <pre>
-          <code>{actionYaml}</code>
-        </pre>
       </section>
+
+      {mode === "scanner" ? (
+        <>
+          <section className="demo-grid" aria-label="Base Attribution OS scanner demo">
+            <aside className="panel control-panel">
+              <div className="panel-heading">
+                <p className="panel-kicker">Inputs</p>
+                <h2>Scan setup</h2>
+              </div>
+
+              <label className="field">
+                <span>Builder Code</span>
+                <input value={builderCode} onChange={handleBuilderCode} spellCheck={false} />
+              </label>
+
+              <div className="field">
+                <span>Profile</span>
+                <div className="segmented" role="group" aria-label="Scanner profile">
+                  {(Object.keys(profiles) as Profile[]).map((entry) => (
+                    <button
+                      key={entry}
+                      className={entry === profile ? "is-active" : undefined}
+                      type="button"
+                      onClick={() => setProfile(entry)}
+                    >
+                      {entry}
+                    </button>
+                  ))}
+                </div>
+                <p className="field-note">{profiles[profile].intent}</p>
+              </div>
+
+              <div className="field">
+                <span>Example</span>
+                <div className="example-list" role="list">
+                  {examples.map((example) => (
+                    <button
+                      key={example.id}
+                      className={example.id === activeExample.id ? "is-active" : undefined}
+                      type="button"
+                      onClick={() => selectExample(example)}
+                    >
+                      <span>{example.label}</span>
+                      <small>{example.file}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            <section className="panel editor-panel">
+              <div className="panel-heading editor-heading">
+                <div>
+                  <p className="panel-kicker">Candidate file</p>
+                  <h2>{activeExample.file}</h2>
+                </div>
+                <button
+                  className="copy-button"
+                  type="button"
+                  onClick={() => copyText("code", source)}
+                >
+                  {copied === "code" ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <textarea
+                aria-label="Transaction source"
+                className="code-editor"
+                spellCheck={false}
+                value={source}
+                onChange={handleSource}
+              />
+            </section>
+
+            <section className="panel result-panel">
+              <div className="panel-heading">
+                <p className="panel-kicker">Result</p>
+                <h2>
+                  <span className={`status-dot ${statusTone}`} aria-hidden="true" />
+                  {statusLabel}
+                </h2>
+              </div>
+
+              <dl className="metric-grid">
+                <div>
+                  <dt>profile</dt>
+                  <dd>{profile}</dd>
+                </div>
+                <div>
+                  <dt>candidates</dt>
+                  <dd>{result.candidateFiles}</dd>
+                </div>
+                <div>
+                  <dt>findings</dt>
+                  <dd>{result.findings.length}</dd>
+                </div>
+              </dl>
+
+              <div className="findings">
+                {result.findings.length === 0 ? (
+                  <div className="empty-state">
+                    <strong>No findings</strong>
+                    <span>Attribution is present for this profile.</span>
+                  </div>
+                ) : (
+                  result.findings.map((finding) => (
+                    <article className="finding-row" key={`${finding.marker}-${finding.line}`}>
+                      <div>
+                        <strong>{finding.reason}</strong>
+                        <span>
+                          line {finding.line} near {finding.marker}
+                        </span>
+                      </div>
+                      <b>{finding.family}</b>
+                    </article>
+                  ))
+                )}
+              </div>
+            </section>
+          </section>
+
+          <section className="action-panel">
+            <div className="panel-heading">
+              <div>
+                <p className="panel-kicker">GitHub Action</p>
+                <h2>validate-attribution.yml</h2>
+              </div>
+              <button
+                className="copy-button"
+                type="button"
+                onClick={() => copyText("action", actionYaml)}
+              >
+                {copied === "action" ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <pre>
+              <code>{actionYaml}</code>
+            </pre>
+          </section>
+        </>
+      ) : (
+        <>
+          <section className="migration-grid" aria-label="Base migration planner demo">
+            <aside className="panel control-panel migration-controls">
+              <div className="panel-heading">
+                <p className="panel-kicker">Inputs</p>
+                <h2>Migration setup</h2>
+              </div>
+
+              <label className="field">
+                <span>Builder Code</span>
+                <input value={builderCode} onChange={handleBuilderCode} spellCheck={false} />
+              </label>
+
+              <div className="field">
+                <span>Project</span>
+                <div className="option-grid">
+                  {projectTypeOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={option.value === projectType ? "is-active" : undefined}
+                      type="button"
+                      onClick={() => setProjectType(option.value)}
+                    >
+                      <strong>{option.label}</strong>
+                      <small>{option.note}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <span>Backend</span>
+                <div className="option-grid">
+                  {backendOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={option.value === backend ? "is-active" : undefined}
+                      type="button"
+                      onClick={() => setBackend(option.value)}
+                    >
+                      <strong>{option.label}</strong>
+                      <small>{option.note}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="field">
+                <span>Unit</span>
+                <div className="option-grid compact-options">
+                  {unitOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={option.value === unit ? "is-active" : undefined}
+                      type="button"
+                      onClick={() => {
+                        setUnit(option.value);
+                        setPackageName(defaultPackageName(option.value));
+                      }}
+                    >
+                      <strong>{option.label}</strong>
+                      <small>{option.note}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="field">
+                <span>Starter package</span>
+                <input
+                  value={packageName}
+                  onChange={(event) => setPackageName(event.target.value)}
+                />
+              </label>
+
+              <label className="field">
+                <span>Price, USDC</span>
+                <input
+                  inputMode="decimal"
+                  value={packagePrice}
+                  onChange={(event) => setPackagePrice(event.target.value)}
+                />
+              </label>
+            </aside>
+
+            <section className="panel flow-panel">
+              <div className="panel-heading">
+                <div>
+                  <p className="panel-kicker">Generated flow</p>
+                  <h2>{migrationPlan.title}</h2>
+                </div>
+              </div>
+
+              <ol className="flow-list">
+                {migrationPlan.flow.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+
+              <article className="attribution-card">
+                <p className="panel-kicker">Builder Code attribution</p>
+                <strong>{migrationPlan.attributionStep}</strong>
+              </article>
+
+              <article className="attribution-card">
+                <p className="panel-kicker">Adapter path</p>
+                <strong>{migrationPlan.adapterPath}</strong>
+              </article>
+            </section>
+
+            <section className="panel result-panel">
+              <div className="panel-heading">
+                <p className="panel-kicker">Server checklist</p>
+                <h2>
+                  <span className="status-dot good" aria-hidden="true" />
+                  replay-safe plan
+                </h2>
+              </div>
+
+              <div className="check-list">
+                {migrationPlan.verification.map((item) => (
+                  <article key={item}>
+                    <span aria-hidden="true">OK</span>
+                    <p>{item}</p>
+                  </article>
+                ))}
+              </div>
+
+              <a className="repo-cta" href="https://github.com/horn111/base-attribution-os">
+                Star the repo if this should become an installable SDK
+              </a>
+            </section>
+          </section>
+
+          <section className="action-panel migration-output">
+            <div className="panel-heading">
+              <div>
+                <p className="panel-kicker">Catalog preview</p>
+                <h2>package-catalog.json</h2>
+              </div>
+              <button
+                className="copy-button"
+                type="button"
+                onClick={() => copyText("catalog", catalogJson)}
+              >
+                {copied === "catalog" ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <pre>
+              <code>{catalogJson}</code>
+            </pre>
+          </section>
+        </>
+      )}
     </main>
   );
+}
+
+function createMigrationPlan(input: {
+  backend: BackendTarget;
+  builderCode: string;
+  packageName: string;
+  packagePrice: string;
+  projectType: ProjectType;
+  unit: MonetizationUnit;
+}): MigrationPlan {
+  const amount = defaultUnitAmount(input.unit);
+  const projectLabel = input.projectType === "game" ? "game" : "app";
+  const unitLabel = unitCopy(input.unit);
+  const backendName = backendLabel(input.backend);
+
+  return {
+    title: `${backendName} ${projectLabel} with ${unitLabel}`,
+    flow: [
+      `Define ${input.packageName} as a Base Pay USDC purchase.`,
+      `Send the payment with Builder Code ${input.builderCode} attached as the data suffix.`,
+      "Verify payment status on the server before fulfillment.",
+      `Credit ${amount} ${unitLabel} to the user's internal balance or entitlement ledger.`,
+      "Let the product consume the internal balance offchain with fast UX.",
+      "Keep the onchain payment visible for attribution, analytics, and future CI checks.",
+    ],
+    verification: [
+      "Require completed Base Pay status from getPaymentStatus.",
+      "Check sender, recipient, amount, currency, and order id.",
+      "Store a unique payment id before issuing value.",
+      "Make fulfillment idempotent for retries and webhooks.",
+      "Record every credit, ticket, or entitlement change in an internal ledger.",
+      "Keep internal balances non-transferable and non-withdrawable by default.",
+    ],
+    attributionStep: `The onchain purchase carries ${input.builderCode}; internal ${unitLabel} spends stay offchain.`,
+    adapterPath: adapterPath(input.backend, input.projectType),
+    catalog: {
+      packageId: input.packageName,
+      projectType: input.projectType,
+      backend: input.backend,
+      unit: input.unit,
+      amount,
+      priceUsd: input.packagePrice,
+      builderCode: input.builderCode,
+      fulfillment: fulfillmentCopy(input.unit),
+    },
+  };
 }
 
 function scanSource(source: string, builderCode: string, profile: Profile): ScanResult {
@@ -413,7 +746,7 @@ function scanSource(source: string, builderCode: string, profile: Profile): Scan
   }
 
   const hasExpectedCode = source.includes(builderCode);
-  const hasExpectedSuffix = source.toLowerCase().includes(stringToHex(builderCode).slice(2));
+  const hasExpectedSuffix = source.toLowerCase().includes(stringToHex(builderCode).toLowerCase());
   const discoveredCodes = Array.from(source.matchAll(builderCodeRegex), (entry) => entry[0]);
   const hasWrongCode = discoveredCodes.some((code) => code !== builderCode);
   const hasAttributionHelper = attributionHelperRegex.test(source);
@@ -518,4 +851,73 @@ jobs:
           builder-code: ${builderCode || "bc_abc123"}
           paths: "src,app,packages"
           profile: "${profile}"`;
+}
+
+function backendLabel(backend: BackendTarget): string {
+  const labels: Record<BackendTarget, string> = {
+    custom: "Custom API",
+    nakama: "Nakama",
+    next: "Next.js",
+    supabase: "Supabase",
+  };
+
+  return labels[backend];
+}
+
+function defaultPackageName(unit: MonetizationUnit): string {
+  const names: Record<MonetizationUnit, string> = {
+    credits: "starter_credits_100",
+    entitlement: "premium_unlock",
+    tickets: "starter_tickets_20",
+  };
+
+  return names[unit];
+}
+
+function defaultUnitAmount(unit: MonetizationUnit): number {
+  const amounts: Record<MonetizationUnit, number> = {
+    credits: 100,
+    entitlement: 1,
+    tickets: 20,
+  };
+
+  return amounts[unit];
+}
+
+function unitCopy(unit: MonetizationUnit): string {
+  const labels: Record<MonetizationUnit, string> = {
+    credits: "credits",
+    entitlement: "entitlements",
+    tickets: "tickets",
+  };
+
+  return labels[unit];
+}
+
+function fulfillmentCopy(unit: MonetizationUnit): string {
+  const labels: Record<MonetizationUnit, string> = {
+    credits: "credit_balance",
+    entitlement: "account_unlock",
+    tickets: "ticket_balance",
+  };
+
+  return labels[unit];
+}
+
+function adapterPath(backend: BackendTarget, projectType: ProjectType): string {
+  if (backend === "nakama") {
+    return "First adapter target: Nakama RPCs for order creation, verification, balance reads, and spends.";
+  }
+
+  if (backend === "supabase") {
+    return "Future app adapter: Supabase SQL tables, unique payment constraints, and edge functions.";
+  }
+
+  if (backend === "next") {
+    return "Future app adapter: Next.js route handlers around payments-core and entitlements-core.";
+  }
+
+  return projectType === "game"
+    ? "Custom game backend path: call shared core from your authoritative server."
+    : "Custom app backend path: call shared core from Express, Hono, or your existing API.";
 }

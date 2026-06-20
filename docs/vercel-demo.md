@@ -1,8 +1,8 @@
 # Vercel Demo
 
-The docs app is a live scanner playground for Base Attribution OS. It mirrors
-the `bao scan-repo` developer workflow in the browser so teams can try Builder
-Code enforcement before installing the packages.
+The docs app is a live playground for Base Attribution OS. It includes the
+scanner workflow for Builder Code enforcement and a Migration Planner preview
+for Base Pay, internal credits or tickets, entitlements, and attribution.
 
 ## Vercel settings
 

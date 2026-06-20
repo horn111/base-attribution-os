@@ -104,6 +104,36 @@ https://github.com/horn111/base-attribution-os
 
 Demo: [Vercel URL]
 
+## App and game migration RFC post
+
+Shipped Base Attribution OS update 3.
+
+The project is expanding from Builder Code CI into an app/game migration layer:
+
+- Base Pay purchases
+- server verification
+- internal credits, tickets, and entitlements
+- Builder Code attribution
+- a new Migration Planner demo
+
+Star the repo if existing apps and games should have a faster path to Base:
+https://github.com/horn111/base-attribution-os
+
+Demo: [Vercel URL]
+
+@base @CoinbaseDev
+
+## App and game migration RFC next-update teaser
+
+Next update is already scoped:
+
+`payments-core` + `entitlements-core` primitives.
+
+The goal: turn the RFC into installable SDK building blocks before adapters,
+then ship Nakama for games and lightweight app adapters after that.
+
+Base migration should feel like adding a layer, not rebuilding the product.
+
 ## Weekly update template
 
 Week N of Base Attribution OS:

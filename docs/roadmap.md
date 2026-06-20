@@ -11,15 +11,24 @@
 - ethers adapter.
 - Scanner profiles for local, CI, and strict enforcement.
 - Vercel scanner playground.
+- App and game migration layer RFC.
+- Migration Planner demo for Base Pay, internal credits, tickets, entitlements,
+  and Builder Code attribution.
 
 ## v0.1
 
+- `payments-core` primitives for Base Pay order creation, verification, and
+  replay-safe fulfillment events.
+- `entitlements-core` primitives for credits, tickets, unlocks, balance reads,
+  and consumption events.
 - Better scanner rules with AST parsing.
 - Wallet `sendCalls` middleware examples.
 - Public fixture set for real transaction calldata.
 
 ## v0.2
 
+- Nakama adapter for game ticket packs and wallet ledger fulfillment.
+- Next.js or Hono adapter for app credit packs and entitlement checks.
 - Dune query templates for attribution replay.
 - Local analytics dashboard.
 - Shareable progress cards for X.
