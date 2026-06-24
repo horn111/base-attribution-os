@@ -312,14 +312,14 @@ export default function Page() {
       }),
     [backend, builderCode, packageName, packagePrice, projectType, unit],
   );
-  const statusLabel = result.ok ? "passing" : "failing";
-  const statusTone = result.ok ? "good" : "bad";
+
   const catalogJson = JSON.stringify(migrationPlan.catalog, null, 2);
   const introTitle = mode === "scanner" ? "Builder Codes in CI" : "App & game migration";
   const introCopy =
     mode === "scanner"
       ? "Try attribution checks across ethers, viem, wagmi, wallet batches, and agent transaction tools."
       : "Plan Base Pay purchases, internal credits or tickets, server verification, and Builder Code attribution.";
+  const lineNumbers = source.split(/\r?\n/).map((_, index) => index + 1);
 
   function selectExample(example: Example): void {
     setActiveExample(example);
@@ -342,7 +342,7 @@ export default function Page() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-container">
       <header className="topbar">
         <a className="brand" href="https://github.com/horn111/base-attribution-os">
           <span className="brand-mark" aria-hidden="true">
@@ -353,22 +353,23 @@ export default function Page() {
         <nav className="nav-links" aria-label="Project links">
           <a href="https://github.com/horn111/base-attribution-os">GitHub</a>
           <a href="https://github.com/horn111/base-attribution-os#readme">Docs</a>
-          <a className="star-link" href="https://github.com/horn111/base-attribution-os">
-            Star repo
+          <a className="star-button" href="https://github.com/horn111/base-attribution-os">
+            <StarIcon />
+            <span>Star repo</span>
           </a>
         </nav>
       </header>
 
-      <section className="intro">
-        <div>
-          <p className="eyebrow">Live OSS demo</p>
+      <section className="hero">
+        <div className="hero-meta">
+          <p className="eyebrow">Live OSS Utility</p>
           <h1>{introTitle}</h1>
         </div>
-        <div className="intro-actions">
+        <div className="hero-controls">
           <div className="mode-tabs" role="tablist" aria-label="Demo mode">
             <button
               aria-selected={mode === "scanner"}
-              className={mode === "scanner" ? "is-active" : undefined}
+              className={`tab-button ${mode === "scanner" ? "active" : ""}`}
               role="tab"
               type="button"
               onClick={() => setMode("scanner")}
@@ -377,7 +378,7 @@ export default function Page() {
             </button>
             <button
               aria-selected={mode === "migration"}
-              className={mode === "migration" ? "is-active" : undefined}
+              className={`tab-button ${mode === "migration" ? "active" : ""}`}
               role="tab"
               type="button"
               onClick={() => setMode("migration")}
@@ -389,301 +390,426 @@ export default function Page() {
         </div>
       </section>
 
-      {mode === "scanner" ? (
-        <>
-          <section className="demo-grid" aria-label="Base Attribution OS scanner demo">
-            <aside className="panel control-panel">
-              <div className="panel-heading">
-                <p className="panel-kicker">Inputs</p>
-                <h2>Scan setup</h2>
-              </div>
+      <div className="bento-grid">
+        <aside className="bento-card input-card">
+          {mode === "scanner" ? (
+            <ScannerInputs
+              activeExample={activeExample}
+              builderCode={builderCode}
+              copied={copied}
+              profile={profile}
+              onBuilderCodeChange={handleBuilderCode}
+              onExampleSelect={selectExample}
+              onProfileChange={setProfile}
+            />
+          ) : (
+            <MigrationInputs
+              backend={backend}
+              builderCode={builderCode}
+              packageName={packageName}
+              packagePrice={packagePrice}
+              projectType={projectType}
+              unit={unit}
+              onBackendChange={setBackend}
+              onBuilderCodeChange={handleBuilderCode}
+              onPackageNameChange={setPackageName}
+              onPackagePriceChange={setPackagePrice}
+              onProjectTypeChange={setProjectType}
+              onUnitChange={(nextUnit) => {
+                setUnit(nextUnit);
+                setPackageName(defaultPackageName(nextUnit));
+              }}
+            />
+          )}
+        </aside>
 
-              <label className="field">
-                <span>Builder Code</span>
-                <input value={builderCode} onChange={handleBuilderCode} spellCheck={false} />
-              </label>
-
-              <div className="field">
-                <span>Profile</span>
-                <div className="segmented" role="group" aria-label="Scanner profile">
-                  {(Object.keys(profiles) as Profile[]).map((entry) => (
-                    <button
-                      key={entry}
-                      className={entry === profile ? "is-active" : undefined}
-                      type="button"
-                      onClick={() => setProfile(entry)}
-                    >
-                      {entry}
-                    </button>
-                  ))}
-                </div>
-                <p className="field-note">{profiles[profile].intent}</p>
-              </div>
-
-              <div className="field">
-                <span>Example</span>
-                <div className="example-list" role="list">
-                  {examples.map((example) => (
-                    <button
-                      key={example.id}
-                      className={example.id === activeExample.id ? "is-active" : undefined}
-                      type="button"
-                      onClick={() => selectExample(example)}
-                    >
-                      <span>{example.label}</span>
-                      <small>{example.file}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </aside>
-
-            <section className="panel editor-panel">
-              <div className="panel-heading editor-heading">
-                <div>
-                  <p className="panel-kicker">Candidate file</p>
+        {mode === "scanner" ? (
+          <>
+            <section className="bento-card editor-card">
+              <div className="editor-header">
+                <div className="editor-header-title">
+                  <p className="card-kicker">Candidate file</p>
                   <h2>{activeExample.file}</h2>
                 </div>
-                <button
-                  className="copy-button"
-                  type="button"
-                  onClick={() => copyText("code", source)}
-                >
-                  {copied === "code" ? "Copied" : "Copy"}
-                </button>
+                <CopyButton copied={copied === "code"} onClick={() => copyText("code", source)} />
               </div>
-
-              <textarea
-                aria-label="Transaction source"
-                className="code-editor"
-                spellCheck={false}
-                value={source}
-                onChange={handleSource}
-              />
+              <div className="editor-container">
+                <div className="line-numbers" aria-hidden="true">
+                  {lineNumbers.map((line) => (
+                    <span key={line}>{line}</span>
+                  ))}
+                </div>
+                <textarea
+                  aria-label="Transaction source"
+                  className="code-textarea"
+                  spellCheck={false}
+                  value={source}
+                  onChange={handleSource}
+                />
+              </div>
             </section>
 
-            <section className="panel result-panel">
-              <div className="panel-heading">
-                <p className="panel-kicker">Result</p>
-                <h2>
-                  <span className={`status-dot ${statusTone}`} aria-hidden="true" />
-                  {statusLabel}
-                </h2>
+            <ScannerResultPanel profile={profile} result={result} />
+          </>
+        ) : (
+          <>
+            <section className="bento-card flow-card">
+              <div className="card-header">
+                <p className="card-kicker">Generated flow</p>
+                <h2>{migrationPlan.title}</h2>
               </div>
-
-              <dl className="metric-grid">
-                <div>
-                  <dt>profile</dt>
-                  <dd>{profile}</dd>
-                </div>
-                <div>
-                  <dt>candidates</dt>
-                  <dd>{result.candidateFiles}</dd>
-                </div>
-                <div>
-                  <dt>findings</dt>
-                  <dd>{result.findings.length}</dd>
-                </div>
-              </dl>
-
-              <div className="findings">
-                {result.findings.length === 0 ? (
-                  <div className="empty-state">
-                    <strong>No findings</strong>
-                    <span>Attribution is present for this profile.</span>
+              <div className="flow-steps">
+                {migrationPlan.flow.map((step, index) => (
+                  <div className="flow-step-item" key={step}>
+                    <span className="flow-step-num">{index + 1}</span>
+                    <p className="flow-step-content">{step}</p>
                   </div>
-                ) : (
-                  result.findings.map((finding) => (
-                    <article className="finding-row" key={`${finding.marker}-${finding.line}`}>
-                      <div>
-                        <strong>{finding.reason}</strong>
-                        <span>
-                          line {finding.line} near {finding.marker}
-                        </span>
-                      </div>
-                      <b>{finding.family}</b>
-                    </article>
-                  ))
-                )}
+                ))}
+              </div>
+              <div className="migration-card">
+                <p className="migration-card-label">Builder Code attribution</p>
+                <strong className="migration-card-value">{migrationPlan.attributionStep}</strong>
+              </div>
+              <div className="migration-card">
+                <p className="migration-card-label">Adapter path</p>
+                <strong className="migration-card-value">{migrationPlan.adapterPath}</strong>
               </div>
             </section>
-          </section>
 
-          <section className="action-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="panel-kicker">GitHub Action</p>
-                <h2>validate-attribution.yml</h2>
-              </div>
-              <button
-                className="copy-button"
-                type="button"
-                onClick={() => copyText("action", actionYaml)}
-              >
-                {copied === "action" ? "Copied" : "Copy"}
-              </button>
+            <MigrationChecklist items={migrationPlan.verification} />
+          </>
+        )}
+      </div>
+
+      {mode === "scanner" ? (
+        <section className="bento-card output-card">
+          <div className="output-header">
+            <div className="editor-header-title">
+              <p className="card-kicker">GitHub Action</p>
+              <h2>validate-attribution.yml</h2>
             </div>
+            <CopyButton
+              copied={copied === "action"}
+              onClick={() => copyText("action", actionYaml)}
+            />
+          </div>
+          <div className="output-code-container">
             <pre>
               <code>{actionYaml}</code>
             </pre>
-          </section>
-        </>
+          </div>
+        </section>
       ) : (
-        <>
-          <section className="migration-grid" aria-label="Base migration planner demo">
-            <aside className="panel control-panel migration-controls">
-              <div className="panel-heading">
-                <p className="panel-kicker">Inputs</p>
-                <h2>Migration setup</h2>
-              </div>
-
-              <label className="field">
-                <span>Builder Code</span>
-                <input value={builderCode} onChange={handleBuilderCode} spellCheck={false} />
-              </label>
-
-              <div className="field">
-                <span>Project</span>
-                <div className="option-grid">
-                  {projectTypeOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      className={option.value === projectType ? "is-active" : undefined}
-                      type="button"
-                      onClick={() => setProjectType(option.value)}
-                    >
-                      <strong>{option.label}</strong>
-                      <small>{option.note}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="field">
-                <span>Backend</span>
-                <div className="option-grid">
-                  {backendOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      className={option.value === backend ? "is-active" : undefined}
-                      type="button"
-                      onClick={() => setBackend(option.value)}
-                    >
-                      <strong>{option.label}</strong>
-                      <small>{option.note}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="field">
-                <span>Unit</span>
-                <div className="option-grid compact-options">
-                  {unitOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      className={option.value === unit ? "is-active" : undefined}
-                      type="button"
-                      onClick={() => {
-                        setUnit(option.value);
-                        setPackageName(defaultPackageName(option.value));
-                      }}
-                    >
-                      <strong>{option.label}</strong>
-                      <small>{option.note}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="field">
-                <span>Starter package</span>
-                <input
-                  value={packageName}
-                  onChange={(event) => setPackageName(event.target.value)}
-                />
-              </label>
-
-              <label className="field">
-                <span>Price, USDC</span>
-                <input
-                  inputMode="decimal"
-                  value={packagePrice}
-                  onChange={(event) => setPackagePrice(event.target.value)}
-                />
-              </label>
-            </aside>
-
-            <section className="panel flow-panel">
-              <div className="panel-heading">
-                <div>
-                  <p className="panel-kicker">Generated flow</p>
-                  <h2>{migrationPlan.title}</h2>
-                </div>
-              </div>
-
-              <ol className="flow-list">
-                {migrationPlan.flow.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-
-              <article className="attribution-card">
-                <p className="panel-kicker">Builder Code attribution</p>
-                <strong>{migrationPlan.attributionStep}</strong>
-              </article>
-
-              <article className="attribution-card">
-                <p className="panel-kicker">Adapter path</p>
-                <strong>{migrationPlan.adapterPath}</strong>
-              </article>
-            </section>
-
-            <section className="panel result-panel">
-              <div className="panel-heading">
-                <p className="panel-kicker">Server checklist</p>
-                <h2>
-                  <span className="status-dot good" aria-hidden="true" />
-                  replay-safe plan
-                </h2>
-              </div>
-
-              <div className="check-list">
-                {migrationPlan.verification.map((item) => (
-                  <article key={item}>
-                    <span aria-hidden="true">OK</span>
-                    <p>{item}</p>
-                  </article>
-                ))}
-              </div>
-
-              <a className="repo-cta" href="https://github.com/horn111/base-attribution-os">
-                Star the repo if this should become an installable SDK
-              </a>
-            </section>
-          </section>
-
-          <section className="action-panel migration-output">
-            <div className="panel-heading">
-              <div>
-                <p className="panel-kicker">Catalog preview</p>
-                <h2>package-catalog.json</h2>
-              </div>
-              <button
-                className="copy-button"
-                type="button"
-                onClick={() => copyText("catalog", catalogJson)}
-              >
-                {copied === "catalog" ? "Copied" : "Copy"}
-              </button>
+        <section className="bento-card output-card">
+          <div className="output-header">
+            <div className="editor-header-title">
+              <p className="card-kicker">Catalog preview</p>
+              <h2>package-catalog.json</h2>
             </div>
+            <CopyButton
+              copied={copied === "catalog"}
+              onClick={() => copyText("catalog", catalogJson)}
+            />
+          </div>
+          <div className="output-code-container">
             <pre>
               <code>{catalogJson}</code>
             </pre>
-          </section>
-        </>
+          </div>
+        </section>
       )}
     </main>
+  );
+}
+
+function ScannerInputs(props: {
+  activeExample: Example;
+  builderCode: string;
+  copied: string | undefined;
+  profile: Profile;
+  onBuilderCodeChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onExampleSelect: (example: Example) => void;
+  onProfileChange: (profile: Profile) => void;
+}) {
+  return (
+    <>
+      <div className="card-header">
+        <p className="card-kicker">Inputs</p>
+        <h2>Scan setup</h2>
+      </div>
+
+      <div className="form-stack">
+        <label className="form-group">
+          <span className="form-label">Builder Code</span>
+          <input
+            className="text-input"
+            spellCheck={false}
+            value={props.builderCode}
+            onChange={props.onBuilderCodeChange}
+          />
+        </label>
+
+        <div className="form-group">
+          <span className="form-label">Profile</span>
+          <div className="segmented-control" role="group" aria-label="Scanner profile">
+            {(Object.keys(profiles) as Profile[]).map((entry) => (
+              <button
+                key={entry}
+                className={`segment-button ${entry === props.profile ? "active" : ""}`}
+                type="button"
+                onClick={() => props.onProfileChange(entry)}
+              >
+                {entry}
+              </button>
+            ))}
+          </div>
+          <p className="field-hint">{profiles[props.profile].intent}</p>
+        </div>
+
+        <div className="form-group">
+          <span className="form-label">Example</span>
+          <div className="option-list" role="list">
+            {examples.map((example) => (
+              <button
+                key={example.id}
+                className={`option-item ${example.id === props.activeExample.id ? "active" : ""}`}
+                type="button"
+                onClick={() => props.onExampleSelect(example)}
+              >
+                <span className="option-item-name">{example.label}</span>
+                <span className="option-item-meta">{example.file}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function MigrationInputs(props: {
+  backend: BackendTarget;
+  builderCode: string;
+  packageName: string;
+  packagePrice: string;
+  projectType: ProjectType;
+  unit: MonetizationUnit;
+  onBackendChange: (backend: BackendTarget) => void;
+  onBuilderCodeChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onPackageNameChange: (value: string) => void;
+  onPackagePriceChange: (value: string) => void;
+  onProjectTypeChange: (projectType: ProjectType) => void;
+  onUnitChange: (unit: MonetizationUnit) => void;
+}) {
+  return (
+    <>
+      <div className="card-header">
+        <p className="card-kicker">Inputs</p>
+        <h2>Migration setup</h2>
+      </div>
+
+      <div className="form-stack">
+        <label className="form-group">
+          <span className="form-label">Builder Code</span>
+          <input
+            className="text-input"
+            spellCheck={false}
+            value={props.builderCode}
+            onChange={props.onBuilderCodeChange}
+          />
+        </label>
+
+        <div className="form-group">
+          <span className="form-label">Project</span>
+          <div className="option-grid">
+            {projectTypeOptions.map((option) => (
+              <button
+                key={option.value}
+                className={`grid-option-item ${option.value === props.projectType ? "active" : ""}`}
+                type="button"
+                onClick={() => props.onProjectTypeChange(option.value)}
+              >
+                <span className="grid-option-title">{option.label}</span>
+                <span className="grid-option-desc">{option.note}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <span className="form-label">Backend</span>
+          <div className="option-grid">
+            {backendOptions.map((option) => (
+              <button
+                key={option.value}
+                className={`grid-option-item ${option.value === props.backend ? "active" : ""}`}
+                type="button"
+                onClick={() => props.onBackendChange(option.value)}
+              >
+                <span className="grid-option-title">{option.label}</span>
+                <span className="grid-option-desc">{option.note}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <span className="form-label">Unit</span>
+          <div className="option-grid">
+            {unitOptions.map((option) => (
+              <button
+                key={option.value}
+                className={`grid-option-item ${option.value === props.unit ? "active" : ""}`}
+                type="button"
+                onClick={() => props.onUnitChange(option.value)}
+              >
+                <span className="grid-option-title">{option.label}</span>
+                <span className="grid-option-desc">{option.note}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="form-group">
+          <span className="form-label">Starter package</span>
+          <input
+            className="text-input"
+            value={props.packageName}
+            onChange={(event) => props.onPackageNameChange(event.target.value)}
+          />
+        </label>
+
+        <label className="form-group">
+          <span className="form-label">Price, USDC</span>
+          <input
+            className="text-input"
+            inputMode="decimal"
+            value={props.packagePrice}
+            onChange={(event) => props.onPackagePriceChange(event.target.value)}
+          />
+        </label>
+      </div>
+    </>
+  );
+}
+
+function ScannerResultPanel(props: { profile: Profile; result: ScanResult }) {
+  const status = props.result.ok ? "passing" : "failing";
+
+  return (
+    <section className="bento-card result-panel">
+      <div className="card-header">
+        <p className="card-kicker">Result</p>
+        <div className={`status-badge ${status}`}>
+          <span className="status-dot" />
+          <span>{status}</span>
+        </div>
+      </div>
+
+      <div className="metrics-row">
+        <div className="metric-item">
+          <p className="metric-label">profile</p>
+          <p className="metric-value">{props.profile}</p>
+        </div>
+        <div className="metric-item">
+          <p className="metric-label">candidates</p>
+          <p className="metric-value">{props.result.candidateFiles}</p>
+        </div>
+        <div className="metric-item">
+          <p className="metric-label">findings</p>
+          <p className="metric-value">{props.result.findings.length}</p>
+        </div>
+      </div>
+
+      <div className="analysis-block">
+        <p className="findings-title">Analysis details</p>
+        <div className="findings-container">
+          {props.result.findings.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-state-title">No findings</span>
+              <span className="empty-state-desc">
+                Attribution checks confirm valid implementation.
+              </span>
+            </div>
+          ) : (
+            props.result.findings.map((finding) => (
+              <article className="finding-card" key={`${finding.marker}-${finding.line}`}>
+                <div className="finding-info">
+                  <span className="finding-reason">{finding.reason}</span>
+                  <span className="finding-meta">
+                    line {finding.line} near {finding.marker}
+                  </span>
+                </div>
+                <span className="finding-family">{finding.family}</span>
+              </article>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MigrationChecklist(props: { items: string[] }) {
+  return (
+    <section className="bento-card result-panel">
+      <div className="card-header">
+        <p className="card-kicker">Server checklist</p>
+        <div className="status-badge passing">
+          <span className="status-dot" />
+          <span>replay-safe plan</span>
+        </div>
+      </div>
+
+      <div className="checklist-container">
+        {props.items.map((item) => (
+          <article className="checklist-item" key={item}>
+            <span className="checklist-icon" aria-hidden="true">
+              <CheckIcon />
+            </span>
+            <p className="checklist-text">{item}</p>
+          </article>
+        ))}
+      </div>
+
+      <a className="cta-link" href="https://github.com/horn111/base-attribution-os">
+        Star the repo for custom SDK access
+      </a>
+    </section>
+  );
+}
+
+function CopyButton(props: { copied: boolean; onClick: () => void }) {
+  return (
+    <button className="copy-btn" type="button" onClick={props.onClick}>
+      <CopyIcon />
+      <span>{props.copied ? "Copied" : "Copy"}</span>
+    </button>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg aria-hidden="true" height="14" viewBox="0 0 24 24" width="14">
+      <rect height="13" rx="2" ry="2" width="13" x="9" y="9" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" height="12" viewBox="0 0 24 24" width="12">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg aria-hidden="true" height="12" viewBox="0 0 24 24" width="12">
+      <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z" />
+    </svg>
   );
 }
 
