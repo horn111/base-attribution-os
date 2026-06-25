@@ -14,6 +14,7 @@
 - App and game migration layer RFC.
 - Migration Planner demo for Base Pay, internal credits, tickets, entitlements,
   and Builder Code attribution.
+- x402 Builder Codes CI support for buyer and seller payment paths.
 
 ## v0.1
 

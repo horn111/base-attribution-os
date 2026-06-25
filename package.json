@@ -2,7 +2,7 @@
   "name": "base-attribution-os",
   "version": "0.0.0",
   "private": true,
-  "description": "Add, validate, and enforce Base Builder Code attribution across viem, wagmi, wallets, agents, and CI.",
+  "description": "Add, validate, and enforce Base Builder Code attribution across x402, viem, wagmi, wallets, agents, and CI.",
   "license": "MIT",
   "author": "horn111 <https://github.com/horn111>",
   "repository": {
@@ -16,6 +16,7 @@
   "keywords": [
     "base",
     "builder-codes",
+    "x402",
     "erc8021",
     "attribution",
     "viem",

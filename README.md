@@ -6,8 +6,8 @@
 [![Base](https://img.shields.io/badge/Base-Builder%20Codes-0052ff.svg)](https://docs.base.org/apps/builder-codes/builder-codes)
 [![GitHub stars](https://img.shields.io/github/stars/horn111/base-attribution-os?style=social)](https://github.com/horn111/base-attribution-os)
 
-Add, validate, and enforce Base Builder Code attribution across viem, wagmi,
-wallets, agents, and CI.
+Add, validate, and enforce Base Builder Code attribution across x402, viem,
+wagmi, wallets, agents, and CI.
 
 Builder Codes are powerful, but attribution fails silently. Base Attribution OS
 turns attribution into a development workflow: SDK helpers append the ERC-8021
@@ -19,9 +19,13 @@ Base Pay purchases, server-side verification, internal credits or tickets, and
 Builder Code attribution as one repeatable path for teams moving existing
 products to Base.
 
+Update 4 adds x402 Builder Code CI support. Official x402 extensions make
+attribution native for paid HTTP flows; BAO checks that buyer and seller paths
+keep those extensions before code ships.
+
 ```mermaid
 flowchart LR
-  A["App, wallet, or agent"] --> B["Base Attribution OS SDK"]
+  A["App, x402 route, wallet, or agent"] --> B["Base Attribution OS SDK"]
   B --> C["ERC-8021 data suffix"]
   C --> D["Base transaction"]
   D --> E["Base.dev analytics, rewards, and visibility"]
@@ -41,12 +45,12 @@ leaderboard surfaces, and ecosystem visibility.
 The problem: most teams only notice missing attribution after transactions are
 already live.
 
-| Before                        | After                                                |
-| ----------------------------- | ---------------------------------------------------- |
-| Builder Code lives in docs    | Builder Code lives in SDK config and CI              |
-| Missing suffix fails silently | PR fails before deploy                               |
-| Manual calldata inspection    | `bao check-calldata` and `bao check-tx`              |
-| One-off app setup             | Shared adapters for viem, wagmi, wallets, and agents |
+| Before                        | After                                             |
+| ----------------------------- | ------------------------------------------------- |
+| Builder Code lives in docs    | Builder Code lives in SDK config and CI           |
+| Missing suffix fails silently | PR fails before deploy                            |
+| Manual calldata inspection    | `bao check-calldata` and `bao check-tx`           |
+| One-off app setup             | Shared checks for SDKs, x402, wallets, and agents |
 
 Official context:
 
@@ -56,6 +60,7 @@ Official context:
 - [Base Agent Developers](https://docs.base.org/apps/builder-codes/agent-developers)
 - [Base Pay](https://docs.base.org/base-account/guides/accept-payments)
 - [Base Rewards](https://docs.base.org/apps/growth/rewards)
+- [Coinbase x402 Builder Codes](https://docs.cdp.coinbase.com/x402/builder-code.skill)
 - [Dune EIP-8021 parser](https://docs.dune.com/query-engine/Functions-and-operators/eip-8021)
 - [base/builder-codes](https://github.com/base/builder-codes)
 
@@ -193,8 +198,8 @@ bao scan-repo --path . --builder-code bc_abc123 --profile ci
 ```
 
 `scan-repo` classifies common transaction entrypoints across viem, wagmi,
-ethers, wallet, and agent flows. Findings include the file, line, transaction
-family, and marker that triggered the check.
+ethers, wallet, agent, and x402 flows. Findings include the file, line,
+transaction family, and marker that triggered the check.
 
 Profiles let teams choose the right enforcement level:
 
@@ -202,9 +207,30 @@ Profiles let teams choose the right enforcement level:
 - `ci`: fail obvious missing or wrong Builder Code usage.
 - `strict`: require the expected Builder Code or suffix in candidate files.
 
+## x402 Builder Codes in CI
+
+x402 Builder Codes make attribution native for paid HTTP flows on Base. BAO does
+not replace the x402 SDK, execute payments, or talk to a facilitator. It checks
+that the official x402 Builder Code hooks stay present in the code paths teams
+ship.
+
+The scanner looks for buyer/client paths such as `x402Client`,
+`wrapFetchWithPayment`, `BuilderCodeClientExtension`, and `registerExtension`.
+It also checks seller/resource-server paths such as `paymentMiddleware`,
+`x402ResourceServer`, `BUILDER_CODE`, and `declareBuilderCodeExtension`.
+
+Use `ci` while teams wire environment-driven Builder Codes, then move critical
+payment paths to `strict` when the expected literal code or suffix should be in
+the candidate file.
+
+See [docs/x402-builder-codes.md](docs/x402-builder-codes.md) for examples and
+limitations.
+
 ## Use cases
 
 - dApp teams: make Builder Codes part of the transaction helper layer.
+- x402 builders: keep buyer and seller attribution extensions in paid HTTP
+  paths.
 - Smart wallet teams: enforce attribution around `sendCalls` and batched flows.
 - Agent builders: keep autonomous transaction flows visible in Base analytics.
 - Growth engineers: create a repeatable checklist for Base.dev readiness.
@@ -245,6 +271,7 @@ for the RFC.
 - Shipped: Vercel scanner playground.
 - Update 3: app and game migration RFC with a Base Pay and entitlement planning
   demo.
+- Update 4: x402 Builder Codes CI support for buyer and seller payment paths.
 - Next: `payments-core` and `entitlements-core` primitives.
 - Next: wallet middleware for `sendCalls` and smart account frameworks.
 - Next: Dune query templates for attributed transaction replay.

@@ -126,6 +126,135 @@ export const transactionTool = {
     });
   });
 
+  it("finds missing attribution in x402 client flows", async () => {
+    const root = await createFixture(`
+import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+
+const client = new x402Client();
+client.register("eip155:*", new ExactEvmScheme(signer));
+
+export const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toMatchObject({
+      reason: "missing-attribution",
+      marker: "x402Client",
+      family: "x402",
+      line: 5,
+    });
+  });
+
+  it("accepts x402 client attribution in strict profile", async () => {
+    const root = await createFixture(`
+import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+import { BuilderCodeClientExtension } from "@x402/extensions/builder-code";
+
+const client = new x402Client();
+client.register("eip155:*", new ExactEvmScheme(signer));
+client.registerExtension(new BuilderCodeClientExtension("bc_abc123"));
+
+export const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+      profile: "strict",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("finds missing attribution in x402 seller flows", async () => {
+    const root = await createFixture(`
+import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+
+app.use(
+  paymentMiddleware(
+    {
+      "GET /weather": {
+        accepts: [{ scheme: "exact", network: "eip155:8453", price: "$0.001", payTo }],
+      },
+    },
+    new x402ResourceServer(facilitatorClient).register("eip155:8453", new ExactEvmScheme()),
+  ),
+);
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toMatchObject({
+      reason: "missing-attribution",
+      marker: "paymentMiddleware",
+      family: "x402",
+      line: 6,
+    });
+  });
+
+  it("accepts x402 seller env attribution in the ci profile", async () => {
+    const root = await createFixture(`
+import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { BUILDER_CODE, declareBuilderCodeExtension } from "@x402/extensions/builder-code";
+
+app.use(
+  paymentMiddleware({
+    "GET /weather": {
+      accepts: [{ scheme: "exact", network: "eip155:8453", price: "$0.001", payTo }],
+      extensions: {
+        [BUILDER_CODE]: declareBuilderCodeExtension(process.env.BUILDER_CODE ?? ""),
+      },
+    },
+  }, new x402ResourceServer(facilitatorClient).register("eip155:8453", new ExactEvmScheme())),
+);
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+      profile: "ci",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("finds wrong Builder Codes in x402 flows", async () => {
+    const root = await createFixture(`
+import { x402Client } from "@x402/fetch";
+import { BuilderCodeClientExtension } from "@x402/extensions/builder-code";
+
+const client = new x402Client();
+client.registerExtension(new BuilderCodeClientExtension("bc_wrong"));
+`);
+
+    const result = await scanRepo({
+      path: root,
+      builderCode: "bc_abc123",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.findings[0]).toMatchObject({
+      reason: "wrong-builder-code",
+      marker: "BuilderCodeClientExtension",
+      family: "x402",
+    });
+  });
+
   it("accepts attributed transaction helpers", async () => {
     const root = await createFixture(`
 import { builderCodeDataSuffix } from "@base-attribution-os/viem";
