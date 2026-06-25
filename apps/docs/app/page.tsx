@@ -351,8 +351,6 @@ export default function Page() {
           <span>Base Attribution OS</span>
         </a>
         <nav className="nav-links" aria-label="Project links">
-          <a href="https://github.com/horn111/base-attribution-os">GitHub</a>
-          <a href="https://github.com/horn111/base-attribution-os#readme">Docs</a>
           <a className="star-button" href="https://github.com/horn111/base-attribution-os">
             <StarIcon />
             <span>Star repo</span>

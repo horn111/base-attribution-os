@@ -130,23 +130,25 @@ pre {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--text-accent);
+  border: 1px solid #0052ff;
   border-radius: var(--border-radius);
-  background: var(--surface);
-  color: var(--text-accent) !important;
-  padding: 6px 12px;
+  background: #0052ff;
+  color: #ffffff !important;
+  padding: 8px 14px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(0, 82, 255, 0.18);
 }
 
 .star-button:hover {
-  background: var(--text-accent);
-  color: var(--canvas) !important;
+  background: #003ecb;
+  border-color: #003ecb;
+  color: #ffffff !important;
 }
 
 .star-button svg {
   flex: 0 0 auto;
-  fill: currentColor;
+  fill: #ffd166;
 }
 
 .hero {
