@@ -4,7 +4,7 @@ import { useMemo, useState, type ChangeEvent } from "react";
 
 type DemoMode = "scanner" | "migration";
 type Profile = "local" | "ci" | "strict";
-type Family = "agent" | "ethers" | "viem" | "wagmi" | "wallet";
+type Family = "agent" | "ethers" | "viem" | "wagmi" | "wallet" | "x402";
 type Reason = "missing-attribution" | "wrong-builder-code";
 type ProjectType = "app" | "game";
 type BackendTarget = "custom" | "nakama" | "next" | "supabase";
@@ -173,9 +173,93 @@ export function MintButton() {
 };
 `,
   },
+  {
+    id: "x402-client",
+    label: "x402 client",
+    file: "src/paid-fetch.ts",
+    source: `import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm/exact/client";
+
+const client = new x402Client();
+client.register("eip155:*", new ExactEvmScheme(signer));
+
+export const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+`,
+  },
+  {
+    id: "x402-seller",
+    label: "x402 seller",
+    file: "src/paid-route.ts",
+    source: `import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { BUILDER_CODE, declareBuilderCodeExtension } from "@x402/extensions/builder-code";
+
+app.use(
+  paymentMiddleware(
+    {
+      "GET /weather": {
+        accepts: [
+          {
+            scheme: "exact",
+            network: "eip155:8453",
+            price: "$0.001",
+            payTo,
+          },
+        ],
+        extensions: {
+          [BUILDER_CODE]: declareBuilderCodeExtension("bc_abc123"),
+        },
+      },
+    },
+    new x402ResourceServer(facilitatorClient).register("eip155:8453", new ExactEvmScheme()),
+  ),
+);
+`,
+  },
 ];
 
 const transactionPatterns: TransactionPattern[] = [
+  {
+    marker: "BuilderCodeClientExtension",
+    family: "x402",
+    regex: /\bBuilderCodeClientExtension\b/,
+  },
+  {
+    marker: "declareBuilderCodeExtension",
+    family: "x402",
+    regex: /\bdeclareBuilderCodeExtension\b/,
+  },
+  {
+    marker: "x402Client",
+    family: "x402",
+    regex: /\bx402Client\s*\(/,
+  },
+  {
+    marker: "wrapFetchWithPayment",
+    family: "x402",
+    regex: /\bwrapFetchWithPayment\s*\(/,
+  },
+  {
+    marker: "registerExtension",
+    family: "x402",
+    regex: /\bregisterExtension\s*\(/,
+  },
+  {
+    marker: "paymentMiddleware",
+    family: "x402",
+    regex: /\bpaymentMiddleware\s*\(/,
+  },
+  {
+    marker: "x402ResourceServer",
+    family: "x402",
+    regex: /\bx402ResourceServer\b/,
+  },
+  {
+    marker: "BUILDER_CODE",
+    family: "x402",
+    regex:
+      /(?:@x402\/extensions\/builder-code[\s\S]*\bBUILDER_CODE\b|\bBUILDER_CODE\b[\s\S]*@x402\/extensions\/builder-code)/,
+  },
   {
     marker: "agentTransactionTool",
     family: "agent",
@@ -275,7 +359,7 @@ const unitOptions: Option<MonetizationUnit>[] = [
 
 const builderCodeRegex = /\bbc_[A-Za-z0-9._:-]+\b/g;
 const attributionHelperRegex =
-  /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
+  /\b(?:appendDataSuffix|attributeSendCalls|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|parseBuilderCodeSuffixFromCalldata|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
 const ethersSourceRegex =
   /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
 
@@ -317,7 +401,7 @@ export default function Page() {
   const introTitle = mode === "scanner" ? "Builder Codes in CI" : "App & game migration";
   const introCopy =
     mode === "scanner"
-      ? "Try attribution checks across ethers, viem, wagmi, wallet batches, and agent transaction tools."
+      ? "Try attribution checks across x402, ethers, viem, wagmi, wallet batches, and agent transaction tools."
       : "Plan Base Pay purchases, internal credits or tickets, server verification, and Builder Code attribution.";
   const lineNumbers = source.split(/\r?\n/).map((_, index) => index + 1);
 

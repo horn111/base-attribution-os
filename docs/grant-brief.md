@@ -4,7 +4,7 @@
 
 Base Attribution OS is open-source attribution infrastructure for Base builders.
 It helps teams add, validate, and enforce Builder Codes across SDKs, wallets,
-agents, and CI.
+agents, x402 payment paths, and CI.
 
 ## Why Base should care
 
@@ -18,7 +18,7 @@ break.
 - viem, wagmi, and ethers adapters.
 - `bao` CLI for calldata, transaction, and repo validation.
 - GitHub Action for PR enforcement.
-- Examples for dApps, wallets, and agent flows.
+- Examples for dApps, wallets, agent flows, and x402 buyer/seller paths.
 - Launch docs that help teams ship and share measurable progress.
 
 ## Metrics

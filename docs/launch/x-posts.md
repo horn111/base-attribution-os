@@ -95,7 +95,7 @@ Shipped a live Base Attribution OS demo.
 
 Try the scanner playground in your browser:
 
-- pick viem, wagmi, ethers, wallet, or agent code
+- pick x402, viem, wagmi, ethers, wallet, or agent code
 - switch `local`, `ci`, and `strict` profiles
 - copy the GitHub Action config
 
@@ -127,12 +127,51 @@ Demo: [Vercel URL]
 
 Next update is already scoped:
 
+x402 Builder Codes CI support.
+
+The goal: check both buyer and seller x402 attribution paths before deploy,
+without replacing the official x402 SDK.
+
+Builder Codes should be native in payment flows and boring in CI.
+
+## x402 Builder Codes CI post
+
+Shipped Base Attribution OS update 4.
+
+x402 Builder Codes are now part of the scanner.
+
+BAO checks buyer/client and seller/resource-server payment paths before deploy:
+
+- `x402Client`
+- `wrapFetchWithPayment`
+- `BuilderCodeClientExtension`
+- `paymentMiddleware`
+- `x402ResourceServer`
+- `declareBuilderCodeExtension`
+
+Official x402 gives teams the Builder Code extension.
+
+BAO makes sure it stays in the code paths that ship.
+
+Star the repo if x402 Builder Code attribution belongs in CI:
+https://github.com/horn111/base-attribution-os
+
+Demo: [Vercel URL]
+
+@base @CoinbaseDev
+
+## x402 Builder Codes CI next-update teaser
+
+Next update:
+
 `payments-core` + `entitlements-core` primitives.
 
-The goal: turn the RFC into installable SDK building blocks before adapters,
-then ship Nakama for games and lightweight app adapters after that.
+The goal: turn the app/game migration RFC into installable building blocks for
+order creation, replay-safe fulfillment, internal credits, tickets, and
+entitlements.
 
-Base migration should feel like adding a layer, not rebuilding the product.
+Base monetization should feel like adding a thin layer, not rebuilding the
+product.
 
 ## Weekly update template
 

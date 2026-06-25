@@ -10,7 +10,8 @@ apps, and in CI.
 - Adapters: tiny helpers for viem, wagmi, and ethers transaction flows.
 - CLI: local validation for calldata, transaction hashes, and repository scans.
 - GitHub Action: CI wrapper around `bao scan-repo`.
-- Examples: reference integrations for apps, wallets, and agents.
+- Examples: reference integrations for apps, wallets, agents, and x402 payment
+  paths.
 
 ## Data flow
 

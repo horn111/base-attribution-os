@@ -20199,8 +20199,8 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
   "node_modules"
 ]);
 var BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
-var BUILDER_CODE_ASSIGNMENT_REGEX = /\b(?:builderCode|builderCodes|builder-code|BUILDER_CODE|BUILDER_CODES)\b[^"'`\n]{0,120}["'`]([^"'`]+)["'`]/gi;
-var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
+var BUILDER_CODE_ASSIGNMENT_REGEX = /\b(?:builderCode|builderCodes|builder-code|BUILDER_CODE|BUILDER_CODES)\b\s*(?:=|:)\s*["'`]([^"'`]+)["'`]/gi;
+var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|parseBuilderCodeSuffixFromCalldata|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
 var ETHERS_SOURCE_REGEX = /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
 var PROFILE_CONFIGS = {
   local: {
@@ -20217,6 +20217,46 @@ var PROFILE_CONFIGS = {
   }
 };
 var TRANSACTION_PATTERNS = [
+  {
+    marker: "BuilderCodeClientExtension",
+    family: "x402",
+    regex: /\bBuilderCodeClientExtension\b/
+  },
+  {
+    marker: "declareBuilderCodeExtension",
+    family: "x402",
+    regex: /\bdeclareBuilderCodeExtension\b/
+  },
+  {
+    marker: "x402Client",
+    family: "x402",
+    regex: /\bx402Client\s*\(/
+  },
+  {
+    marker: "wrapFetchWithPayment",
+    family: "x402",
+    regex: /\bwrapFetchWithPayment\s*\(/
+  },
+  {
+    marker: "registerExtension",
+    family: "x402",
+    regex: /\bregisterExtension\s*\(/
+  },
+  {
+    marker: "paymentMiddleware",
+    family: "x402",
+    regex: /\bpaymentMiddleware\s*\(/
+  },
+  {
+    marker: "x402ResourceServer",
+    family: "x402",
+    regex: /\bx402ResourceServer\b/
+  },
+  {
+    marker: "BUILDER_CODE",
+    family: "x402",
+    regex: /(?:@x402\/extensions\/builder-code[\s\S]*\bBUILDER_CODE\b|\bBUILDER_CODE\b[\s\S]*@x402\/extensions\/builder-code)/
+  },
   {
     marker: "agentTransactionTool",
     family: "agent",
