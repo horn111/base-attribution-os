@@ -10,14 +10,15 @@ Add, validate, and enforce Base Builder Code attribution across x402, viem,
 wagmi, wallets, agents, and CI.
 
 Builder Codes are powerful, but attribution fails silently. Base Attribution OS
-turns attribution into a development workflow: SDK helpers append the ERC-8021
-suffix, the CLI validates calldata and transactions, and CI catches missing
-Builder Codes before code ships.
+turns attribution into a development workflow: SDK helpers append ERC-8021
+suffixes for supported transaction clients, x402-aware scans enforce official
+Builder Code extensions, the CLI validates calldata and transactions, and CI
+catches missing Builder Codes before code ships.
 
-Update 3 expands the project direction into an app and game migration layer:
-Base Pay purchases, server-side verification, internal credits or tickets, and
-Builder Code attribution as one repeatable path for teams moving existing
-products to Base.
+Update 3 added an RFC and live demo direction for an app and game migration
+layer: Base Pay purchases, server-side verification, internal credits or
+tickets, and Builder Code attribution as one repeatable path for teams moving
+existing products to Base.
 
 Update 4 adds x402 Builder Code CI support. Official x402 extensions make
 attribution native for paid HTTP flows; BAO checks that buyer and seller paths
@@ -25,7 +26,7 @@ keep those extensions before code ships.
 
 ```mermaid
 flowchart LR
-  A["App, x402 route, wallet, or agent"] --> B["Base Attribution OS SDK"]
+  A["App, x402 route, wallet, or agent"] --> B["SDK helper or x402 extension"]
   B --> C["ERC-8021 data suffix"]
   C --> D["Base transaction"]
   D --> E["Base.dev analytics, rewards, and visibility"]
@@ -66,7 +67,18 @@ Official context:
 
 ## 60-second quickstart
 
-Install the SDK and CLI:
+Base Attribution OS is currently pre-release. Clone and build the workspace
+locally:
+
+```bash
+git clone https://github.com/horn111/base-attribution-os.git
+cd base-attribution-os
+pnpm install
+pnpm build
+```
+
+The package names below are the intended npm interface for the first public
+package release:
 
 ```bash
 pnpm add @base-attribution-os/core @base-attribution-os/viem
@@ -78,7 +90,7 @@ pnpm add -D @base-attribution-os/cli
 Encode a Builder Code suffix:
 
 ```bash
-pnpm bao encode --code bc_abc123
+node packages/cli/dist/index.js encode --code bc_abc123
 ```
 
 Use it with viem:
@@ -143,13 +155,13 @@ export function MintButton() {
 Validate calldata:
 
 ```bash
-pnpm bao check-calldata --calldata 0x... --expect bc_abc123
+node packages/cli/dist/index.js check-calldata --calldata 0x... --expect bc_abc123
 ```
 
 Validate a transaction:
 
 ```bash
-pnpm bao check-tx \
+node packages/cli/dist/index.js check-tx \
   --hash 0x... \
   --rpc-url https://mainnet.base.org \
   --expect bc_abc123
@@ -168,7 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: horn111/base-attribution-os/packages/github-action@v0
+      - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
           paths: "src,app,packages,examples"
@@ -187,6 +199,9 @@ jobs:
 | `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli` | MVP      |
 | `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                          | MVP      |
 
+NPM packages are not published yet. Until the first release, use the workspace
+directly or pin the GitHub Action to `@main`.
+
 ## CLI
 
 ```bash
@@ -196,6 +211,9 @@ bao check-calldata --calldata 0x... --expect bc_abc123
 bao check-tx --hash 0x... --rpc-url https://mainnet.base.org --expect bc_abc123
 bao scan-repo --path . --builder-code bc_abc123 --profile ci
 ```
+
+When running from this repository before npm publish, replace `bao` with
+`node packages/cli/dist/index.js`.
 
 `scan-repo` classifies common transaction entrypoints across viem, wagmi,
 ethers, wallet, agent, and x402 flows. Findings include the file, line,

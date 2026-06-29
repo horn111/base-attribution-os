@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: horn111/base-attribution-os/packages/github-action@v0
+      - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
           paths: "src,app,packages"
