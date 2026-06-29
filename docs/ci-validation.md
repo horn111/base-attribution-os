@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: horn111/base-attribution-os/packages/github-action@v0
+      - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
           paths: "src,app,packages,examples"
@@ -32,13 +32,14 @@ Use scanner profiles to tune enforcement:
 
 Scanner v0.3 classifies common transaction markers by family:
 
-| Family   | Markers                                                                                                 |
-| -------- | ------------------------------------------------------------------------------------------------------- |
-| `ethers` | `sendTransaction`, `populateTransaction` when ethers usage is detected                                  |
-| `viem`   | `sendTransaction`, `writeContract`, `prepareTransactionRequest`                                         |
-| `wagmi`  | `useSendTransaction`, `useWriteContract`                                                                |
-| `wallet` | `sendCalls`, `wallet_sendCalls`                                                                         |
-| `agent`  | `transactionTool`, `agentTransactionTool`, `executeTransaction`, `onchainAction`, `sendTransactionTool` |
+| Family   | Markers                                                                                                                                      |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ethers` | `sendTransaction`, `populateTransaction` when ethers usage is detected                                                                       |
+| `viem`   | `sendTransaction`, `writeContract`, `prepareTransactionRequest`                                                                              |
+| `wagmi`  | `useSendTransaction`, `useWriteContract`                                                                                                     |
+| `wallet` | `sendCalls`, `wallet_sendCalls`                                                                                                              |
+| `agent`  | `transactionTool`, `agentTransactionTool`, `executeTransaction`, `onchainAction`, `sendTransactionTool`                                      |
+| `x402`   | `x402Client`, `wrapFetchWithPayment`, `BuilderCodeClientExtension`, `paymentMiddleware`, `x402ResourceServer`, `declareBuilderCodeExtension` |
 
 Findings include:
 
