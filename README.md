@@ -37,6 +37,8 @@ flowchart LR
 Built by [horn111](https://github.com/horn111). This is an independent OSS
 project for the Base ecosystem.
 
+Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
+
 ## Why this exists
 
 Base Builder Codes connect onchain activity to the apps, wallets, and agents
@@ -64,6 +66,31 @@ Official context:
 - [Coinbase x402 Builder Codes](https://docs.cdp.coinbase.com/x402/builder-code.skill)
 - [Dune EIP-8021 parser](https://docs.dune.com/query-engine/Functions-and-operators/eip-8021)
 - [base/builder-codes](https://github.com/base/builder-codes)
+
+## Why Base should care
+
+Attribution only creates ecosystem value when teams can ship it reliably.
+Builder Codes, x402 paid HTTP flows, app discovery, rewards readiness, and
+analytics all depend on the same practical question: did the transaction path
+actually carry the expected attribution?
+
+Base Attribution OS makes that question testable before deploy. It gives teams
+SDK helpers where BAO owns the suffix, scanner checks where official SDKs own
+the integration, and CI output that Base ecosystem reviewers can inspect.
+
+## Grant-ready status
+
+| Current shipped surface                 | Next funded milestone                              |
+| --------------------------------------- | -------------------------------------------------- |
+| Core ERC-8021 helpers                   | Public `v0.1.0` package release                    |
+| viem, wagmi, ethers helpers             | Three pilot integrations                           |
+| `bao` encode/decode/check/scan CLI      | Public attribution fixture set                     |
+| GitHub Action wrapper                   | Dune attribution replay templates                  |
+| x402 buyer/seller scanner support       | Measurement report for Base builders               |
+| Vercel Scanner + Migration Planner demo | `payments-core` and `entitlements-core` primitives |
+
+Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
+live in [docs/grant](docs/grant).
 
 ## 60-second quickstart
 
