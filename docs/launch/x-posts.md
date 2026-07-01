@@ -104,36 +104,6 @@ https://github.com/horn111/base-attribution-os
 
 Demo: [Vercel URL]
 
-## App and game migration RFC post
-
-Shipped Base Attribution OS update 3.
-
-The project is expanding from Builder Code CI into an app/game migration layer:
-
-- Base Pay purchases
-- server verification
-- internal credits, tickets, and entitlements
-- Builder Code attribution
-- a new Migration Planner demo
-
-Star the repo if existing apps and games should have a faster path to Base:
-https://github.com/horn111/base-attribution-os
-
-Demo: [Vercel URL]
-
-@base @CoinbaseDev
-
-## App and game migration RFC next-update teaser
-
-Next update is already scoped:
-
-x402 Builder Codes CI support.
-
-The goal: check both buyer and seller x402 attribution paths before deploy,
-without replacing the official x402 SDK.
-
-Builder Codes should be native in payment flows and boring in CI.
-
 ## x402 Builder Codes CI post
 
 Shipped Base Attribution OS update 4.
@@ -164,14 +134,12 @@ Demo: [Vercel URL]
 
 Next update:
 
-`payments-core` + `entitlements-core` primitives.
+wallet + agent attribution fixtures.
 
-The goal: turn the app/game migration RFC into installable building blocks for
-order creation, replay-safe fulfillment, internal credits, tickets, and
-entitlements.
+The goal: make batched wallet calls and autonomous transaction tools easier to
+validate before deploy.
 
-Base monetization should feel like adding a thin layer, not rebuilding the
-product.
+Builder Codes should stay attached even when transaction paths get abstracted.
 
 ## Weekly update template
 

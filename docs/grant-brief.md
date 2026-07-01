@@ -9,8 +9,8 @@ It helps teams add, validate, and enforce Builder Codes across SDK transaction
 clients, x402 payment paths, wallets, agents, and CI.
 
 The project is independent OSS by [horn111](https://github.com/horn111). It is
-designed to complement Base Builder Codes, Base.dev analytics, x402, Base Pay,
-and the broader Base growth stack.
+designed to complement Base Builder Codes, Base.dev analytics, x402, and the
+broader Base growth stack.
 
 ## Problem
 
@@ -36,8 +36,8 @@ developer workflow:
 - `bao` validates calldata, transactions, and repository source paths;
 - GitHub Action checks fail pull requests before production regressions ship;
 - x402 scanner support verifies buyer and seller Builder Code integration paths;
-- Migration Planner previews how existing apps and games can move monetization
-  to Base with attribution intact.
+- Dune/replay work can connect validated code paths to measurable attributed
+  activity.
 
 This is not a competing platform. BAO is a thin OSS layer between official docs
 and production code.
@@ -51,9 +51,9 @@ and production code.
   `scan-repo`.
 - Scanner profiles: `local`, `ci`, and `strict`.
 - Scanner families: viem, wagmi, ethers, wallet `sendCalls`, agents, and x402.
-- Vercel demo: Scanner playground plus App & Game Migration Planner.
-- Docs for CI validation, x402 Builder Codes, app/game migration, integrations,
-  architecture, roadmap, and launch content.
+- Vercel demo: Scanner playground for transaction and x402 attribution checks.
+- Docs for CI validation, x402 Builder Codes, integrations, architecture,
+  roadmap, and launch content.
 
 Demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
 
@@ -100,7 +100,7 @@ Deliverables:
 
 - Dune query templates or an attribution replay guide;
 - public report connecting BAO validation to attributed transaction analysis;
-- funded roadmap for `payments-core` and `entitlements-core` primitives;
+- wallet, agent, and x402 fixture coverage for reviewer inspection;
 - summary of adoption metrics and next integration targets.
 
 Success metric: reviewers can see how BAO moves from developer tooling to
@@ -125,10 +125,6 @@ Base ecosystem measurement.
 - Risk: Builder Code or x402 APIs change.
   Mitigation: scanner rules are small, tested, and easy to update; official docs
   are linked throughout the repo.
-
-- Risk: teams need runtime monetization, not only attribution checks.
-  Mitigation: `payments-core` and `entitlements-core` are scoped as the next
-  funded milestone after grant-ready release work.
 
 - Risk: adoption claims are too early.
   Mitigation: grant milestones prioritize public pilots, fixture repos, and

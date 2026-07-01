@@ -53,8 +53,8 @@ Deliverables:
 - public report explaining how Builder Code validation improves downstream
   analytics;
 - first public list of validated transaction examples or fixture calldata;
-- roadmap update for `payments-core`, `entitlements-core`, and app/game
-  migration adapters.
+- roadmap update for AST-backed scanning, wallet middleware, agent fixtures, and
+  x402 coverage.
 
 Acceptance criteria:
 

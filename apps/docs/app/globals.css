@@ -194,33 +194,8 @@ pre {
   padding-bottom: 24px;
 }
 
-.mode-tabs {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
-  background: var(--accent-bg);
-  padding: 3px;
-}
-
-.tab-button {
-  min-height: 36px;
-  border-radius: calc(var(--border-radius) - 2px);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 18px;
-  transition: var(--transition);
-}
-
-.tab-button.active {
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  color: var(--text-accent);
-}
-
 .lede {
-  max-width: 520px;
+  max-width: 640px;
   color: var(--text-muted);
   font-size: 16px;
   line-height: 1.55;
@@ -338,14 +313,12 @@ pre {
   font-size: 11px;
 }
 
-.option-list,
-.option-grid {
+.option-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.grid-option-item,
 .option-item {
   border: 1px solid var(--border);
   border-radius: var(--border-radius);
@@ -363,31 +336,20 @@ pre {
   padding: 10px 12px;
 }
 
-.grid-option-item {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  padding: 10px 14px;
-}
-
-.grid-option-item:hover,
 .option-item:hover {
   background: var(--accent-bg);
 }
 
-.grid-option-item.active,
 .option-item.active {
   border-color: var(--text-accent);
   background: var(--accent-bg);
 }
 
-.grid-option-title,
 .option-item-name {
   color: var(--text-accent);
   font-weight: 600;
 }
 
-.grid-option-desc,
 .option-item-meta {
   overflow: hidden;
   color: var(--text-muted);
@@ -641,132 +603,6 @@ pre {
 .empty-state-desc {
   color: var(--text-muted);
   font-size: 12px;
-}
-
-.flow-card {
-  min-height: 100%;
-}
-
-.flow-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.flow-step-item {
-  display: flex;
-  gap: 16px;
-}
-
-.flow-step-num {
-  display: flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-top: 1px;
-  background: var(--accent-bg);
-  color: var(--text-accent);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.flow-step-content {
-  color: var(--text-main);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.migration-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
-  background: var(--accent-bg);
-  padding: 16px;
-}
-
-.migration-card-label {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.migration-card-value {
-  color: var(--text-accent);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
-}
-
-.checklist-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.checklist-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
-  background: var(--surface);
-  padding: 10px 12px;
-}
-
-.checklist-icon {
-  display: flex;
-  width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  border-radius: 4px;
-  margin-top: 1px;
-  background: var(--pastel-green-bg);
-  color: var(--pastel-green-text);
-}
-
-.checklist-icon svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 3;
-}
-
-.checklist-text {
-  color: var(--text-main);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.cta-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--text-accent);
-  border-radius: var(--border-radius);
-  background: var(--text-accent);
-  color: var(--canvas);
-  cursor: pointer;
-  font-weight: 600;
-  padding: 12px;
-  text-align: center;
-  transition: var(--transition);
-}
-
-.cta-link:hover {
-  background: var(--canvas);
-  color: var(--text-accent);
 }
 
 .output-card {

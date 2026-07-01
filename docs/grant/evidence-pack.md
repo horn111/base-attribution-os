@@ -35,7 +35,6 @@ grant submission.
 - GitHub Action: `packages/github-action`
 - Demo app: `apps/docs`
 - x402 scanner docs: `docs/x402-builder-codes.md`
-- App/game migration RFC: `docs/app-and-game-migration-rfc.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
 
@@ -47,17 +46,12 @@ grant submission.
 4. Select `x402 seller` and show passing Builder Code attribution.
 5. Switch through `local`, `ci`, and `strict` profiles.
 6. Copy the GitHub Action YAML.
-7. Switch to Migration mode.
-8. Show app/game planning for Base Pay -> verification -> credits/tickets ->
-   Builder Code attribution.
 
 ## Screenshots and social proof
 
 Add final assets before submission:
 
 - `[SCREENSHOT_SCANNER]`
-- `[SCREENSHOT_MIGRATION_PLANNER]`
-- `[X_UPDATE_3_URL]`
 - `[X_UPDATE_4_URL]`
 - `[COMMENT_ON_BASE_X402_POST_URL]`
 - `[GITHUB_RELEASE_URL]`

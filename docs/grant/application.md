@@ -26,7 +26,7 @@ developer workflow.
 
 The current release includes ERC-8021 suffix helpers, viem/wagmi/ethers
 adapters, a `bao` CLI, GitHub Action enforcement, scanner profiles, x402
-Builder Code checks, and a live demo with Scanner and Migration Planner modes.
+Builder Code checks, and a live Scanner demo.
 
 The next funded phase will turn this into a public release and adoption program:
 stable npm packages, stable GitHub Action tags, pilot integrations, and
@@ -53,9 +53,9 @@ attribution readiness.
 - Scanner profiles: `local`, `ci`, `strict`.
 - Scanner families: viem, wagmi, ethers, wallet, agent, and x402.
 - GitHub Action wrapper for pull request enforcement.
-- Live Vercel demo for Scanner and Migration Planner workflows.
-- RFC for app/game migration through Base Pay, internal credits or tickets,
-  entitlements, and Builder Code attribution.
+- Live Vercel demo for Scanner workflows.
+- x402 buyer and seller examples that show missing and valid Builder Code
+  attribution paths.
 
 ## Funding request
 
@@ -101,4 +101,4 @@ Milestone 3: Measurement Layer, `[TIMEBOX]`
 The main risk is that official Base or Coinbase tooling may add adjacent
 features. BAO mitigates this by staying thin and complementary: it validates
 integration paths, wraps common SDK usage, and gives teams CI enforcement rather
-than replacing official Builder Code, x402, Base Pay, or Base.dev primitives.
+than replacing official Builder Code, x402, or Base.dev primitives.

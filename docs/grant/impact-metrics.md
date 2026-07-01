@@ -34,7 +34,7 @@ Track these for each release:
 
 Track these for grant reporting:
 
-- apps or games that adopt Builder Code checks;
+- apps, wallets, agents, or x402 services that adopt Builder Code checks;
 - x402 routes with verified Builder Code extension coverage;
 - wallet, `sendCalls`, or agent flows validated;
 - transaction hashes or calldata samples decoded by `bao`;

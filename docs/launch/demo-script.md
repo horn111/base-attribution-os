@@ -5,8 +5,6 @@
 3. Select `x402 seller` and show the passing Builder Code extension.
 4. Switch `local`, `ci`, and `strict` profiles.
 5. Copy the GitHub Action YAML.
-6. Switch to Migration mode.
-7. Generate an app/game Base Pay -> credits/tickets -> Builder Code attribution
-   plan.
-8. End on: "Builder Codes should live in CI, and Base migration should feel
-   like adding a layer."
+6. Select ethers, viem, wagmi, wallet, and agent examples to show scanner
+   coverage.
+7. End on: "Builder Codes should live in CI."
