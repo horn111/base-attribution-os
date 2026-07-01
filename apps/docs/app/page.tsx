@@ -2,13 +2,9 @@
 
 import { useMemo, useState, type ChangeEvent } from "react";
 
-type DemoMode = "scanner" | "migration";
 type Profile = "local" | "ci" | "strict";
 type Family = "agent" | "ethers" | "viem" | "wagmi" | "wallet" | "x402";
 type Reason = "missing-attribution" | "wrong-builder-code";
-type ProjectType = "app" | "game";
-type BackendTarget = "custom" | "nakama" | "next" | "supabase";
-type MonetizationUnit = "credits" | "entitlement" | "tickets";
 
 interface Finding {
   line: number;
@@ -34,30 +30,6 @@ interface TransactionPattern {
   marker: string;
   family: Family;
   regex: RegExp;
-}
-
-interface Option<T extends string> {
-  value: T;
-  label: string;
-  note: string;
-}
-
-interface MigrationPlan {
-  title: string;
-  flow: string[];
-  verification: string[];
-  attributionStep: string;
-  adapterPath: string;
-  catalog: {
-    packageId: string;
-    projectType: ProjectType;
-    backend: BackendTarget;
-    unit: MonetizationUnit;
-    amount: number;
-    priceUsd: string;
-    builderCode: string;
-    fulfillment: string;
-  };
 }
 
 const profiles: Record<
@@ -303,60 +275,6 @@ const transactionPatterns: TransactionPattern[] = [
   },
 ];
 
-const projectTypeOptions: Option<ProjectType>[] = [
-  {
-    value: "app",
-    label: "App",
-    note: "credits, paid features, exports",
-  },
-  {
-    value: "game",
-    label: "Game",
-    note: "tickets, continues, boosts",
-  },
-];
-
-const backendOptions: Option<BackendTarget>[] = [
-  {
-    value: "nakama",
-    label: "Nakama",
-    note: "game backend adapter",
-  },
-  {
-    value: "next",
-    label: "Next.js",
-    note: "route handlers",
-  },
-  {
-    value: "supabase",
-    label: "Supabase",
-    note: "SQL + edge functions",
-  },
-  {
-    value: "custom",
-    label: "Custom API",
-    note: "Express, Hono, or any backend",
-  },
-];
-
-const unitOptions: Option<MonetizationUnit>[] = [
-  {
-    value: "credits",
-    label: "Credits",
-    note: "usage packs",
-  },
-  {
-    value: "tickets",
-    label: "Tickets",
-    note: "game actions",
-  },
-  {
-    value: "entitlement",
-    label: "Entitlement",
-    note: "premium unlock",
-  },
-];
-
 const builderCodeRegex = /\bbc_[A-Za-z0-9._:-]+\b/g;
 const attributionHelperRegex =
   /\b(?:appendDataSuffix|attributeSendCalls|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|parseBuilderCodeSuffixFromCalldata|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
@@ -364,16 +282,10 @@ const ethersSourceRegex =
   /\bfrom\s+["'`]ethers["'`]|\bimport\s+["'`]ethers["'`]|\b(?:BrowserProvider|ContractRunner|JsonRpcSigner|new\s+Wallet)\b/;
 
 export default function Page() {
-  const [mode, setMode] = useState<DemoMode>("scanner");
   const [builderCode, setBuilderCode] = useState("bc_abc123");
   const [profile, setProfile] = useState<Profile>("ci");
   const [activeExample, setActiveExample] = useState(examples[0]);
   const [source, setSource] = useState(examples[0].source);
-  const [projectType, setProjectType] = useState<ProjectType>("app");
-  const [backend, setBackend] = useState<BackendTarget>("next");
-  const [unit, setUnit] = useState<MonetizationUnit>("credits");
-  const [packageName, setPackageName] = useState("starter_credits_100");
-  const [packagePrice, setPackagePrice] = useState("0.99");
   const [copied, setCopied] = useState<string | undefined>();
 
   const result = useMemo(
@@ -384,25 +296,9 @@ export default function Page() {
     () => createActionYaml(builderCode.trim(), profile),
     [builderCode, profile],
   );
-  const migrationPlan = useMemo(
-    () =>
-      createMigrationPlan({
-        backend,
-        builderCode: builderCode.trim() || "bc_abc123",
-        packageName: packageName.trim() || defaultPackageName(unit),
-        packagePrice: packagePrice.trim() || "0.99",
-        projectType,
-        unit,
-      }),
-    [backend, builderCode, packageName, packagePrice, projectType, unit],
-  );
-
-  const catalogJson = JSON.stringify(migrationPlan.catalog, null, 2);
-  const introTitle = mode === "scanner" ? "Builder Codes in CI" : "App & game migration";
+  const introTitle = "Builder Codes in CI";
   const introCopy =
-    mode === "scanner"
-      ? "Try attribution checks across x402, ethers, viem, wagmi, wallet batches, and agent transaction tools."
-      : "Plan Base Pay purchases, internal credits or tickets, server verification, and Builder Code attribution.";
+    "Try attribution checks across x402, ethers, viem, wagmi, wallet batches, and agent transaction tools.";
   const lineNumbers = source.split(/\r?\n/).map((_, index) => index + 1);
 
   function selectExample(example: Example): void {
@@ -448,158 +344,64 @@ export default function Page() {
           <h1>{introTitle}</h1>
         </div>
         <div className="hero-controls">
-          <div className="mode-tabs" role="tablist" aria-label="Demo mode">
-            <button
-              aria-selected={mode === "scanner"}
-              className={`tab-button ${mode === "scanner" ? "active" : ""}`}
-              role="tab"
-              type="button"
-              onClick={() => setMode("scanner")}
-            >
-              Scanner
-            </button>
-            <button
-              aria-selected={mode === "migration"}
-              className={`tab-button ${mode === "migration" ? "active" : ""}`}
-              role="tab"
-              type="button"
-              onClick={() => setMode("migration")}
-            >
-              Migration
-            </button>
-          </div>
           <p className="lede">{introCopy}</p>
         </div>
       </section>
 
       <div className="bento-grid">
         <aside className="bento-card input-card">
-          {mode === "scanner" ? (
-            <ScannerInputs
-              activeExample={activeExample}
-              builderCode={builderCode}
-              copied={copied}
-              profile={profile}
-              onBuilderCodeChange={handleBuilderCode}
-              onExampleSelect={selectExample}
-              onProfileChange={setProfile}
-            />
-          ) : (
-            <MigrationInputs
-              backend={backend}
-              builderCode={builderCode}
-              packageName={packageName}
-              packagePrice={packagePrice}
-              projectType={projectType}
-              unit={unit}
-              onBackendChange={setBackend}
-              onBuilderCodeChange={handleBuilderCode}
-              onPackageNameChange={setPackageName}
-              onPackagePriceChange={setPackagePrice}
-              onProjectTypeChange={setProjectType}
-              onUnitChange={(nextUnit) => {
-                setUnit(nextUnit);
-                setPackageName(defaultPackageName(nextUnit));
-              }}
-            />
-          )}
+          <ScannerInputs
+            activeExample={activeExample}
+            builderCode={builderCode}
+            copied={copied}
+            profile={profile}
+            onBuilderCodeChange={handleBuilderCode}
+            onExampleSelect={selectExample}
+            onProfileChange={setProfile}
+          />
         </aside>
 
-        {mode === "scanner" ? (
-          <>
-            <section className="bento-card editor-card">
-              <div className="editor-header">
-                <div className="editor-header-title">
-                  <p className="card-kicker">Candidate file</p>
-                  <h2>{activeExample.file}</h2>
-                </div>
-                <CopyButton copied={copied === "code"} onClick={() => copyText("code", source)} />
-              </div>
-              <div className="editor-container">
-                <div className="line-numbers" aria-hidden="true">
-                  {lineNumbers.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </div>
-                <textarea
-                  aria-label="Transaction source"
-                  className="code-textarea"
-                  spellCheck={false}
-                  value={source}
-                  onChange={handleSource}
-                />
-              </div>
-            </section>
+        <section className="bento-card editor-card">
+          <div className="editor-header">
+            <div className="editor-header-title">
+              <p className="card-kicker">Candidate file</p>
+              <h2>{activeExample.file}</h2>
+            </div>
+            <CopyButton copied={copied === "code"} onClick={() => copyText("code", source)} />
+          </div>
+          <div className="editor-container">
+            <div className="line-numbers" aria-hidden="true">
+              {lineNumbers.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </div>
+            <textarea
+              aria-label="Transaction source"
+              className="code-textarea"
+              spellCheck={false}
+              value={source}
+              onChange={handleSource}
+            />
+          </div>
+        </section>
 
-            <ScannerResultPanel profile={profile} result={result} />
-          </>
-        ) : (
-          <>
-            <section className="bento-card flow-card">
-              <div className="card-header">
-                <p className="card-kicker">Generated flow</p>
-                <h2>{migrationPlan.title}</h2>
-              </div>
-              <div className="flow-steps">
-                {migrationPlan.flow.map((step, index) => (
-                  <div className="flow-step-item" key={step}>
-                    <span className="flow-step-num">{index + 1}</span>
-                    <p className="flow-step-content">{step}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="migration-card">
-                <p className="migration-card-label">Builder Code attribution</p>
-                <strong className="migration-card-value">{migrationPlan.attributionStep}</strong>
-              </div>
-              <div className="migration-card">
-                <p className="migration-card-label">Adapter path</p>
-                <strong className="migration-card-value">{migrationPlan.adapterPath}</strong>
-              </div>
-            </section>
-
-            <MigrationChecklist items={migrationPlan.verification} />
-          </>
-        )}
+        <ScannerResultPanel profile={profile} result={result} />
       </div>
 
-      {mode === "scanner" ? (
-        <section className="bento-card output-card">
-          <div className="output-header">
-            <div className="editor-header-title">
-              <p className="card-kicker">GitHub Action</p>
-              <h2>validate-attribution.yml</h2>
-            </div>
-            <CopyButton
-              copied={copied === "action"}
-              onClick={() => copyText("action", actionYaml)}
-            />
+      <section className="bento-card output-card">
+        <div className="output-header">
+          <div className="editor-header-title">
+            <p className="card-kicker">GitHub Action</p>
+            <h2>validate-attribution.yml</h2>
           </div>
-          <div className="output-code-container">
-            <pre>
-              <code>{actionYaml}</code>
-            </pre>
-          </div>
-        </section>
-      ) : (
-        <section className="bento-card output-card">
-          <div className="output-header">
-            <div className="editor-header-title">
-              <p className="card-kicker">Catalog preview</p>
-              <h2>package-catalog.json</h2>
-            </div>
-            <CopyButton
-              copied={copied === "catalog"}
-              onClick={() => copyText("catalog", catalogJson)}
-            />
-          </div>
-          <div className="output-code-container">
-            <pre>
-              <code>{catalogJson}</code>
-            </pre>
-          </div>
-        </section>
-      )}
+          <CopyButton copied={copied === "action"} onClick={() => copyText("action", actionYaml)} />
+        </div>
+        <div className="output-code-container">
+          <pre>
+            <code>{actionYaml}</code>
+          </pre>
+        </div>
+      </section>
     </main>
   );
 }
@@ -669,112 +471,6 @@ function ScannerInputs(props: {
   );
 }
 
-function MigrationInputs(props: {
-  backend: BackendTarget;
-  builderCode: string;
-  packageName: string;
-  packagePrice: string;
-  projectType: ProjectType;
-  unit: MonetizationUnit;
-  onBackendChange: (backend: BackendTarget) => void;
-  onBuilderCodeChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onPackageNameChange: (value: string) => void;
-  onPackagePriceChange: (value: string) => void;
-  onProjectTypeChange: (projectType: ProjectType) => void;
-  onUnitChange: (unit: MonetizationUnit) => void;
-}) {
-  return (
-    <>
-      <div className="card-header">
-        <p className="card-kicker">Inputs</p>
-        <h2>Migration setup</h2>
-      </div>
-
-      <div className="form-stack">
-        <label className="form-group">
-          <span className="form-label">Builder Code</span>
-          <input
-            className="text-input"
-            spellCheck={false}
-            value={props.builderCode}
-            onChange={props.onBuilderCodeChange}
-          />
-        </label>
-
-        <div className="form-group">
-          <span className="form-label">Project</span>
-          <div className="option-grid">
-            {projectTypeOptions.map((option) => (
-              <button
-                key={option.value}
-                className={`grid-option-item ${option.value === props.projectType ? "active" : ""}`}
-                type="button"
-                onClick={() => props.onProjectTypeChange(option.value)}
-              >
-                <span className="grid-option-title">{option.label}</span>
-                <span className="grid-option-desc">{option.note}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <span className="form-label">Backend</span>
-          <div className="option-grid">
-            {backendOptions.map((option) => (
-              <button
-                key={option.value}
-                className={`grid-option-item ${option.value === props.backend ? "active" : ""}`}
-                type="button"
-                onClick={() => props.onBackendChange(option.value)}
-              >
-                <span className="grid-option-title">{option.label}</span>
-                <span className="grid-option-desc">{option.note}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <span className="form-label">Unit</span>
-          <div className="option-grid">
-            {unitOptions.map((option) => (
-              <button
-                key={option.value}
-                className={`grid-option-item ${option.value === props.unit ? "active" : ""}`}
-                type="button"
-                onClick={() => props.onUnitChange(option.value)}
-              >
-                <span className="grid-option-title">{option.label}</span>
-                <span className="grid-option-desc">{option.note}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <label className="form-group">
-          <span className="form-label">Starter package</span>
-          <input
-            className="text-input"
-            value={props.packageName}
-            onChange={(event) => props.onPackageNameChange(event.target.value)}
-          />
-        </label>
-
-        <label className="form-group">
-          <span className="form-label">Price, USDC</span>
-          <input
-            className="text-input"
-            inputMode="decimal"
-            value={props.packagePrice}
-            onChange={(event) => props.onPackagePriceChange(event.target.value)}
-          />
-        </label>
-      </div>
-    </>
-  );
-}
-
 function ScannerResultPanel(props: { profile: Profile; result: ScanResult }) {
   const status = props.result.ok ? "passing" : "failing";
 
@@ -832,35 +528,6 @@ function ScannerResultPanel(props: { profile: Profile; result: ScanResult }) {
   );
 }
 
-function MigrationChecklist(props: { items: string[] }) {
-  return (
-    <section className="bento-card result-panel">
-      <div className="card-header">
-        <p className="card-kicker">Server checklist</p>
-        <div className="status-badge passing">
-          <span className="status-dot" />
-          <span>replay-safe plan</span>
-        </div>
-      </div>
-
-      <div className="checklist-container">
-        {props.items.map((item) => (
-          <article className="checklist-item" key={item}>
-            <span className="checklist-icon" aria-hidden="true">
-              <CheckIcon />
-            </span>
-            <p className="checklist-text">{item}</p>
-          </article>
-        ))}
-      </div>
-
-      <a className="cta-link" href="https://github.com/horn111/base-attribution-os">
-        Star the repo for custom SDK access
-      </a>
-    </section>
-  );
-}
-
 function CopyButton(props: { copied: boolean; onClick: () => void }) {
   return (
     <button className="copy-btn" type="button" onClick={props.onClick}>
@@ -879,66 +546,12 @@ function CopyIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg aria-hidden="true" height="12" viewBox="0 0 24 24" width="12">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 function StarIcon() {
   return (
     <svg aria-hidden="true" height="12" viewBox="0 0 24 24" width="12">
       <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z" />
     </svg>
   );
-}
-
-function createMigrationPlan(input: {
-  backend: BackendTarget;
-  builderCode: string;
-  packageName: string;
-  packagePrice: string;
-  projectType: ProjectType;
-  unit: MonetizationUnit;
-}): MigrationPlan {
-  const amount = defaultUnitAmount(input.unit);
-  const projectLabel = input.projectType === "game" ? "game" : "app";
-  const unitLabel = unitCopy(input.unit);
-  const backendName = backendLabel(input.backend);
-
-  return {
-    title: `${backendName} ${projectLabel} with ${unitLabel}`,
-    flow: [
-      `Define ${input.packageName} as a Base Pay USDC purchase.`,
-      `Send the payment with Builder Code ${input.builderCode} attached as the data suffix.`,
-      "Verify payment status on the server before fulfillment.",
-      `Credit ${amount} ${unitLabel} to the user's internal balance or entitlement ledger.`,
-      "Let the product consume the internal balance offchain with fast UX.",
-      "Keep the onchain payment visible for attribution, analytics, and future CI checks.",
-    ],
-    verification: [
-      "Require completed Base Pay status from getPaymentStatus.",
-      "Check sender, recipient, amount, currency, and order id.",
-      "Store a unique payment id before issuing value.",
-      "Make fulfillment idempotent for retries and webhooks.",
-      "Record every credit, ticket, or entitlement change in an internal ledger.",
-      "Keep internal balances non-transferable and non-withdrawable by default.",
-    ],
-    attributionStep: `The onchain purchase carries ${input.builderCode}; internal ${unitLabel} spends stay offchain.`,
-    adapterPath: adapterPath(input.backend, input.projectType),
-    catalog: {
-      packageId: input.packageName,
-      projectType: input.projectType,
-      backend: input.backend,
-      unit: input.unit,
-      amount,
-      priceUsd: input.packagePrice,
-      builderCode: input.builderCode,
-      fulfillment: fulfillmentCopy(input.unit),
-    },
-  };
 }
 
 function scanSource(source: string, builderCode: string, profile: Profile): ScanResult {
@@ -1054,78 +667,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: horn111/base-attribution-os/packages/github-action@v0
+      - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: ${builderCode || "bc_abc123"}
           paths: "src,app,packages"
           profile: "${profile}"`;
-}
-
-function backendLabel(backend: BackendTarget): string {
-  const labels: Record<BackendTarget, string> = {
-    custom: "Custom API",
-    nakama: "Nakama",
-    next: "Next.js",
-    supabase: "Supabase",
-  };
-
-  return labels[backend];
-}
-
-function defaultPackageName(unit: MonetizationUnit): string {
-  const names: Record<MonetizationUnit, string> = {
-    credits: "starter_credits_100",
-    entitlement: "premium_unlock",
-    tickets: "starter_tickets_20",
-  };
-
-  return names[unit];
-}
-
-function defaultUnitAmount(unit: MonetizationUnit): number {
-  const amounts: Record<MonetizationUnit, number> = {
-    credits: 100,
-    entitlement: 1,
-    tickets: 20,
-  };
-
-  return amounts[unit];
-}
-
-function unitCopy(unit: MonetizationUnit): string {
-  const labels: Record<MonetizationUnit, string> = {
-    credits: "credits",
-    entitlement: "entitlements",
-    tickets: "tickets",
-  };
-
-  return labels[unit];
-}
-
-function fulfillmentCopy(unit: MonetizationUnit): string {
-  const labels: Record<MonetizationUnit, string> = {
-    credits: "credit_balance",
-    entitlement: "account_unlock",
-    tickets: "ticket_balance",
-  };
-
-  return labels[unit];
-}
-
-function adapterPath(backend: BackendTarget, projectType: ProjectType): string {
-  if (backend === "nakama") {
-    return "First adapter target: Nakama RPCs for order creation, verification, balance reads, and spends.";
-  }
-
-  if (backend === "supabase") {
-    return "Future app adapter: Supabase SQL tables, unique payment constraints, and edge functions.";
-  }
-
-  if (backend === "next") {
-    return "Future app adapter: Next.js route handlers around payments-core and entitlements-core.";
-  }
-
-  return projectType === "game"
-    ? "Custom game backend path: call shared core from your authoritative server."
-    : "Custom app backend path: call shared core from Express, Hono, or your existing API.";
 }

@@ -1,8 +1,8 @@
 # Vercel Demo
 
 The docs app is a live playground for Base Attribution OS. It includes the
-scanner workflow for Builder Code enforcement and a Migration Planner preview
-for Base Pay, internal credits or tickets, entitlements, and attribution.
+scanner workflow for Builder Code enforcement across x402, SDK, wallet, and
+agent transaction paths.
 
 Production demo: https://base-attribution-os.vercel.app
 
@@ -10,18 +10,17 @@ Production demo: https://base-attribution-os.vercel.app
 
 Use this path for grant reviewers:
 
-1. Open Scanner mode.
+1. Open the Scanner playground.
 2. Select `x402 client` to show a missing Builder Code extension.
 3. Select `x402 seller` to show a passing official Builder Code extension.
-4. Switch `local`, `ci`, and `strict` profiles to show rollout controls.
-5. Copy the GitHub Action YAML.
-6. Open Migration mode.
-7. Generate an app or game plan that maps Base Pay -> server verification ->
-   credits/tickets/entitlements -> Builder Code attribution.
+4. Select ethers, viem, wagmi, wallet, and agent examples to show scanner
+   coverage.
+5. Switch `local`, `ci`, and `strict` profiles to show rollout controls.
+6. Copy the GitHub Action YAML.
 
-The demo does not execute payments. It shows the developer workflow and the
-grant direction: make attribution visible, testable, and easier to adopt before
-teams ship Base activity.
+The demo does not execute transactions or payment flows. It shows the developer
+workflow and the grant direction: make attribution visible, testable, and easier
+to adopt before teams ship Base activity.
 
 ## Vercel settings
 

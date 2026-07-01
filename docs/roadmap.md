@@ -11,26 +11,22 @@
 - ethers adapter.
 - Scanner profiles for local, CI, and strict enforcement.
 - Vercel scanner playground.
-- App and game migration layer RFC.
-- Migration Planner demo for Base Pay, internal credits, tickets, entitlements,
-  and Builder Code attribution.
 - x402 Builder Codes CI support for buyer and seller payment paths.
 
 ## v0.1
 
-- `payments-core` primitives for Base Pay order creation, verification, and
-  replay-safe fulfillment events.
-- `entitlements-core` primitives for credits, tickets, unlocks, balance reads,
-  and consumption events.
+- Publish stable `@base-attribution-os/*` packages.
+- Pin the GitHub Action to `v0`.
+- Add public x402 buyer and seller fixture repos.
+- Add wallet `sendCalls` and agent transaction fixtures.
 - Better scanner rules with AST parsing.
 - Wallet `sendCalls` middleware examples.
 - Public fixture set for real transaction calldata.
 
 ## v0.2
 
-- Nakama adapter for game ticket packs and wallet ledger fulfillment.
-- Next.js or Hono adapter for app credit packs and entitlement checks.
 - Dune query templates for attribution replay.
+- Public attribution replay guide for verified transaction examples.
 - Local analytics dashboard.
 - Shareable progress cards for X.
 - Pilot integration reports.
@@ -39,4 +35,4 @@
 
 - Stable public APIs.
 - Strong compatibility policy.
-- Documented migration path from scanner MVP to AST-backed validation.
+- Documented upgrade path from scanner MVP to AST-backed validation.

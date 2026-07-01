@@ -15,11 +15,6 @@ suffixes for supported transaction clients, x402-aware scans enforce official
 Builder Code extensions, the CLI validates calldata and transactions, and CI
 catches missing Builder Codes before code ships.
 
-Update 3 added an RFC and live demo direction for an app and game migration
-layer: Base Pay purchases, server-side verification, internal credits or
-tickets, and Builder Code attribution as one repeatable path for teams moving
-existing products to Base.
-
 Update 4 adds x402 Builder Code CI support. Official x402 extensions make
 attribution native for paid HTTP flows; BAO checks that buyer and seller paths
 keep those extensions before code ships.
@@ -38,6 +33,9 @@ Built by [horn111](https://github.com/horn111). This is an independent OSS
 project for the Base ecosystem.
 
 Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
+
+Companion migration work may use BAO as the Builder Code attribution layer, but
+this repository stays focused on attribution, validation, and CI.
 
 ## Why this exists
 
@@ -61,7 +59,6 @@ Official context:
 - [Base App Developers](https://docs.base.org/apps/builder-codes/app-developers)
 - [Base Wallet Developers](https://docs.base.org/apps/builder-codes/wallet-developers)
 - [Base Agent Developers](https://docs.base.org/apps/builder-codes/agent-developers)
-- [Base Pay](https://docs.base.org/base-account/guides/accept-payments)
 - [Base Rewards](https://docs.base.org/apps/growth/rewards)
 - [Coinbase x402 Builder Codes](https://docs.cdp.coinbase.com/x402/builder-code.skill)
 - [Dune EIP-8021 parser](https://docs.dune.com/query-engine/Functions-and-operators/eip-8021)
@@ -80,14 +77,14 @@ the integration, and CI output that Base ecosystem reviewers can inspect.
 
 ## Grant-ready status
 
-| Current shipped surface                 | Next funded milestone                              |
-| --------------------------------------- | -------------------------------------------------- |
-| Core ERC-8021 helpers                   | Public `v0.1.0` package release                    |
-| viem, wagmi, ethers helpers             | Three pilot integrations                           |
-| `bao` encode/decode/check/scan CLI      | Public attribution fixture set                     |
-| GitHub Action wrapper                   | Dune attribution replay templates                  |
-| x402 buyer/seller scanner support       | Measurement report for Base builders               |
-| Vercel Scanner + Migration Planner demo | `payments-core` and `entitlements-core` primitives |
+| Current shipped surface            | Next funded milestone                |
+| ---------------------------------- | ------------------------------------ |
+| Core ERC-8021 helpers              | Public `v0.1.0` package release      |
+| viem, wagmi, ethers helpers        | Three pilot integrations             |
+| `bao` encode/decode/check/scan CLI | Public attribution fixture set       |
+| GitHub Action wrapper              | Dune attribution replay templates    |
+| x402 buyer/seller scanner support  | Measurement report for Base builders |
+| Vercel Scanner playground          | Wallet and agent pilot fixtures      |
 
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).
@@ -281,44 +278,15 @@ limitations.
 - Growth engineers: create a repeatable checklist for Base.dev readiness.
 - Base ecosystem teams: review integration PRs with automated attribution checks.
 
-## App and game migration layer
-
-Base Attribution OS is not a payment processor, hosted backend, or Base.dev
-replacement. The next layer is a thin migration workflow for teams that already
-have an app or game and want Base-native monetization without rebuilding their
-product.
-
-```txt
-existing app or game
-  -> Base Pay USDC purchase
-  -> server-side verification
-  -> internal credits, tickets, or entitlements
-  -> Builder Code attribution
-  -> measurable Base activity
-```
-
-Examples:
-
-- Apps: AI credits, paid exports, premium unlocks, API usage packs, community
-  passes.
-- Games: tickets, continues, lives, boosts, chests, cosmetic unlocks.
-- Backends: shared core first, Nakama adapter for games, Next.js/Hono/Express
-  and Supabase adapters for apps.
-
-See [docs/app-and-game-migration-rfc.md](docs/app-and-game-migration-rfc.md)
-for the RFC.
-
 ## Roadmap
 
 - MVP: core, viem, wagmi, CLI, GitHub Action, examples, README.
 - Shipped: scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
 - Shipped: ethers adapter and scanner profiles for stricter CI.
 - Shipped: Vercel scanner playground.
-- Update 3: app and game migration RFC with a Base Pay and entitlement planning
-  demo.
 - Update 4: x402 Builder Codes CI support for buyer and seller payment paths.
-- Next: `payments-core` and `entitlements-core` primitives.
 - Next: wallet middleware for `sendCalls` and smart account frameworks.
+- Next: public x402 pilot fixtures and stricter real-world scan cases.
 - Next: Dune query templates for attributed transaction replay.
 - Next: local dashboard, alerts, and shareable progress cards for X.
 - Later: pilot integrations, public leaderboard screenshots, and grant reports.
