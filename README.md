@@ -36,7 +36,7 @@ Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.a
 
 Project Builder Code: `bc_vwmzy653`.
 
-Onchain proof: [docs/onchain-proof.md](docs/onchain-proof.md) tracks the first
+Onchain proof: [docs/onchain-proof.md](docs/onchain-proof.md) records a verified
 Base mainnet transaction attributed with BAO's Builder Code.
 
 Companion project:
@@ -82,6 +82,21 @@ Base Attribution OS makes that question testable before deploy. It gives teams
 SDK helpers where BAO owns the suffix, scanner checks where official SDKs own
 the integration, and CI output that Base ecosystem reviewers can inspect.
 
+## Complementary tools
+
+Base docs link to the
+[Builder Code Validation](https://builder-code-checker.vercel.app/) tool for
+manual post-transaction checks. BAO does not replace that checker. It complements
+it by moving attribution checks earlier in the lifecycle:
+
+| Tool                         | Best for                                               |
+| ---------------------------- | ------------------------------------------------------ |
+| Builder Code Validation tool | Manual validation after a transaction already exists   |
+| BAO                          | SDK helpers, local scans, CI enforcement, and tx proof |
+
+Use the checker when you have a transaction hash. Use BAO when you want the code
+path to fail before an unattributed transaction ships.
+
 ## Grant-ready status
 
 | Current shipped surface            | Next funded milestone                |
@@ -92,7 +107,7 @@ the integration, and CI output that Base ecosystem reviewers can inspect.
 | GitHub Action wrapper              | Dune attribution replay templates    |
 | x402 buyer/seller scanner support  | Measurement report for Base builders |
 | Vercel Scanner playground          | Wallet and agent pilot fixtures      |
-| Registered Builder Code            | First attributed Base proof tx       |
+| Verified onchain proof tx          | Dune attribution replay templates    |
 
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).

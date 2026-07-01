@@ -1,6 +1,6 @@
 # Onchain Proof
 
-Status: ready for first attributed Base mainnet transaction.
+Status: verified on Base mainnet.
 
 Base Attribution OS has a registered Builder Code:
 
@@ -13,15 +13,13 @@ should be visible, testable, and easy to verify before grant review.
 
 ## Proof transaction
 
-Fill these fields after sending the first attributed Base transaction:
-
-| Field        | Value                    |
-| ------------ | ------------------------ |
-| Builder Code | `bc_vwmzy653`            |
-| Network      | Base mainnet             |
-| Transaction  | `[PENDING_TX_HASH]`      |
-| Explorer     | `[PENDING_BASESCAN_URL]` |
-| Verified by  | `bao check-tx`           |
+| Field        | Value                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| Builder Code | `bc_vwmzy653`                                                                                          |
+| Network      | Base mainnet                                                                                           |
+| Transaction  | `0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926`                                   |
+| Explorer     | [Basescan](https://basescan.org/tx/0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926) |
+| Verified by  | `bao check-tx`                                                                                         |
 
 ## Create the suffix
 
@@ -46,13 +44,24 @@ After the transaction is mined:
 
 ```bash
 node packages/cli/dist/index.js check-tx \
-  --hash 0x... \
+  --hash 0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926 \
   --rpc-url https://mainnet.base.org \
   --expect bc_vwmzy653
 ```
 
 Expected result: `bao` confirms that the transaction calldata contains the
 expected Builder Code attribution suffix.
+
+Verified output:
+
+```txt
+Attribution OK: bc_vwmzy653
+```
+
+You can also cross-check the same transaction in the
+[Builder Code Validation](https://builder-code-checker.vercel.app/) tool linked
+from Base docs. That checker is useful after a transaction exists. BAO is useful
+before deploy and again here as a CLI proof.
 
 ## Grant reviewer note
 

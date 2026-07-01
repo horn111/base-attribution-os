@@ -9,6 +9,8 @@ grant submission.
 - Demo: https://base-attribution-os.vercel.app
 - Maintainer: https://github.com/horn111
 - Builder Code: `bc_vwmzy653`
+- Onchain proof tx:
+  https://basescan.org/tx/0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926
 - README: ../../README.md
 - Onchain proof: ../onchain-proof.md
 - Grant brief: ../grant-brief.md
@@ -37,9 +39,11 @@ grant submission.
 - GitHub Action: `packages/github-action`
 - Demo app: `apps/docs`
 - x402 scanner docs: `docs/x402-builder-codes.md`
-- Onchain proof tracker: `docs/onchain-proof.md`
+- Verified onchain proof: `docs/onchain-proof.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
+- Complementary checker note: BAO complements the public Builder Code Validation
+  tool by moving checks into SDK helpers, local scans, and CI.
 
 ## Demo reviewer path
 
@@ -67,8 +71,6 @@ Before final grant submission:
 - GitHub tags `v0.1.0` and `v0` created;
 - Action snippets updated to `@v0`;
 - README pre-release warning removed;
-- first Base mainnet transaction attributed with `bc_vwmzy653` verified by
-  `bao check-tx`;
 - fresh external install verified;
 - demo production build verified;
 - issue templates enabled;
