@@ -8,7 +8,7 @@ grant submission.
 - Repository: https://github.com/horn111/base-attribution-os
 - Demo: https://base-attribution-os.vercel.app
 - Maintainer: https://github.com/horn111
-- Builder Code: `bc_vwmzy653`
+- Verified proof Builder Code: `bc_vwmzy653`
 - Onchain proof tx:
   https://basescan.org/tx/0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926
 - README: ../../README.md
