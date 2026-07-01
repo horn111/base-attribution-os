@@ -34,8 +34,10 @@ project for the Base ecosystem.
 
 Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
 
-Companion migration work may use BAO as the Builder Code attribution layer, but
-this repository stays focused on attribution, validation, and CI.
+Companion project:
+[Base Game Migration](https://github.com/horn111/base-game-migration) may use
+BAO as the Builder Code attribution layer for game migration flows. This
+repository stays focused on attribution, validation, and CI.
 
 ## Why this exists
 
