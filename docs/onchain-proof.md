@@ -2,7 +2,8 @@
 
 Status: verified on Base mainnet.
 
-Base Attribution OS has a registered Builder Code:
+Base Attribution OS has a registered Builder Code for its own proof
+transaction:
 
 ```txt
 bc_vwmzy653
@@ -10,6 +11,9 @@ bc_vwmzy653
 
 The goal is to make the project prove its own thesis: Builder Code attribution
 should be visible, testable, and easy to verify before grant review.
+
+Do not use this Builder Code in your app. It exists only for BAO's own onchain
+proof. Replace examples with your own Builder Code from Base.
 
 ## Proof transaction
 

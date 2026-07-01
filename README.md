@@ -34,10 +34,13 @@ project for the Base ecosystem.
 
 Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
 
-Project Builder Code: `bc_vwmzy653`.
+Verified proof Builder Code: `bc_vwmzy653`.
 
 Onchain proof: [docs/onchain-proof.md](docs/onchain-proof.md) records a verified
 Base mainnet transaction attributed with BAO's Builder Code.
+
+Do not use BAO's proof code in your app. Replace all example codes with your own
+Builder Code from Base.
 
 Companion project:
 [Base Game Migration](https://github.com/horn111/base-game-migration) may use
