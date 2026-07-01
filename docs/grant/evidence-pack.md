@@ -8,7 +8,9 @@ grant submission.
 - Repository: https://github.com/horn111/base-attribution-os
 - Demo: https://base-attribution-os.vercel.app
 - Maintainer: https://github.com/horn111
+- Builder Code: `bc_vwmzy653`
 - README: ../../README.md
+- Onchain proof: ../onchain-proof.md
 - Grant brief: ../grant-brief.md
 - Roadmap: ../roadmap.md
 
@@ -35,6 +37,7 @@ grant submission.
 - GitHub Action: `packages/github-action`
 - Demo app: `apps/docs`
 - x402 scanner docs: `docs/x402-builder-codes.md`
+- Onchain proof tracker: `docs/onchain-proof.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
 
@@ -64,6 +67,8 @@ Before final grant submission:
 - GitHub tags `v0.1.0` and `v0` created;
 - Action snippets updated to `@v0`;
 - README pre-release warning removed;
+- first Base mainnet transaction attributed with `bc_vwmzy653` verified by
+  `bao check-tx`;
 - fresh external install verified;
 - demo production build verified;
 - issue templates enabled;

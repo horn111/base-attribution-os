@@ -34,6 +34,11 @@ project for the Base ecosystem.
 
 Live demo: [base-attribution-os.vercel.app](https://base-attribution-os.vercel.app)
 
+Project Builder Code: `bc_vwmzy653`.
+
+Onchain proof: [docs/onchain-proof.md](docs/onchain-proof.md) tracks the first
+Base mainnet transaction attributed with BAO's Builder Code.
+
 Companion project:
 [Base Game Migration](https://github.com/horn111/base-game-migration) may use
 BAO as the Builder Code attribution layer for game migration flows. This
@@ -87,6 +92,7 @@ the integration, and CI output that Base ecosystem reviewers can inspect.
 | GitHub Action wrapper              | Dune attribution replay templates    |
 | x402 buyer/seller scanner support  | Measurement report for Base builders |
 | Vercel Scanner playground          | Wallet and agent pilot fixtures      |
+| Registered Builder Code            | First attributed Base proof tx       |
 
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).
