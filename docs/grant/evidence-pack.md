@@ -40,6 +40,7 @@ grant submission.
 - Demo app: `apps/docs`
 - x402 scanner docs: `docs/x402-builder-codes.md`
 - Verified onchain proof: `docs/onchain-proof.md`
+- Fallow pre-grant audit summary: `docs/grant/fallow-summary.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
 - Complementary checker note: BAO complements the public Builder Code Validation

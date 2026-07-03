@@ -56,7 +56,7 @@ export function hexToString(hex: Hex): string {
   return decoder.decode(hexToBytes(hex));
 }
 
-export function bytesToHex(bytes: Uint8Array): Hex {
+function bytesToHex(bytes: Uint8Array): Hex {
   return `0x${Array.from(bytes)
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("")}`;
