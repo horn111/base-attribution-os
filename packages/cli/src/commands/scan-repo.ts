@@ -28,7 +28,7 @@ export interface ScanRepoResult {
   findings: ScanFinding[];
 }
 
-export const SCAN_PROFILES = ["local", "ci", "strict"] as const;
+const SCAN_PROFILES = ["local", "ci", "strict"] as const;
 export type ScanProfile = (typeof SCAN_PROFILES)[number];
 
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
