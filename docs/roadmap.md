@@ -12,11 +12,13 @@
 - Scanner profiles for local, CI, and strict enforcement.
 - Vercel scanner playground.
 - x402 Builder Codes CI support for buyer and seller payment paths.
+- v0.1 release candidate verification script and pilot docs.
 
 ## v0.1
 
 - Publish stable `@base-attribution-os/*` packages.
 - Pin the GitHub Action to `v0`.
+- Pass external consumer install verification from packed tarballs.
 - Add public x402 buyer and seller fixture repos.
 - Add wallet `sendCalls` and agent transaction fixtures.
 - Better scanner rules with AST parsing.

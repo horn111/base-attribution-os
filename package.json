@@ -43,7 +43,8 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "release": "changeset publish",
     "size": "tsx scripts/check-size.ts",
-    "prepare:release": "tsx scripts/prepare-release.ts"
+    "prepare:release": "tsx scripts/prepare-release.ts",
+    "verify:release-candidate": "tsx scripts/verify-release-candidate.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.12",

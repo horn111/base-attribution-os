@@ -115,10 +115,27 @@ path to fail before an unattributed transaction ships.
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).
 
+## Release candidate status
+
+BAO is now preparing for `v0.1.0`. The current repo includes a release-candidate
+verification script that packs the core, CLI, and viem adapter packages, installs
+them into a fresh external consumer project, and runs the basic `bao` smoke
+commands.
+
+Run it locally:
+
+```bash
+pnpm verify:release-candidate
+```
+
+Public npm publishing, `v0.1.0` tags, and the stable GitHub Action ref `v0` are
+separate release steps. Until then, package install commands below describe the
+intended public interface, not a published npm release.
+
 ## 60-second quickstart
 
-Base Attribution OS is currently pre-release. Clone and build the workspace
-locally:
+Base Attribution OS is currently a `v0.1` release candidate. Clone and build the
+workspace locally:
 
 ```bash
 git clone https://github.com/horn111/base-attribution-os.git
@@ -323,7 +340,8 @@ See [docs/roadmap.md](docs/roadmap.md) for the working roadmap.
 
 - Public pilots: `0/3` target for the first launch cycle.
 - Attributed transaction examples: collecting first verified cases.
-- Integration requests: open an issue with your framework, wallet, or agent stack.
+- Integration requests: open an issue with your framework, wallet, x402 flow, or
+  agent stack.
 
 ## Contributing
 
