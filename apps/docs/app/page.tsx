@@ -325,9 +325,14 @@ export default function Page() {
     <main className="app-container">
       <header className="topbar">
         <a className="brand" href="https://github.com/horn111/base-attribution-os">
-          <span className="brand-mark" aria-hidden="true">
-            BAO
-          </span>
+          <img
+            alt=""
+            aria-hidden="true"
+            className="brand-wordmark"
+            height="65"
+            src="/bao-wordmark.png"
+            width="172"
+          />
           <span>Base Attribution OS</span>
         </a>
         <nav className="nav-links" aria-label="Project links">
