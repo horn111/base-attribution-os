@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { Hex } from "@base-attribution-os/core";
 import { checkCalldataCommand } from "./commands/check-calldata.js";
 import { checkTransactionCommand } from "./commands/check-tx.js";
@@ -20,7 +21,7 @@ export type {
   ScanRepoResult,
 } from "./commands/scan-repo.js";
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliEntrypoint()) {
   run(process.argv.slice(2)).catch((error) => {
     if (error instanceof CliError) {
       console.error(error.message);
@@ -30,6 +31,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   });
+}
+
+function isCliEntrypoint(): boolean {
+  if (!process.argv[1]) {
+    return false;
+  }
+
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
 }
 
 async function run(argv: string[]): Promise<void> {

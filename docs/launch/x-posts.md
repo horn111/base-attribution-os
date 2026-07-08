@@ -141,6 +141,33 @@ validate before deploy.
 
 Builder Codes should stay attached even when transaction paths get abstracted.
 
+## v0.1 release candidate post
+
+Base Attribution OS update 5:
+
+BAO is moving from MVP to v0.1 release candidate.
+
+New this round:
+
+- package smoke test via `pnpm pack`
+- fresh external consumer install
+- `bao encode/check-calldata/scan-repo` verification
+- pilot integration guide for Base builders
+
+Star the repo if Builder Code attribution belongs in CI:
+https://github.com/horn111/base-attribution-os
+
+Opening pilot requests for x402, wallet, app, and agent transaction paths.
+
+## v0.1 release candidate next-update teaser
+
+Next update:
+
+wallet + agent attribution fixtures.
+
+The goal: public examples that show BAO catching missing Builder Codes in
+batched wallet calls and autonomous transaction tools before deploy.
+
 ## Weekly update template
 
 Week N of Base Attribution OS:

@@ -19826,7 +19826,8 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
 var core = __toESM(require_core(), 1);
 
 // ../cli/dist/index.js
-import { pathToFileURL } from "url";
+import { realpathSync } from "fs";
+import { fileURLToPath } from "url";
 
 // ../core/dist/index.js
 var ERC8021_SUFFIX = "0x80218021802180218021802180218021";
@@ -20459,7 +20460,7 @@ function required(value, name) {
   }
   return value;
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isCliEntrypoint()) {
   run(process.argv.slice(2)).catch((error) => {
     if (error instanceof CliError) {
       console.error(error.message);
@@ -20468,6 +20469,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   });
+}
+function isCliEntrypoint() {
+  if (!process.argv[1]) {
+    return false;
+  }
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
 }
 async function run(argv) {
   const [command, ...rest] = argv;

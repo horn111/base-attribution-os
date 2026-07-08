@@ -41,6 +41,8 @@ grant submission.
 - x402 scanner docs: `docs/x402-builder-codes.md`
 - Verified onchain proof: `docs/onchain-proof.md`
 - Fallow pre-grant audit summary: `docs/grant/fallow-summary.md`
+- v0.1 release candidate checklist: `docs/release-checklist.md`
+- Pilot integration guide: `docs/pilot-integration.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
 - Complementary checker note: BAO complements the public Builder Code Validation
@@ -68,11 +70,15 @@ Add final assets before submission:
 
 Before final grant submission:
 
-- npm packages published as `v0.1.0`;
-- GitHub tags `v0.1.0` and `v0` created;
-- Action snippets updated to `@v0`;
-- README pre-release warning removed;
-- fresh external install verified;
+- `pnpm verify:release-candidate` passes;
 - demo production build verified;
 - issue templates enabled;
 - first integration request or attribution case opened.
+
+After the explicit public release decision:
+
+- npm packages published as `v0.1.0`;
+- GitHub tags `v0.1.0` and `v0` created;
+- Action snippets updated to `@v0`;
+- README unpublished-package warning removed;
+- fresh npm install verified.
