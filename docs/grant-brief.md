@@ -61,15 +61,38 @@ Repo: [github.com/horn111/base-attribution-os](https://github.com/horn111/base-a
 
 ## Grant request
 
-Requested funding: `[REQUEST_AMOUNT]`
+Requested funding: milestone-scoped Base Builder Grant.
 
-Recommended structure: milestone-based grant for open-source attribution
-infrastructure. The ask should fund public release work, pilot integrations, and
-measurement/reporting so the project can prove impact in Base-native terms.
+BAO already has a working MVP, live demo, release-candidate install path, and
+verified onchain attribution proof. Funding would turn that foundation into
+reusable Base ecosystem infrastructure: a public release, pilot integrations,
+fixture repos, Dune/replay measurement templates, and ongoing scanner coverage
+as Builder Code and x402 integration patterns evolve.
 
-## Milestones
+## Why funding is needed
 
-### Milestone 1: Public OSS Release
+Builder Code attribution is only valuable if it survives real production paths.
+That requires more than a library release. It requires testing against actual
+apps, x402 flows, wallet calls, agent tooling, CI workflows, and analytics
+surfaces.
+
+Grant funding would support the work that is hardest to sustain as unpaid OSS
+maintenance:
+
+- supporting pilot teams while they integrate BAO into real repositories;
+- keeping scanner coverage current as official Builder Code and x402 patterns
+  change;
+- publishing public fixture repos that reviewers and builders can inspect;
+- documenting real attribution regressions caught before deploy;
+- connecting validation output to Dune/replay measurement so Base can see how
+  attribution tooling maps to ecosystem activity.
+
+Without funding, BAO can remain a useful OSS repo. With funding, it can become a
+repeatable attribution validation layer for Base builders.
+
+## Funded work plan
+
+### Workstream 1: v0.1 Public Release
 
 Deliverables:
 
@@ -82,7 +105,10 @@ Deliverables:
 Success metric: an external Base builder can install BAO, add attribution, and
 run CI without cloning the monorepo.
 
-### Milestone 2: Attribution Adoption Pilots
+Why it matters: this makes BAO usable outside the maintainer's repo and gives
+Base teams a stable install path for CI validation.
+
+### Workstream 2: Attribution Adoption Pilots
 
 Deliverables:
 
@@ -91,10 +117,14 @@ Deliverables:
 - publish PR examples showing missing and wrong Builder Codes caught by CI;
 - collect issue templates and case reports from pilot usage.
 
-Success metric: three real or self-owned projects validated with `bao`, with
-public artifacts reviewers can inspect.
+Success metric: three transaction paths validated with `bao`, including at
+least one external pilot where possible and public artifacts reviewers can
+inspect.
 
-### Milestone 3: Measurement Layer
+Why it matters: this proves BAO catches attribution regressions in practical
+Base builder workflows, not only in synthetic examples.
+
+### Workstream 3: Measurement Layer
 
 Deliverables:
 
@@ -105,6 +135,10 @@ Deliverables:
 
 Success metric: reviewers can see how BAO moves from developer tooling to
 Base ecosystem measurement.
+
+Why it matters: Base can evaluate the project in native terms: attribution
+coverage, validated transaction paths, CI adoption, and measurable Builder Code
+activity.
 
 ## Measurable outcomes
 
