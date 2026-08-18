@@ -1,8 +1,7 @@
 # Vercel Demo
 
-The docs app is a live playground for Base Attribution OS. It includes the
-scanner workflow for Builder Code enforcement across x402, SDK, wallet, and
-agent transaction paths.
+The docs app is an interactive Attribution Doctor preview. It shows transaction
+path coverage across app, wallet, x402, RPC, and agent fixtures.
 
 Production demo: https://base-attribution-os.vercel.app
 
@@ -10,13 +9,12 @@ Production demo: https://base-attribution-os.vercel.app
 
 Use this path for grant reviewers:
 
-1. Open the Scanner playground.
-2. Select `x402 client` to show a missing Builder Code extension.
-3. Select `x402 seller` to show a passing official Builder Code extension.
-4. Select ethers, viem, wagmi, wallet, and agent examples to show scanner
-   coverage.
-5. Switch `local`, `ci`, and `strict` profiles to show rollout controls.
-6. Copy the GitHub Action YAML.
+1. Open Attribution Doctor and select a broken fixture.
+2. Observe its rule ID, transaction path, and suggested fix.
+3. Switch to `fixed` and show coverage moving to 100%.
+4. Try Wagmi, Privy, smart wallet, raw RPC, x402, and agent fixtures.
+5. Switch `local`, `ci`, and `strict` profiles.
+6. Copy the changed-only GitHub Action YAML.
 
 The demo does not execute transactions or payment flows. It shows the developer
 workflow and the grant direction: make attribution visible, testable, and easier

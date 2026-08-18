@@ -74,6 +74,8 @@ pre {
 }
 
 .app-container {
+  width: 100%;
+  min-width: 0;
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px 64px;
@@ -150,6 +152,7 @@ pre {
 
 .hero {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 24px;
   margin-bottom: 48px;
@@ -184,6 +187,7 @@ pre {
 
 .hero-controls {
   display: flex;
+  min-width: 0;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
@@ -198,8 +202,63 @@ pre {
   line-height: 1.55;
 }
 
+.hero-command {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--surface);
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.coverage-strip {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(190px, auto) minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--surface);
+  padding: 18px 24px;
+}
+
+.coverage-value {
+  margin-top: 3px;
+  color: var(--text-accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.coverage-strip strong {
+  color: #0052ff;
+  font-family: var(--font-mono);
+  font-size: 20px;
+}
+
+.coverage-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e8e8e6;
+}
+
+.coverage-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #0052ff;
+  transition: width var(--transition);
+}
+
 .bento-grid {
   display: grid;
+  min-width: 0;
   grid-template-columns: 320px minmax(0, 1fr) 340px;
   align-items: start;
   gap: 24px;
@@ -285,6 +344,10 @@ pre {
   border-radius: var(--border-radius);
   background: var(--accent-bg);
   padding: 2px;
+}
+
+.segmented-control.segments-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .segment-button {
@@ -473,6 +536,21 @@ pre {
   color: var(--pastel-red-text);
 }
 
+.result-heading {
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.result-heading > div:first-child {
+  min-width: 0;
+}
+
+.result-heading h2 {
+  margin-top: 4px;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;
@@ -518,6 +596,10 @@ pre {
   font-weight: 600;
 }
 
+.doctor-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .analysis-block {
   display: flex;
   flex-direction: column;
@@ -561,6 +643,21 @@ pre {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
+}
+
+.path-protected .finding-reason {
+  color: var(--pastel-green-text);
+}
+
+.path-unresolved .finding-reason {
+  color: var(--pastel-yellow-text);
+}
+
+.finding-suggestion {
+  margin-top: 5px;
+  color: var(--text-main);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .finding-meta {
@@ -663,8 +760,23 @@ pre {
     flex-direction: column;
   }
 
+  .hero-command {
+    width: 100%;
+  }
+
+  .coverage-strip {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .coverage-track {
+    grid-column: span 2;
+    grid-row: 2;
+  }
+
   .bento-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .bento-card.result-panel {
@@ -702,6 +814,14 @@ pre {
   .metrics-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .doctor-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .doctor-metrics .metric-item:nth-child(2) {
+    border-right: none;
   }
 
   .metric-item {

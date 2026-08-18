@@ -8,8 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
           paths: "src,app,packages,examples"
-          fail-on-missing: "true"
+          profile: ci
+          changed-only: "true"
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          sarif-file: bao-results.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: bao-results.sarif

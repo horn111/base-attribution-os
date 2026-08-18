@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/horn111/base-attribution-os/main/bao.schema.json",
+  "title": "Base Attribution OS configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["builderCodes"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "builderCodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^bc_[A-Za-z0-9._:-]+$" }
+    },
+    "profile": { "enum": ["local", "ci", "strict"] },
+    "include": { "type": "array", "items": { "type": "string" } },
+    "exclude": { "type": "array", "items": { "type": "string" } },
+    "baseline": { "type": "string" },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "missing-attribution": { "$ref": "#/$defs/severity" },
+        "wrong-builder-code": { "$ref": "#/$defs/severity" },
+        "dynamic-attribution": { "$ref": "#/$defs/severity" },
+        "ambiguous-path": { "$ref": "#/$defs/severity" }
+      }
+    }
+  },
+  "$defs": {
+    "severity": { "enum": ["error", "warning", "off"] }
+  }
+}

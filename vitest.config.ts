@@ -16,6 +16,9 @@ export default defineConfig({
       "@base-attribution-os/cli": fileURLToPath(
         new URL("./packages/cli/src/index.ts", import.meta.url),
       ),
+      "@base-attribution-os/scanner": fileURLToPath(
+        new URL("./packages/scanner/src/index.ts", import.meta.url),
+      ),
     },
   },
   test: {

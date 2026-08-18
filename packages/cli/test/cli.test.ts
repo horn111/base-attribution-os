@@ -77,9 +77,9 @@ export function Button() {
     expect(result.ok).toBe(false);
     expect(result.findings[0]).toMatchObject({
       reason: "missing-attribution",
-      marker: "useSendTransaction",
+      marker: "sendTransaction",
       family: "wagmi",
-      line: 5,
+      line: 6,
     });
   });
 
@@ -98,7 +98,7 @@ export async function batch(provider) {
     expect(result.ok).toBe(false);
     expect(result.findings[0]).toMatchObject({
       reason: "missing-attribution",
-      marker: "sendCalls",
+      marker: "wallet_sendCalls",
       family: "wallet",
       line: 3,
     });
@@ -120,9 +120,9 @@ export const transactionTool = {
     expect(result.ok).toBe(false);
     expect(result.findings[0]).toMatchObject({
       reason: "missing-attribution",
-      marker: "agentTransactionTool",
+      marker: "sendTransaction",
       family: "agent",
-      line: 2,
+      line: 4,
     });
   });
 
@@ -250,7 +250,7 @@ client.registerExtension(new BuilderCodeClientExtension("bc_wrong"));
     expect(result.ok).toBe(false);
     expect(result.findings[0]).toMatchObject({
       reason: "wrong-builder-code",
-      marker: "BuilderCodeClientExtension",
+      marker: "x402Client",
       family: "x402",
     });
   });

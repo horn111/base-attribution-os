@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@base-attribution-os/cli": "workspace:*"
+    "@base-attribution-os/cli": "workspace:*",
+    "@base-attribution-os/scanner": "workspace:*"
   }
 }

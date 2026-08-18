@@ -1,7 +1,7 @@
 # CI Validation
 
-The GitHub Action wraps `bao scan-repo` and fails pull requests when transaction
-candidate files appear to be missing the expected Builder Code.
+The GitHub Action runs Attribution Doctor and fails pull requests when supported
+transaction paths are missing verifiable Builder Code attribution.
 
 ```yaml
 name: Validate Attribution
@@ -14,32 +14,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
-          paths: "src,app,packages,examples"
           profile: "ci"
+          changed-only: "true"
+          sarif-output: "bao.sarif"
           fail-on-missing: "true"
 ```
 
 Use scanner profiles to tune enforcement:
 
-| Profile  | Default behavior                                                 |
-| -------- | ---------------------------------------------------------------- |
-| `local`  | Reports findings without failing, useful during rollout.         |
-| `ci`     | Fails obvious missing or wrong Builder Code usage.               |
-| `strict` | Requires the expected Builder Code or suffix in candidate files. |
+| Profile  | Default behavior                                              |
+| -------- | ------------------------------------------------------------- |
+| `local`  | Reports findings without failing, useful during rollout.      |
+| `ci`     | Fails obvious missing or wrong Builder Code usage.            |
+| `strict` | Requires every path to match verifiable attribution evidence. |
 
-Scanner v0.3 classifies common transaction markers by family:
+Attribution Doctor classifies call sites by family:
 
-| Family   | Markers                                                                                                                                      |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ethers` | `sendTransaction`, `populateTransaction` when ethers usage is detected                                                                       |
-| `viem`   | `sendTransaction`, `writeContract`, `prepareTransactionRequest`                                                                              |
-| `wagmi`  | `useSendTransaction`, `useWriteContract`                                                                                                     |
-| `wallet` | `sendCalls`, `wallet_sendCalls`                                                                                                              |
-| `agent`  | `transactionTool`, `agentTransactionTool`, `executeTransaction`, `onchainAction`, `sendTransactionTool`                                      |
-| `x402`   | `x402Client`, `wrapFetchWithPayment`, `BuilderCodeClientExtension`, `paymentMiddleware`, `x402ResourceServer`, `declareBuilderCodeExtension` |
+| Family   | Main evidence                                              |
+| -------- | ---------------------------------------------------------- |
+| `privy`  | Privy imports and project-level `dataSuffix` configuration |
+| `ethers` | ethers transaction calls and BAO signer wrappers           |
+| `viem`   | transaction calls and client-level `dataSuffix`            |
+| `wagmi`  | Wagmi transaction calls and config evidence                |
+| `rpc`    | `eth_sendTransaction` with an appended suffix              |
+| `wallet` | `sendCalls` or `wallet_sendCalls` with capabilities        |
+| `agent`  | transaction tools with an attributed send path             |
+| `x402`   | official buyer or seller Builder Code extensions           |
 
 Findings include:
 
@@ -47,7 +52,9 @@ Findings include:
 - line number
 - transaction family
 - marker
-- reason: `missing-attribution` or `wrong-builder-code`
+- attribution status and BAO rule ID
+- evidence, confidence, and suggested fix
 
-The scanner is conservative. It should catch obvious regressions without trying
-to replace code review.
+For large existing repos, use `changed-only` or a baseline. See
+[incremental-adoption.md](incremental-adoption.md). The Action also writes a
+coverage table to GitHub Step Summary and can emit SARIF.

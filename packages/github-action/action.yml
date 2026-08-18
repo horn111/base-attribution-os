@@ -6,8 +6,8 @@ branding:
   color: "blue"
 inputs:
   builder-code:
-    description: "Expected Builder Code, for example bc_abc123."
-    required: true
+    description: "Expected Builder Code(s), comma-separated. Optional when bao.config.json exists."
+    required: false
   path:
     description: "Repository root to scan."
     required: false
@@ -16,6 +16,10 @@ inputs:
     description: "Comma-separated subpaths to scan."
     required: false
     default: ""
+  config:
+    description: "Path to a BAO JSON config file."
+    required: false
+    default: "bao.config.json"
   profile:
     description: "Scanner profile: local reports findings without failing by default, ci fails obvious missing attribution, strict requires the expected Builder Code in candidate files."
     required: false
@@ -23,6 +27,37 @@ inputs:
   fail-on-missing:
     description: "Override the selected profile's default failure behavior."
     required: false
+  changed-only:
+    description: "Scan files changed from the PR base ref instead of the full project."
+    required: false
+    default: "false"
+  base-ref:
+    description: "Git ref used by changed-only. Defaults to the pull request base branch."
+    required: false
+    default: ""
+  baseline:
+    description: "Path to an attribution findings baseline."
+    required: false
+    default: ""
+  sarif-output:
+    description: "Optional path for a SARIF report, for example bao.sarif."
+    required: false
+    default: ""
+outputs:
+  checked-files:
+    description: "Number of source files checked."
+  transaction-paths:
+    description: "Number of transaction paths detected."
+  protected-paths:
+    description: "Number of paths with verified attribution evidence."
+  coverage:
+    description: "Percentage of protected transaction paths."
+  profile:
+    description: "Scanner profile used."
+  findings:
+    description: "JSON array of non-protected transaction paths."
+  sarif-file:
+    description: "Absolute path to the generated SARIF report."
 runs:
   using: "node20"
   main: "dist/index.js"
