@@ -24,7 +24,9 @@ Track these for each release:
 - packages published;
 - package downloads;
 - GitHub Action workflow references;
-- `bao scan-repo` candidate files checked in pilots;
+- `bao doctor` transaction paths checked in pilots;
+- protected-path coverage by transaction family;
+- new findings blocked after a baseline is adopted;
 - missing-attribution findings caught before deploy;
 - wrong-builder-code findings caught before deploy;
 - number of scanner families covered;

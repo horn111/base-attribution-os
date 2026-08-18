@@ -13,13 +13,13 @@ pnpm verify:release-candidate
 
 The script:
 
-- builds `@base-attribution-os/core`, `@base-attribution-os/viem`, and
-  `@base-attribution-os/cli`;
+- builds `@base-attribution-os/core`, `@base-attribution-os/scanner`,
+  `@base-attribution-os/viem`, and `@base-attribution-os/cli`;
 - runs `pnpm pack` for those packages;
 - creates a temporary external consumer project;
 - wires unpublished internal packages through temporary `pnpm.overrides`;
 - installs the packed tarballs;
-- runs `bao encode`, `bao check-calldata`, and `bao scan-repo`;
+- runs `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`;
 - removes the temporary workspace unless `BAO_KEEP_RELEASE_SMOKE=1` is set.
 
 No tarballs or temporary consumer files should be committed.
@@ -50,6 +50,6 @@ Only after an explicit release decision:
 ## Post-release proof
 
 - Install packages in a fresh external project from npm.
-- Run `bao encode`, `bao check-calldata`, and `bao scan-repo`.
+- Run `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`.
 - Record the result in `docs/grant/evidence-pack.md`.
 - Share the release post and invite pilot teams to open integration requests.

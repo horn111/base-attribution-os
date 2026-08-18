@@ -38,7 +38,7 @@ Deliverables:
 
 Acceptance criteria:
 
-- 3 repos or public cases validated with `bao scan-repo`;
+- 3 repos or public cases validated with `bao doctor`;
 - at least one missing-attribution case caught before deploy;
 - at least one wrong-builder-code case caught before deploy;
 - docs link to all pilot artifacts.

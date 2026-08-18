@@ -5,14 +5,18 @@ import type { Hex } from "@base-attribution-os/core";
 import { checkCalldataCommand } from "./commands/check-calldata.js";
 import { checkTransactionCommand } from "./commands/check-tx.js";
 import { decodeCommand } from "./commands/decode.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { encodeCommand } from "./commands/encode.js";
+import { initCommand } from "./commands/init.js";
 import { scanRepoCommand } from "./commands/scan-repo.js";
 import { CliError, printResult, required } from "./output.js";
 
 export { checkCalldataCommand } from "./commands/check-calldata.js";
 export { checkTransactionCommand } from "./commands/check-tx.js";
 export { decodeCommand } from "./commands/decode.js";
+export { doctorCommand, formatDoctorReport } from "./commands/doctor.js";
 export { encodeCommand } from "./commands/encode.js";
+export { initCommand } from "./commands/init.js";
 export { normalizeScanProfile, scanRepo, scanRepoCommand } from "./commands/scan-repo.js";
 export type {
   ScanFinding,
@@ -90,6 +94,43 @@ async function run(argv: string[]): Promise<void> {
     return setExitCode(result.ok);
   }
 
+  if (command === "init") {
+    const result = await initCommand({
+      path: options.path ?? ".",
+      builderCode: required(options["builder-code"], "--builder-code"),
+      force: options.force === "true",
+      profile: options.profile,
+    });
+    printResult(result, json);
+    return setExitCode(result.ok);
+  }
+
+  if (command === "doctor") {
+    const format = options.format ?? (json ? "json" : "human");
+    const builderCodes = (options["builder-codes"] ?? options["builder-code"])
+      ?.split(",")
+      .map((code) => code.trim())
+      .filter(Boolean);
+    const result = await doctorCommand({
+      path: options.path ?? ".",
+      builderCodes,
+      config: options.config,
+      profile: options.profile,
+      changedSince: options["changed-since"],
+      baseline: options.baseline,
+      writeBaseline: options["write-baseline"],
+      output: options.output,
+      format,
+    });
+
+    if (format === "json" || (format === "sarif" && !options.output)) {
+      console.log(JSON.stringify(result.data, null, 2));
+    } else {
+      console.log(result.message);
+    }
+    return setExitCode(result.ok);
+  }
+
   if (command === "scan-repo") {
     const result = await scanRepoCommand({
       path: options.path ?? ".",
@@ -146,6 +187,8 @@ function helpText(): string {
   return `Base Attribution OS CLI
 
 Usage:
+  bao init --builder-code bc_abc123
+  bao doctor [--changed-since origin/main] [--format human|json|sarif]
   bao encode --code bc_abc123
   bao decode --calldata 0x...
   bao check-calldata --calldata 0x... --expect bc_abc123
@@ -156,6 +199,12 @@ Options:
   --json                  Print machine-readable JSON
   --codes a,b             Encode multiple Builder Codes
   --profile local|ci|strict
+  --config path            Use a custom BAO config file
+  --changed-since ref      Audit only files changed since a Git ref
+  --baseline path          Ignore findings recorded in a baseline
+  --write-baseline path    Write current findings as a baseline
+  --format human|json|sarif
+  --output path            Write SARIF output to a file
   --fail-on-missing false Allow scan findings without failing
 `;
 }

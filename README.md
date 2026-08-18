@@ -6,8 +6,8 @@
 [![Base](https://img.shields.io/badge/Base-Builder%20Codes-0052ff.svg)](https://docs.base.org/apps/builder-codes/builder-codes)
 [![GitHub stars](https://img.shields.io/github/stars/horn111/base-attribution-os?style=social)](https://github.com/horn111/base-attribution-os)
 
-Add, validate, and enforce Base Builder Code attribution across x402, viem,
-wagmi, wallets, agents, and CI.
+Audit, validate, and enforce Base Builder Code attribution across Privy, x402,
+viem, wagmi, ethers, smart wallets, raw RPC, agents, and CI.
 
 Builder Codes are powerful, but attribution fails silently. Base Attribution OS
 turns attribution into a development workflow: SDK helpers append ERC-8021
@@ -15,9 +15,9 @@ suffixes for supported transaction clients, x402-aware scans enforce official
 Builder Code extensions, the CLI validates calldata and transactions, and CI
 catches missing Builder Codes before code ships.
 
-Update 4 adds x402 Builder Code CI support. Official x402 extensions make
-attribution native for paid HTTP flows; BAO checks that buyer and seller paths
-keep those extensions before code ships.
+Update 6 introduces Attribution Doctor: an AST-backed project audit that finds
+every supported transaction path, connects it to attribution evidence, reports
+coverage, and blocks new regressions with changed-only CI and baselines.
 
 ```mermaid
 flowchart LR
@@ -25,8 +25,8 @@ flowchart LR
   B --> C["ERC-8021 data suffix"]
   C --> D["Base transaction"]
   D --> E["Base.dev analytics, rewards, and visibility"]
-  B --> F["bao CLI"]
-  F --> G["GitHub Action"]
+  B --> F["bao doctor"]
+  F --> G["Coverage report + GitHub Action"]
 ```
 
 Built by [horn111](https://github.com/horn111). This is an independent OSS
@@ -56,12 +56,13 @@ leaderboard surfaces, and ecosystem visibility.
 The problem: most teams only notice missing attribution after transactions are
 already live.
 
-| Before                        | After                                             |
-| ----------------------------- | ------------------------------------------------- |
-| Builder Code lives in docs    | Builder Code lives in SDK config and CI           |
-| Missing suffix fails silently | PR fails before deploy                            |
-| Manual calldata inspection    | `bao check-calldata` and `bao check-tx`           |
-| One-off app setup             | Shared checks for SDKs, x402, wallets, and agents |
+| Before                        | After                                           |
+| ----------------------------- | ----------------------------------------------- |
+| Builder Code lives in docs    | Builder Code lives in SDK config and CI         |
+| Missing suffix fails silently | PR fails before deploy                          |
+| Manual calldata inspection    | `bao check-calldata` and `bao check-tx`         |
+| One-off app setup             | Project-wide transaction-path coverage          |
+| Existing attribution debt     | Baseline old findings and block new regressions |
 
 Official context:
 
@@ -102,15 +103,15 @@ path to fail before an unattributed transaction ships.
 
 ## Grant-ready status
 
-| Current shipped surface            | Next funded milestone                |
-| ---------------------------------- | ------------------------------------ |
-| Core ERC-8021 helpers              | Public `v0.1.0` package release      |
-| viem, wagmi, ethers helpers        | Three pilot integrations             |
-| `bao` encode/decode/check/scan CLI | Public attribution fixture set       |
-| GitHub Action wrapper              | Dune attribution replay templates    |
-| x402 buyer/seller scanner support  | Measurement report for Base builders |
-| Vercel Scanner playground          | Wallet and agent pilot fixtures      |
-| Verified onchain proof tx          | Dune attribution replay templates    |
+| Current shipped surface                        | Next funded milestone                |
+| ---------------------------------------------- | ------------------------------------ |
+| Core ERC-8021 and SDK helpers                  | Public `v0.1.0` package release      |
+| AST-backed Attribution Doctor                  | Three pilot integrations             |
+| Privy, RPC, wallet, agent, and x402 rules      | Dune attribution replay templates    |
+| Config, baseline, changed-only, JSON and SARIF | Measurement report for Base builders |
+| GitHub Action annotations and job summary      | First external CI adoption reports   |
+| Public broken/fixed fixture lab                | Additional production fixtures       |
+| Verified onchain proof transaction             | Attribution replay report            |
 
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).
@@ -118,7 +119,7 @@ live in [docs/grant](docs/grant).
 ## Release candidate status
 
 BAO is now preparing for `v0.1.0`. The current repo includes a release-candidate
-verification script that packs the core, CLI, and viem adapter packages, installs
+verification script that packs the core, scanner, CLI, and viem adapter packages, installs
 them into a fresh external consumer project, and runs the basic `bao` smoke
 commands.
 
@@ -151,13 +152,20 @@ package release:
 pnpm add @base-attribution-os/core @base-attribution-os/viem
 # or, for ethers projects:
 pnpm add @base-attribution-os/core @base-attribution-os/ethers
-pnpm add -D @base-attribution-os/cli
+pnpm add -D @base-attribution-os/cli @base-attribution-os/scanner
 ```
 
 Encode a Builder Code suffix:
 
 ```bash
 node packages/cli/dist/index.js encode --code bc_abc123
+```
+
+Initialize Attribution Doctor and audit the project:
+
+```bash
+node packages/cli/dist/index.js init --builder-code bc_abc123
+node packages/cli/dist/index.js doctor
 ```
 
 Use it with viem:
@@ -247,24 +255,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: horn111/base-attribution-os/packages/github-action@main
         with:
           builder-code: bc_abc123
-          paths: "src,app,packages,examples"
           profile: "ci"
-          fail-on-missing: "true"
+          changed-only: "true"
+          sarif-output: "bao.sarif"
 ```
 
 ## Packages
 
-| Package                              | Purpose                                   | Install                                | Maturity |
-| ------------------------------------ | ----------------------------------------- | -------------------------------------- | -------- |
-| `@base-attribution-os/core`          | ERC-8021 encode, decode, append, validate | `pnpm add @base-attribution-os/core`   | MVP      |
-| `@base-attribution-os/viem`          | viem `dataSuffix` and client helpers      | `pnpm add @base-attribution-os/viem`   | MVP      |
-| `@base-attribution-os/wagmi`         | wagmi config and hook helpers             | `pnpm add @base-attribution-os/wagmi`  | MVP      |
-| `@base-attribution-os/ethers`        | ethers transaction and signer helpers     | `pnpm add @base-attribution-os/ethers` | MVP      |
-| `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli` | MVP      |
-| `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                          | MVP      |
+| Package                              | Purpose                                   | Install                                    | Maturity |
+| ------------------------------------ | ----------------------------------------- | ------------------------------------------ | -------- |
+| `@base-attribution-os/core`          | ERC-8021 encode, decode, append, validate | `pnpm add @base-attribution-os/core`       | MVP      |
+| `@base-attribution-os/viem`          | viem `dataSuffix` and client helpers      | `pnpm add @base-attribution-os/viem`       | MVP      |
+| `@base-attribution-os/wagmi`         | wagmi config and hook helpers             | `pnpm add @base-attribution-os/wagmi`      | MVP      |
+| `@base-attribution-os/ethers`        | ethers transaction and signer helpers     | `pnpm add @base-attribution-os/ethers`     | MVP      |
+| `@base-attribution-os/scanner`       | AST project audit, rules, baseline, SARIF | `pnpm add -D @base-attribution-os/scanner` | RC       |
+| `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli`     | MVP      |
+| `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                              | MVP      |
 
 NPM packages are not published yet. Until the first release, use the workspace
 directly or pin the GitHub Action to `@main`.
@@ -272,6 +283,11 @@ directly or pin the GitHub Action to `@main`.
 ## CLI
 
 ```bash
+bao init --builder-code bc_abc123
+bao doctor
+bao doctor --changed-since origin/main
+bao doctor --format sarif --output bao.sarif
+bao doctor --write-baseline .bao-baseline.json
 bao encode --code bc_abc123
 bao decode --calldata 0x...
 bao check-calldata --calldata 0x... --expect bc_abc123
@@ -282,15 +298,34 @@ bao scan-repo --path . --builder-code bc_abc123 --profile ci
 When running from this repository before npm publish, replace `bao` with
 `node packages/cli/dist/index.js`.
 
-`scan-repo` classifies common transaction entrypoints across viem, wagmi,
-ethers, wallet, agent, and x402 flows. Findings include the file, line,
-transaction family, and marker that triggered the check.
+`doctor` uses TypeScript ASTs to report every supported transaction call site,
+its attribution status, rule ID, evidence, confidence, and suggested fix.
+`scan-repo` remains as a compatibility command for existing integrations.
 
 Profiles let teams choose the right enforcement level:
 
-- `local`: report findings while teams are wiring attribution in.
-- `ci`: fail obvious missing or wrong Builder Code usage.
-- `strict`: require the expected Builder Code or suffix in candidate files.
+- `local`: report without blocking integration work.
+- `ci`: fail missing or wrong attribution while warning on dynamic config.
+- `strict`: require attribution that can be matched to a configured Builder Code.
+
+## Attribution Doctor
+
+Commit a `bao.config.json` once, then run the same policy locally and in CI:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/horn111/base-attribution-os/main/bao.schema.json",
+  "builderCodes": ["bc_abc123"],
+  "profile": "ci",
+  "include": ["src", "app", "packages"],
+  "exclude": ["**/*.test.*", "**/generated/**"]
+}
+```
+
+Rule IDs distinguish missing attribution (`BAO001`), wrong codes (`BAO002`),
+dynamic configuration (`BAO003`), smart-wallet capability gaps (`BAO005`), and
+x402 extension gaps (`BAO006`). See
+[docs/attribution-doctor.md](docs/attribution-doctor.md) for the full workflow.
 
 ## x402 Builder Codes in CI
 
@@ -324,12 +359,13 @@ limitations.
 ## Roadmap
 
 - MVP: core, viem, wagmi, CLI, GitHub Action, examples, README.
-- Shipped: scanner v0.2 for viem, wagmi, wallet, and agent transaction flows.
+- Shipped: AST-backed Attribution Doctor with project coverage reports.
 - Shipped: ethers adapter and scanner profiles for stricter CI.
 - Shipped: Vercel scanner playground.
 - Update 4: x402 Builder Codes CI support for buyer and seller payment paths.
-- Next: wallet middleware for `sendCalls` and smart account frameworks.
-- Next: public x402 pilot fixtures and stricter real-world scan cases.
+- Shipped: Privy, raw RPC, smart-wallet, x402, wallet, and agent fixtures.
+- Shipped: changed-only enforcement, baselines, SARIF, and Action summaries.
+- Next: external pilot integrations and rule tuning against production repos.
 - Next: Dune query templates for attributed transaction replay.
 - Next: local dashboard, alerts, and shareable progress cards for X.
 - Later: pilot integrations, public leaderboard screenshots, and grant reports.

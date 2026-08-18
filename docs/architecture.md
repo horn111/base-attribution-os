@@ -8,8 +8,11 @@ apps, and in CI.
 
 - Core: ERC-8021 suffix encode, decode, append, and validate.
 - Adapters: tiny helpers for viem, wagmi, and ethers transaction flows.
-- CLI: local validation for calldata, transaction hashes, and repository scans.
-- GitHub Action: CI wrapper around `bao scan-repo`.
+- Scanner: AST-backed transaction discovery, rule evaluation, baselines, and
+  SARIF output.
+- CLI: `bao doctor`, config initialization, calldata, transaction, and
+  compatibility scan commands.
+- GitHub Action: annotations and coverage summaries around the Doctor report.
 - Examples: reference integrations for apps, wallets, agents, and x402 payment
   paths.
 
@@ -26,8 +29,9 @@ sequenceDiagram
   App->>SDK: Builder Code config
   SDK->>App: ERC-8021 dataSuffix
   App->>Tx: send transaction with suffix
+  CLI->>App: audit transaction paths
   CLI->>Tx: decode or check calldata
-  CI->>CLI: scan repo during PR
+  CI->>CLI: changed-only Doctor audit
 ```
 
 ## Boundaries
@@ -39,5 +43,8 @@ is present.
 Scanner profiles define how strongly repository scans should enforce attribution:
 
 - `local`: surface findings without blocking integration work by default.
-- `ci`: fail obvious missing or wrong Builder Code usage.
-- `strict`: require the expected Builder Code or suffix inside candidate files.
+- `ci`: fail missing or wrong Builder Codes and warn on dynamic evidence.
+- `strict`: require every path to match verifiable attribution evidence.
+
+The AST layer is intentionally static. It recognizes project-level SDK config
+and direct call-site evidence, but does not execute environment-dependent code.

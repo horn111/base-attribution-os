@@ -51,7 +51,12 @@ and production code.
   `scan-repo`.
 - Scanner profiles: `local`, `ci`, and `strict`.
 - Scanner families: viem, wagmi, ethers, wallet `sendCalls`, agents, and x402.
-- Vercel demo: Scanner playground for transaction and x402 attribution checks.
+- AST-backed Attribution Doctor with Privy, raw RPC, smart-wallet, x402, and
+  agent rules.
+- Project config, changed-only enforcement, baselines, JSON, and SARIF reports.
+- GitHub Action inline annotations and transaction-family coverage summaries.
+- Public broken/fixed fixture lab for six Base integration paths.
+- Vercel demo: interactive Attribution Audit with rule IDs and fixes.
 - Docs for CI validation, x402 Builder Codes, integrations, architecture,
   roadmap, and launch content.
 
@@ -80,8 +85,8 @@ Grant funding would support the work that is hardest to sustain as unpaid OSS
 maintenance:
 
 - supporting pilot teams while they integrate BAO into real repositories;
-- keeping scanner coverage current as official Builder Code and x402 patterns
-  change;
+- keeping AST rules current as official Builder Code, wallet, Privy, and x402
+  patterns change;
 - publishing public fixture repos that reviewers and builders can inspect;
 - documenting real attribution regressions caught before deploy;
 - connecting validation output to Dune/replay measurement so Base can see how
@@ -112,7 +117,7 @@ Base teams a stable install path for CI validation.
 
 Deliverables:
 
-- complete three pilot integrations or public fixture repos;
+- complete three pilot integrations beyond the shipped fixture lab;
 - cover at least one app flow, one x402 flow, and one wallet or agent flow;
 - publish PR examples showing missing and wrong Builder Codes caught by CI;
 - collect issue templates and case reports from pilot usage.

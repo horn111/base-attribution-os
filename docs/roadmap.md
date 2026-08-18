@@ -13,16 +13,20 @@
 - Vercel scanner playground.
 - x402 Builder Codes CI support for buyer and seller payment paths.
 - v0.1 release candidate verification script and pilot docs.
+- Update 6 Attribution Doctor with AST-backed per-call-site analysis.
+- Privy, raw RPC, smart-wallet, x402, and agent fixture coverage.
+- `bao.config.json`, changed-only audits, baselines, JSON, and SARIF.
+- GitHub Action inline annotations and coverage summaries.
+- Attribution Audit demo with broken/fixed fixtures.
 
 ## v0.1
 
 - Publish stable `@base-attribution-os/*` packages.
 - Pin the GitHub Action to `v0`.
 - Pass external consumer install verification from packed tarballs.
-- Add public x402 buyer and seller fixture repos.
-- Add wallet `sendCalls` and agent transaction fixtures.
-- Better scanner rules with AST parsing.
-- Wallet `sendCalls` middleware examples.
+- Validate rules against at least three external or self-owned production apps.
+- Add public x402 seller and multi-file wallet fixtures.
+- Tune project-level evidence across more monorepo layouts.
 - Public fixture set for real transaction calldata.
 
 ## v0.2

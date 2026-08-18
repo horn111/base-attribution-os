@@ -1,6 +1,6 @@
 # x402 Builder Codes in CI
 
-Update 4 adds x402-aware attribution checks to Base Attribution OS. The goal is
+Attribution Doctor includes x402-aware AST checks in Base Attribution OS. The goal is
 simple: x402 teams should be able to use the official Builder Code extensions
 and then let CI catch missing attribution before deploy.
 
@@ -29,7 +29,7 @@ client.registerExtension(new BuilderCodeClientExtension("bc_abc123"));
 export const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 ```
 
-`bao scan-repo` treats x402 client code as a candidate when it sees markers such
+`bao doctor` treats x402 client code as a candidate when it sees calls such
 as `x402Client`, `wrapFetchWithPayment`, `registerExtension`, or
 `BuilderCodeClientExtension`.
 

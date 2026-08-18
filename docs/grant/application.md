@@ -49,7 +49,10 @@ attribution readiness.
 
 - TypeScript monorepo with core, viem, wagmi, ethers, CLI, and GitHub Action
   packages.
-- `bao encode`, `decode`, `check-calldata`, `check-tx`, and `scan-repo`.
+- `bao init`, `doctor`, `encode`, `decode`, `check-calldata`, `check-tx`, and
+  compatibility `scan-repo`.
+- AST-backed rules for Privy, raw RPC, smart wallets, x402, and agent paths.
+- Changed-only CI, baselines, SARIF, inline annotations, and coverage summaries.
 - Scanner profiles: `local`, `ci`, `strict`.
 - Scanner families: viem, wagmi, ethers, wallet, agent, and x402.
 - GitHub Action wrapper for pull request enforcement.

@@ -43,6 +43,10 @@ grant submission.
 - Fallow pre-grant audit summary: `docs/grant/fallow-summary.md`
 - v0.1 release candidate checklist: `docs/release-checklist.md`
 - Pilot integration guide: `docs/pilot-integration.md`
+- Attribution Doctor: `docs/attribution-doctor.md`
+- Public fixture lab: `fixtures/`
+- Incremental CI and baseline workflow: `docs/incremental-adoption.md`
+- SARIF and GitHub Code Scanning: `docs/sarif-and-code-scanning.md`
 - CI validation docs: `docs/ci-validation.md`
 - Launch content: `docs/launch/x-posts.md`
 - Complementary checker note: BAO complements the public Builder Code Validation
@@ -52,8 +56,8 @@ grant submission.
 
 1. Open https://base-attribution-os.vercel.app.
 2. Start in Scanner mode.
-3. Select `x402 client` and show missing attribution.
-4. Select `x402 seller` and show passing Builder Code attribution.
+3. Select a broken smart-wallet or x402 fixture and show its BAO rule.
+4. Switch to `fixed` and show coverage move to 100%.
 5. Switch through `local`, `ci`, and `strict` profiles.
 6. Copy the GitHub Action YAML.
 

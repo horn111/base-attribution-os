@@ -1,45 +1,152 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import * as core from "@actions/core";
-import { scanRepo } from "@base-attribution-os/cli";
+import {
+  analyzeProject,
+  loadBaoConfig,
+  reportToSarif,
+  type AttributionReport,
+} from "@base-attribution-os/scanner";
 
 async function main(): Promise<void> {
-  const builderCode = core.getInput("builder-code", { required: true });
-  const repoPath = core.getInput("path") || ".";
-  const paths = core
-    .getInput("paths")
+  const repoPath = path.resolve(core.getInput("path") || ".");
+  const configPath = core.getInput("config") || undefined;
+  const loaded = await loadBaoConfig(repoPath, configPath);
+  const config = loaded?.config;
+  const builderCodes = splitInput(core.getInput("builder-code"));
+
+  if (builderCodes.length === 0 && !config?.builderCodes.length) {
+    throw new Error("Set builder-code or commit a bao.config.json file.");
+  }
+
+  const paths = splitInput(core.getInput("paths"));
+  const profile = core.getInput("profile") || config?.profile || "ci";
+  const changedOnly = core.getBooleanInput("changed-only");
+  const changedSince = changedOnly ? resolveBaseRef() : undefined;
+  const baseline = core.getInput("baseline") || config?.baseline;
+  const report = await analyzeProject({
+    root: repoPath,
+    builderCodes: builderCodes.length ? builderCodes : (config?.builderCodes ?? []),
+    include: paths.length ? paths : config?.include,
+    exclude: config?.exclude,
+    rules: config?.rules,
+    profile,
+    baseline,
+    changedSince,
+  });
+
+  await annotate(report);
+  await writeSummary(report, changedSince);
+  await writeSarif(repoPath, report);
+  setOutputs(report);
+
+  const failOnMissingInput = core.getInput("fail-on-missing");
+  const failOnMissing =
+    failOnMissingInput.length === 0 ? true : failOnMissingInput.toLowerCase() !== "false";
+
+  if (!report.ok && failOnMissing) {
+    core.setFailed(`Base attribution validation failed with ${report.summary.errors} error(s).`);
+  }
+}
+
+async function annotate(report: AttributionReport): Promise<void> {
+  core.info(`Using ${report.profile} Attribution Doctor profile.`);
+  core.info(`Checked ${report.checkedFiles} source file(s).`);
+  core.info(`Protected ${report.summary.protected}/${report.summary.total} transaction path(s).`);
+
+  for (const finding of report.transactionPaths.filter(
+    (entry) => entry.status !== "protected" && !entry.baseline,
+  )) {
+    const properties = {
+      file: finding.file,
+      startLine: finding.line,
+      startColumn: finding.column,
+      title: `${finding.ruleId ?? "BAO"}: ${finding.status}`,
+    };
+    const message = finding.suggestion
+      ? `${finding.message} ${finding.suggestion}`
+      : finding.message;
+
+    if (finding.severity === "error") core.error(message, properties);
+    else if (finding.severity === "warning") core.warning(message, properties);
+  }
+}
+
+async function writeSummary(report: AttributionReport, changedSince?: string): Promise<void> {
+  const familyRows = Array.from(new Set(report.transactionPaths.map((entry) => entry.family)))
+    .sort()
+    .map((family) => {
+      const paths = report.transactionPaths.filter((entry) => entry.family === family);
+      return [
+        family,
+        String(paths.filter((entry) => entry.status === "protected").length),
+        String(paths.length),
+      ];
+    });
+
+  core.summary
+    .addHeading("Base Attribution Doctor", 2)
+    .addRaw(
+      `${report.summary.protected}/${report.summary.total} transaction paths protected (${report.summary.coverage}%).`,
+    )
+    .addEOL()
+    .addRaw(
+      `Errors: ${report.summary.errors} | Warnings: ${report.summary.warnings} | Baseline: ${report.summary.baseline}`,
+    )
+    .addEOL();
+
+  if (changedSince) {
+    core.summary.addRaw(`Changed files since \`${changedSince}\` only.`).addEOL();
+  }
+
+  if (familyRows.length > 0) {
+    core.summary.addTable([
+      [
+        { data: "Family", header: true },
+        { data: "Protected", header: true },
+        { data: "Total", header: true },
+      ],
+      ...familyRows,
+    ]);
+  }
+
+  await core.summary.write();
+}
+
+async function writeSarif(root: string, report: AttributionReport): Promise<void> {
+  const output = core.getInput("sarif-output");
+  if (!output) return;
+
+  const target = path.resolve(root, output);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, `${JSON.stringify(reportToSarif(report), null, 2)}\n`, "utf8");
+  core.setOutput("sarif-file", target);
+}
+
+function setOutputs(report: AttributionReport): void {
+  core.setOutput("checked-files", String(report.checkedFiles));
+  core.setOutput("transaction-paths", String(report.summary.total));
+  core.setOutput("protected-paths", String(report.summary.protected));
+  core.setOutput("coverage", String(report.summary.coverage));
+  core.setOutput("profile", report.profile);
+  core.setOutput(
+    "findings",
+    JSON.stringify(report.transactionPaths.filter((entry) => entry.status !== "protected")),
+  );
+}
+
+function resolveBaseRef(): string {
+  const configured = core.getInput("base-ref");
+  if (configured) return configured;
+  if (process.env.GITHUB_BASE_REF) return `origin/${process.env.GITHUB_BASE_REF}`;
+  return "HEAD~1";
+}
+
+function splitInput(value: string): string[] {
+  return value
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
-  const failOnMissingInput = core.getInput("fail-on-missing");
-  const failOnMissing =
-    failOnMissingInput.length === 0 ? undefined : failOnMissingInput !== "false";
-  const profile = core.getInput("profile") || "ci";
-
-  const result = await scanRepo({
-    path: repoPath,
-    paths,
-    builderCode,
-    failOnMissing,
-    profile,
-  });
-
-  core.info(`Using ${result.profile} scanner profile.`);
-  core.info(`Checked ${result.checkedFiles} source file(s).`);
-  core.info(`Found ${result.candidateFiles} transaction candidate file(s).`);
-
-  for (const finding of result.findings) {
-    core.warning(
-      `${finding.reason} in ${finding.file}:${finding.line} near ${finding.marker} (${finding.family})`,
-    );
-  }
-
-  core.setOutput("checked-files", String(result.checkedFiles));
-  core.setOutput("candidate-files", String(result.candidateFiles));
-  core.setOutput("profile", result.profile);
-  core.setOutput("findings", JSON.stringify(result.findings));
-
-  if (!result.ok) {
-    core.setFailed(`Base attribution validation failed with ${result.findings.length} finding(s).`);
-  }
 }
 
 main().catch((error) => {

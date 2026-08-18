@@ -115,6 +115,9 @@ importers:
       '@base-attribution-os/core':
         specifier: workspace:*
         version: link:../core
+      '@base-attribution-os/scanner':
+        specifier: workspace:*
+        version: link:../scanner
 
   packages/core: {}
 
@@ -132,6 +135,18 @@ importers:
       '@base-attribution-os/cli':
         specifier: workspace:*
         version: link:../cli
+      '@base-attribution-os/scanner':
+        specifier: workspace:*
+        version: link:../scanner
+
+  packages/scanner:
+    dependencies:
+      '@base-attribution-os/core':
+        specifier: workspace:*
+        version: link:../core
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/viem:
     dependencies:

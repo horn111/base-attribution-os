@@ -168,6 +168,41 @@ wallet + agent attribution fixtures.
 The goal: public examples that show BAO catching missing Builder Codes in
 batched wallet calls and autonomous transaction tools before deploy.
 
+## Attribution Doctor post
+
+Base Attribution OS Update 6.
+
+BAO can now audit an entire Base project, not just spot a marker in one file.
+
+Attribution Doctor finds transaction paths across Privy, Wagmi, Viem, ethers,
+raw RPC, smart wallets, x402, and agents, then reports what is protected, missing,
+wrong, or impossible to verify statically.
+
+Also shipped:
+
+- AST-backed rules
+- `bao.config.json`
+- changed-only CI and baselines
+- JSON and SARIF reports
+- GitHub annotations and coverage summaries
+- public broken/fixed fixtures
+
+Try the audit demo:
+https://base-attribution-os.vercel.app
+
+Star the repo if Builder Code attribution should be testable before deploy:
+https://github.com/horn111/base-attribution-os
+
+@base @CoinbaseDev
+
+## Attribution Doctor next-update teaser
+
+Next: run Attribution Doctor against real production repositories.
+
+The goal is not another synthetic scanner score. It is public pilot reports
+showing which transaction paths lost attribution, what BAO caught, and what
+changed before deploy.
+
 ## Weekly update template
 
 Week N of Base Attribution OS:

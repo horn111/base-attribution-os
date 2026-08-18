@@ -13,6 +13,7 @@ type PackedPackage = {
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packagesToVerify = [
   { dir: "packages/core", packageName: "@base-attribution-os/core" },
+  { dir: "packages/scanner", packageName: "@base-attribution-os/scanner" },
   { dir: "packages/viem", packageName: "@base-attribution-os/viem" },
   { dir: "packages/cli", packageName: "@base-attribution-os/cli" },
 ];
@@ -27,6 +28,7 @@ mkdirSync(consumerDir, { recursive: true });
 try {
   log(`workspace: ${workspace}`);
   run("pnpm", ["--filter", "@base-attribution-os/core", "build"], repoRoot);
+  run("pnpm", ["--filter", "@base-attribution-os/scanner", "build"], repoRoot);
   run("pnpm", ["--filter", "@base-attribution-os/viem", "build"], repoRoot);
   run("pnpm", ["--filter", "@base-attribution-os/cli", "build"], repoRoot);
 
@@ -46,6 +48,7 @@ try {
         pnpm: {
           overrides: {
             "@base-attribution-os/core": dependencySpecs["@base-attribution-os/core"],
+            "@base-attribution-os/scanner": dependencySpecs["@base-attribution-os/scanner"],
           },
         },
       },
@@ -110,6 +113,20 @@ await walletClient.sendTransaction({
     ],
     consumerDir,
   );
+
+  writeFileSync(
+    path.join(consumerDir, "bao.config.json"),
+    JSON.stringify(
+      {
+        builderCodes: ["bc_abc123"],
+        profile: "strict",
+        include: ["attributed.ts"],
+      },
+      null,
+      2,
+    ),
+  );
+  run("pnpm", ["exec", "bao", "doctor"], consumerDir);
 
   log("release candidate smoke passed");
   log(`packed packages: ${packed.map((entry) => entry.packageName).join(", ")}`);

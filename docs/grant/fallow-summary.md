@@ -44,22 +44,22 @@ Raw JSON reports are not committed. This file is the reviewer-facing summary.
 
 ## Accepted
 
-- `apps/docs/app/page.tsx` remains a known demo hotspot. It is intentionally a
-  compact client-side playground for grant reviewers and should be split only
-  after the grant-facing demo stabilizes.
-- `packages/cli/src/commands/scan-repo.ts` remains a scanner hotspot. It already
-  has focused CLI tests; AST-backed scanning and parser extraction are better
-  follow-up work than a rushed pre-submit refactor.
 - Generated GitHub Action bundle output is not treated as audit source.
 
 ## Follow-Up
 
 - Re-run Fallow after this cleanup if a final machine-verifiable report is
   needed for the grant packet.
-- Split the demo page into smaller components once the scanner UI stops changing
-  weekly.
-- Extract scanner pattern definitions and matching utilities before expanding
-  beyond regex-based detection.
+- Re-run Fallow after Attribution Doctor stabilizes and record any new package
+  architecture findings.
+
+## Update 6 resolution
+
+The scanner hotspot identified by this audit has been replaced by the dedicated
+`@base-attribution-os/scanner` package. It uses TypeScript ASTs, per-call-site
+reports, public fixtures, baselines, and SARIF. `scan-repo` is now a compatibility
+wrapper around that engine. The legacy scanner demo route was removed after the
+Attribution Doctor production build passed.
 
 ## Final Status
 
