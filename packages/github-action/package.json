@@ -11,7 +11,7 @@
     "action.yml",
     "dist"
   ],
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "scripts": {
     "build": "tsup",
     "clean": "rimraf dist",

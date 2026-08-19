@@ -6,6 +6,7 @@
 
 - Publish the first public Base Attribution OS release with ERC-8021 SDK helpers,
   Attribution Doctor, CLI validation, and GitHub Action enforcement.
+- Run the Action as a CommonJS bundle on the Node.js 24 runtime.
 
 ### Patch Changes
 
