@@ -1,9 +1,12 @@
 {
   "name": "@base-attribution-os/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Core ERC-8021 Builder Code suffix helpers for Base Attribution OS.",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "files": [
     "dist"

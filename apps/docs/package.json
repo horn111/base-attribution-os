@@ -4,20 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit",
+    "build": "next typegen && tsc -p tsconfig.json --noEmit",
     "build:next": "next build",
     "clean": "rimraf .next",
     "dev": "next dev",
     "vercel-build": "next build",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "next typegen && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "next": "^14.2.23",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "next": "^16.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5"
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4"
   }
 }

@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: horn111/base-attribution-os/packages/github-action@main
+      - uses: horn111/base-attribution-os/packages/github-action@v0
         with:
           builder-code: bc_abc123
           paths: "src,app,packages"
@@ -103,4 +103,5 @@ Builder Code or suffix in the candidate file.
 - No facilitator or settlement verification.
 - No hosted payment processor behavior.
 - No reward eligibility oracle.
-- Regex-based scanning only; AST-backed validation is a future roadmap item.
+- Static AST analysis only; BAO does not execute dynamic x402 configuration or
+  follow values resolved at runtime.
