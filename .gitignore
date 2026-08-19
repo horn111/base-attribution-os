@@ -2,7 +2,7 @@ node_modules
 .pnpm-store
 dist
 !packages/github-action/dist/
-!packages/github-action/dist/index.js
+!packages/github-action/dist/index.cjs
 .turbo
 .next
 .vercel
@@ -15,3 +15,5 @@ pnpm-debug.log*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/docs/grant/
