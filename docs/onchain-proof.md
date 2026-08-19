@@ -9,8 +9,8 @@ transaction:
 bc_vwmzy653
 ```
 
-The goal is to make the project prove its own thesis: Builder Code attribution
-should be visible, testable, and easy to verify before grant review.
+The project uses this transaction to prove its own workflow: Builder Code
+attribution should be visible, testable, and easy to verify before deploy.
 
 Do not use this Builder Code in your app. It exists only for BAO's own onchain
 proof. Replace examples with your own Builder Code from Base.
@@ -27,11 +27,10 @@ proof. Replace examples with your own Builder Code from Base.
 
 ## Create the suffix
 
-Build the workspace, then generate the ERC-8021 suffix:
+Generate the ERC-8021 suffix with the published CLI:
 
 ```bash
-pnpm build
-node packages/cli/dist/index.js encode --code bc_vwmzy653
+pnpm dlx @base-attribution-os/cli@0.1.0 encode --code bc_vwmzy653
 ```
 
 ## Send the transaction
@@ -47,7 +46,7 @@ repository.
 After the transaction is mined:
 
 ```bash
-node packages/cli/dist/index.js check-tx \
+pnpm dlx @base-attribution-os/cli@0.1.0 check-tx \
   --hash 0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926 \
   --rpc-url https://mainnet.base.org \
   --expect bc_vwmzy653
@@ -67,8 +66,8 @@ You can also cross-check the same transaction in the
 from Base docs. That checker is useful after a transaction exists. BAO is useful
 before deploy and again here as a CLI proof.
 
-## Grant reviewer note
+## Proof scope
 
-This proof is intentionally small. BAO is not trying to create a decorative
-contract deployment. The evidence should show that the project can use its own
-CLI to verify a real Base transaction attributed with its own Builder Code.
+This focused proof shows that BAO can use its own CLI to verify a real Base
+transaction attributed with its own Builder Code. It does not require a custom
+contract deployment.
