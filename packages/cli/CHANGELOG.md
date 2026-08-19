@@ -1,0 +1,16 @@
+# @base-attribution-os/cli
+
+## 0.1.0
+
+### Minor Changes
+
+- Publish the first public Base Attribution OS release with ERC-8021 SDK helpers,
+  Attribution Doctor, CLI validation, and GitHub Action enforcement.
+
+### Patch Changes
+
+- 0506a04: Add ethers attribution helpers and scanner profiles for local, CI, and strict enforcement.
+- 949eba7: Add scanner v0.2 patterns for viem, wagmi, wallet sendCalls, and agent transaction tools.
+- Updated dependencies
+  - @base-attribution-os/core@0.1.0
+  - @base-attribution-os/scanner@0.1.0

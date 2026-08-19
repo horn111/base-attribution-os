@@ -19,11 +19,14 @@
 - GitHub Action inline annotations and coverage summaries.
 - Attribution Audit demo with broken/fixed fixtures.
 
-## v0.1
+## v0.1 (shipped)
 
-- Publish stable `@base-attribution-os/*` packages.
-- Pin the GitHub Action to `v0`.
-- Pass external consumer install verification from packed tarballs.
+- Published `@base-attribution-os/*` packages at `v0.1.0`.
+- Stable GitHub Action ref at `v0`.
+- External consumer install verification from all seven packed packages.
+
+## Next
+
 - Validate rules against at least three external or self-owned production apps.
 - Add public x402 seller and multi-file wallet fixtures.
 - Tune project-level evidence across more monorepo layouts.

@@ -105,8 +105,8 @@ path to fail before an unattributed transaction ships.
 
 | Current shipped surface                        | Next funded milestone                |
 | ---------------------------------------------- | ------------------------------------ |
-| Core ERC-8021 and SDK helpers                  | Public `v0.1.0` package release      |
-| AST-backed Attribution Doctor                  | Three pilot integrations             |
+| Public `v0.1.0` SDK and CLI packages           | Three pilot integrations             |
+| AST-backed Attribution Doctor                  | Dune attribution replay templates    |
 | Privy, RPC, wallet, agent, and x402 rules      | Dune attribution replay templates    |
 | Config, baseline, changed-only, JSON and SARIF | Measurement report for Base builders |
 | GitHub Action annotations and job summary      | First external CI adoption reports   |
@@ -116,12 +116,12 @@ path to fail before an unattributed transaction ships.
 Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
 live in [docs/grant](docs/grant).
 
-## Release candidate status
+## v0.1.0 release
 
-BAO is now preparing for `v0.1.0`. The current repo includes a release-candidate
-verification script that packs the core, scanner, CLI, and viem adapter packages, installs
-them into a fresh external consumer project, and runs the basic `bao` smoke
-commands.
+BAO `v0.1.0` is the first public package release. The release verification
+script packs all seven public packages, installs them into a fresh external
+consumer project, compares the viem, wagmi, and ethers adapter output, and runs
+the core `bao` smoke commands.
 
 Run it locally:
 
@@ -129,24 +129,9 @@ Run it locally:
 pnpm verify:release-candidate
 ```
 
-Public npm publishing, `v0.1.0` tags, and the stable GitHub Action ref `v0` are
-separate release steps. Until then, package install commands below describe the
-intended public interface, not a published npm release.
-
 ## 60-second quickstart
 
-Base Attribution OS is currently a `v0.1` release candidate. Clone and build the
-workspace locally:
-
-```bash
-git clone https://github.com/horn111/base-attribution-os.git
-cd base-attribution-os
-pnpm install
-pnpm build
-```
-
-The package names below are the intended npm interface for the first public
-package release:
+Install the packages for your transaction client:
 
 ```bash
 pnpm add @base-attribution-os/core @base-attribution-os/viem
@@ -257,7 +242,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: horn111/base-attribution-os/packages/github-action@main
+      - uses: horn111/base-attribution-os/packages/github-action@v0
         with:
           builder-code: bc_abc123
           profile: "ci"
@@ -269,16 +254,13 @@ jobs:
 
 | Package                              | Purpose                                   | Install                                    | Maturity |
 | ------------------------------------ | ----------------------------------------- | ------------------------------------------ | -------- |
-| `@base-attribution-os/core`          | ERC-8021 encode, decode, append, validate | `pnpm add @base-attribution-os/core`       | MVP      |
-| `@base-attribution-os/viem`          | viem `dataSuffix` and client helpers      | `pnpm add @base-attribution-os/viem`       | MVP      |
-| `@base-attribution-os/wagmi`         | wagmi config and hook helpers             | `pnpm add @base-attribution-os/wagmi`      | MVP      |
-| `@base-attribution-os/ethers`        | ethers transaction and signer helpers     | `pnpm add @base-attribution-os/ethers`     | MVP      |
-| `@base-attribution-os/scanner`       | AST project audit, rules, baseline, SARIF | `pnpm add -D @base-attribution-os/scanner` | RC       |
-| `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli`     | MVP      |
-| `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                              | MVP      |
-
-NPM packages are not published yet. Until the first release, use the workspace
-directly or pin the GitHub Action to `@main`.
+| `@base-attribution-os/core`          | ERC-8021 encode, decode, append, validate | `pnpm add @base-attribution-os/core`       | v0.1     |
+| `@base-attribution-os/viem`          | viem `dataSuffix` and client helpers      | `pnpm add @base-attribution-os/viem`       | v0.1     |
+| `@base-attribution-os/wagmi`         | wagmi config and hook helpers             | `pnpm add @base-attribution-os/wagmi`      | v0.1     |
+| `@base-attribution-os/ethers`        | ethers transaction and signer helpers     | `pnpm add @base-attribution-os/ethers`     | v0.1     |
+| `@base-attribution-os/scanner`       | AST project audit, rules, baseline, SARIF | `pnpm add -D @base-attribution-os/scanner` | v0.1     |
+| `@base-attribution-os/cli`           | `bao` validator CLI                       | `pnpm add -D @base-attribution-os/cli`     | v0.1     |
+| `@base-attribution-os/github-action` | CI enforcement wrapper                    | GitHub Action                              | v0.1     |
 
 ## CLI
 

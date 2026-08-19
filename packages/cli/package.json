@@ -1,9 +1,12 @@
 {
   "name": "@base-attribution-os/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "CLI validator for Base Builder Code attribution.",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "bao": "./dist/index.js"
   },

@@ -15,7 +15,13 @@ const packagesToVerify = [
   { dir: "packages/core", packageName: "@base-attribution-os/core" },
   { dir: "packages/scanner", packageName: "@base-attribution-os/scanner" },
   { dir: "packages/viem", packageName: "@base-attribution-os/viem" },
+  { dir: "packages/wagmi", packageName: "@base-attribution-os/wagmi" },
+  { dir: "packages/ethers", packageName: "@base-attribution-os/ethers" },
   { dir: "packages/cli", packageName: "@base-attribution-os/cli" },
+  {
+    dir: "packages/github-action",
+    packageName: "@base-attribution-os/github-action",
+  },
 ];
 
 const workspace = mkdtempSync(path.join(tmpdir(), "bao-release-candidate-"));
@@ -27,10 +33,9 @@ mkdirSync(consumerDir, { recursive: true });
 
 try {
   log(`workspace: ${workspace}`);
-  run("pnpm", ["--filter", "@base-attribution-os/core", "build"], repoRoot);
-  run("pnpm", ["--filter", "@base-attribution-os/scanner", "build"], repoRoot);
-  run("pnpm", ["--filter", "@base-attribution-os/viem", "build"], repoRoot);
-  run("pnpm", ["--filter", "@base-attribution-os/cli", "build"], repoRoot);
+  for (const packageInfo of packagesToVerify) {
+    run("pnpm", ["--filter", packageInfo.packageName, "build"], repoRoot);
+  }
 
   const packed = packagesToVerify.map((packageInfo) => packPackage(packageInfo));
   const dependencySpecs = Object.fromEntries(
@@ -46,10 +51,7 @@ try {
         type: "module",
         dependencies: dependencySpecs,
         pnpm: {
-          overrides: {
-            "@base-attribution-os/core": dependencySpecs["@base-attribution-os/core"],
-            "@base-attribution-os/scanner": dependencySpecs["@base-attribution-os/scanner"],
-          },
+          overrides: dependencySpecs,
         },
       },
       null,
@@ -58,6 +60,25 @@ try {
   );
 
   run("pnpm", ["install"], consumerDir);
+  writeFileSync(
+    path.join(consumerDir, "sdk-smoke.mjs"),
+    `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { ethersBuilderCodeDataSuffix } from "@base-attribution-os/ethers";
+import { createAttributionConfig } from "@base-attribution-os/wagmi";
+
+const code = "bc_abc123";
+const viemSuffix = builderCodeDataSuffix(code);
+const ethersSuffix = ethersBuilderCodeDataSuffix(code);
+const wagmiSuffix = createAttributionConfig({ builderCode: code }).dataSuffix;
+
+if (viemSuffix !== ethersSuffix || viemSuffix !== wagmiSuffix) {
+  throw new Error("SDK adapters produced different Builder Code suffixes");
+}
+
+console.log("SDK adapter smoke passed");
+`,
+  );
+  run("node", ["sdk-smoke.mjs"], consumerDir);
   run("pnpm", ["exec", "bao", "encode", "--code", "bc_abc123"], consumerDir);
 
   const encoded = run(
