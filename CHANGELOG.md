@@ -14,6 +14,8 @@ that explains the attribution workflow it improves.
 - Add verified ERC-8021 helpers and transaction checks for Base Builder Codes.
 - Upgrade the public demo to Next.js 16 and React 19 and clear the production
   dependency audit.
+- Run the GitHub Action as a CommonJS bundle on Node.js 24 and update the SARIF
+  upload workflow to CodeQL Action v4.
 
 ## 0.0.0
 
