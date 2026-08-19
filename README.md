@@ -113,9 +113,6 @@ path to fail before an unattributed transaction ships.
 | Public broken/fixed fixture lab                | Additional production fixtures       |
 | Verified onchain proof transaction             | Attribution replay report            |
 
-Grant packet: [docs/grant-brief.md](docs/grant-brief.md). Supporting materials
-live in [docs/grant](docs/grant).
-
 ## v0.1.0 release
 
 BAO `v0.1.0` is the first public package release. The release verification

@@ -17,3 +17,6 @@ yarn-debug.log*
 yarn-error.log*
 
 /docs/grant/
+/docs/grant-brief.md
+/docs/launch/weekly-update-template.md
+/docs/launch/x-posts.md

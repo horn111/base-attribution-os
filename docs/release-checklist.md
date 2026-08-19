@@ -42,11 +42,11 @@ Only after an explicit release decision:
 - publish packages as `v0.1.0`;
 - create GitHub tags `v0.1.0` and `v0`;
 - confirm GitHub Action snippets use `@v0`;
-- add the final npm and GitHub release links to the grant evidence pack.
+- confirm the final npm and GitHub release links resolve.
 
 ## Post-release proof
 
 - Install packages in a fresh external project from npm.
 - Run `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`.
-- Record the result in `docs/grant/evidence-pack.md`.
+- Record the result in the GitHub Release notes.
 - Share the release post and invite pilot teams to open integration requests.
