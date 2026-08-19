@@ -1,7 +1,7 @@
 # v0.1 Release Checklist
 
-Base Attribution OS is in `v0.1` release-candidate mode. This checklist keeps
-the first public release mechanical and reviewable.
+This checklist records the verification and publication steps for the first
+public release.
 
 ## Release candidate verification
 
@@ -13,9 +13,7 @@ pnpm verify:release-candidate
 
 The script:
 
-- builds `@base-attribution-os/core`, `@base-attribution-os/scanner`,
-  `@base-attribution-os/viem`, and `@base-attribution-os/cli`;
-- runs `pnpm pack` for those packages;
+- builds and packs all seven public `@base-attribution-os/*` packages;
 - creates a temporary external consumer project;
 - wires unpublished internal packages through temporary `pnpm.overrides`;
 - installs the packed tarballs;
@@ -34,7 +32,7 @@ debugging a failed smoke run.
 - Run `pnpm format`, `pnpm check`, `pnpm build`, and
   `pnpm verify:release-candidate`.
 - Verify the Vercel demo production URL still loads.
-- Confirm README snippets still say packages are unpublished until release.
+- Confirm README install snippets and package versions match `v0.1.0`.
 - Open or link at least one pilot/integration request.
 
 ## Release step
@@ -43,8 +41,7 @@ Only after an explicit release decision:
 
 - publish packages as `v0.1.0`;
 - create GitHub tags `v0.1.0` and `v0`;
-- update GitHub Action snippets from `@main` to `@v0`;
-- remove the unpublished-package warning from README;
+- confirm GitHub Action snippets use `@v0`;
 - add the final npm and GitHub release links to the grant evidence pack.
 
 ## Post-release proof

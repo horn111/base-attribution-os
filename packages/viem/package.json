@@ -1,9 +1,12 @@
 {
   "name": "@base-attribution-os/viem",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Tiny viem helpers for Base Builder Code attribution.",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "files": [
     "dist"
@@ -28,7 +31,7 @@
     "@base-attribution-os/core": "workspace:*"
   },
   "peerDependencies": {
-    "viem": ">=2.21.0"
+    "viem": ">=2.45.0"
   },
   "peerDependenciesMeta": {
     "viem": {

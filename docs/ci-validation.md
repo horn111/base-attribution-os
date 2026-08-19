@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: horn111/base-attribution-os/packages/github-action@main
+      - uses: horn111/base-attribution-os/packages/github-action@v0
         with:
           builder-code: bc_abc123
           profile: "ci"
