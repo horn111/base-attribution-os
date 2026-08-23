@@ -1,5 +1,6 @@
 import type { Hex } from "@base-attribution-os/core";
 import { checkCalldataCommand } from "./check-calldata.js";
+import { extractErc4337UserOperationCalldata } from "../erc4337.js";
 import type { CommandResult } from "../output.js";
 
 export interface CheckTransactionOptions {
@@ -52,8 +53,43 @@ export async function checkTransactionCommand(
     };
   }
 
-  return checkCalldataCommand({
-    calldata: transaction.input ?? transaction.data ?? "0x",
+  const calldata = transaction.input ?? transaction.data ?? "0x";
+  const directResult = checkCalldataCommand({
+    calldata,
     expect: options.expect,
   });
+
+  if (directResult.ok) {
+    return directResult;
+  }
+
+  const userOperationCalldata = extractErc4337UserOperationCalldata(calldata);
+  for (const [index, nestedCalldata] of userOperationCalldata.entries()) {
+    const nestedResult = checkCalldataCommand({
+      calldata: nestedCalldata,
+      expect: options.expect,
+    });
+
+    if (nestedResult.ok || hasDecodedCodes(nestedResult)) {
+      return {
+        ...nestedResult,
+        message: `${nestedResult.message} (ERC-4337 UserOperation #${index})`,
+        data: {
+          ...(isRecord(nestedResult.data) ? nestedResult.data : {}),
+          attributionPath: "erc4337-user-operation",
+          userOperationIndex: index,
+        },
+      };
+    }
+  }
+
+  return directResult;
+}
+
+function hasDecodedCodes(result: CommandResult): boolean {
+  return isRecord(result.data) && Array.isArray(result.data.codes) && result.data.codes.length > 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
