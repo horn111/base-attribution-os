@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ChangeEvent } from "react";
+import { SiteHeader } from "./_components/site-header";
 
 type Profile = "local" | "ci" | "strict";
 type Variant = "broken" | "fixed";
@@ -184,23 +185,7 @@ export default function DoctorPage() {
 
   return (
     <main className="app-container">
-      <header className="topbar">
-        <a className="brand" href="https://github.com/horn111/base-attribution-os">
-          <img
-            alt=""
-            aria-hidden="true"
-            className="brand-wordmark"
-            height="65"
-            src="/bao-wordmark.png"
-            width="172"
-          />
-          <span>Base Attribution OS</span>
-        </a>
-        <a className="star-button" href="https://github.com/horn111/base-attribution-os">
-          <StarIcon />
-          <span>Star repo</span>
-        </a>
-      </header>
+      <SiteHeader current="doctor" />
 
       <section className="hero">
         <div className="hero-meta">
@@ -542,13 +527,6 @@ function CopyIcon() {
     <svg aria-hidden="true" height="14" viewBox="0 0 24 24" width="14">
       <rect height="13" rx="2" ry="2" width="13" x="9" y="9" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-function StarIcon() {
-  return (
-    <svg aria-hidden="true" height="12" viewBox="0 0 24 24" width="12">
-      <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.132 9.21l8.2-1.192z" />
     </svg>
   );
 }
