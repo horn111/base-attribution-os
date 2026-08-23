@@ -12,6 +12,8 @@ audits supported transaction paths, verifies calldata and onchain results, and
 enforces coverage in CI.
 
 [Live demo](https://base-attribution-os.vercel.app) ·
+[Attribution Observatory](https://base-attribution-os.vercel.app/observatory) ·
+[Published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653) ·
 [v0.1.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.1.0) ·
 [npm packages](https://www.npmjs.com/org/base-attribution-os) ·
 [Documentation](docs/attribution-doctor.md)
@@ -25,6 +27,8 @@ flowchart LR
   E --> F["Coverage, findings, and SARIF"]
   F --> G["Pull request policy"]
   D --> H["bao check-tx"]
+  D --> I["bao replay"]
+  I --> J["Public proof"]
 ```
 
 ## One policy from source code to onchain proof
@@ -199,18 +203,43 @@ the matching `bao check-tx` result.
 Do not copy BAO's proof code into another project. Register and use your own
 Builder Code.
 
+## Replay and publish attribution proofs
+
+Turn a Dune export or a list of transaction hashes into a reproducible coverage
+report:
+
+```bash
+pnpm exec bao replay \
+  --builder-code bc_abc123 \
+  --input dune-export.csv
+
+pnpm exec bao proof \
+  --hash 0x... \
+  --rpc-url https://mainnet.base.org \
+  --expect bc_abc123 \
+  --output proof.md
+```
+
+Use the included [Dune query templates](dune/) to find attributed Base
+transactions. The [Attribution Proof Loop guide](docs/attribution-proof-loop.md)
+documents JSON and CSV inputs, RPC replay, report statuses, and publication
+safety. Explore the workflow in the
+[Attribution Observatory](https://base-attribution-os.vercel.app/observatory)
+and inspect BAO's
+[published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653).
+
 ## Packages
 
 All seven public packages ship at `0.1.0`.
 
 | Package                                                                                                  | Role                                            |
 | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [`@base-attribution-os/core`](https://www.npmjs.com/package/@base-attribution-os/core)                   | ERC-8021 encode, decode, append, and validation |
+| [`@base-attribution-os/core`](https://www.npmjs.com/package/@base-attribution-os/core)                   | ERC-8021 encode, decode, validation, and replay |
 | [`@base-attribution-os/viem`](https://www.npmjs.com/package/@base-attribution-os/viem)                   | viem `dataSuffix` and client helpers            |
 | [`@base-attribution-os/wagmi`](https://www.npmjs.com/package/@base-attribution-os/wagmi)                 | wagmi config and React hook helpers             |
 | [`@base-attribution-os/ethers`](https://www.npmjs.com/package/@base-attribution-os/ethers)               | ethers transaction and signer helpers           |
 | [`@base-attribution-os/scanner`](https://www.npmjs.com/package/@base-attribution-os/scanner)             | AST rules, configuration, baselines, and SARIF  |
-| [`@base-attribution-os/cli`](https://www.npmjs.com/package/@base-attribution-os/cli)                     | `bao` audit and verification commands           |
+| [`@base-attribution-os/cli`](https://www.npmjs.com/package/@base-attribution-os/cli)                     | `bao` audit, replay, and proof commands         |
 | [`@base-attribution-os/github-action`](https://www.npmjs.com/package/@base-attribution-os/github-action) | CI annotations, summaries, outputs, and SARIF   |
 
 The release verification script builds and packs all seven packages, installs
@@ -248,6 +277,7 @@ code path before deploy and verify the result afterward.
 | [SARIF and code scanning](docs/sarif-and-code-scanning.md) | GitHub code scanning output                    |
 | [Incremental adoption](docs/incremental-adoption.md)       | Baselines for existing attribution debt        |
 | [Architecture](docs/architecture.md)                       | Package boundaries and trust model             |
+| [Attribution Proof Loop](docs/attribution-proof-loop.md)   | Dune and RPC replay with public proof reports  |
 | [Roadmap](docs/roadmap.md)                                 | Shipped work and planned milestones            |
 
 Primary references:

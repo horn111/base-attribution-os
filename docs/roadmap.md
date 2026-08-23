@@ -18,12 +18,25 @@
 - `bao.config.json`, changed-only audits, baselines, JSON, and SARIF.
 - GitHub Action inline annotations and coverage summaries.
 - Attribution Audit demo with broken/fixed fixtures.
+- Update 7 Attribution Proof Loop with Dune and RPC replay, public proof
+  artifacts, and the Attribution Observatory.
 
 ## v0.1 (shipped)
 
 - Published `@base-attribution-os/*` packages at `v0.1.0`.
 - Stable GitHub Action ref at `v0`.
 - External consumer install verification from all seven packed packages.
+
+## Update 7 (shipped)
+
+- Pure replay API in `@base-attribution-os/core`.
+- `bao replay` for Dune JSON and CSV exports or batched RPC transaction hashes.
+- `bao proof` for publishable single-transaction reports.
+- [Attribution Proof Loop guide](attribution-proof-loop.md) and
+  [Dune query templates](../dune/).
+- Public [Attribution Observatory](https://base-attribution-os.vercel.app/observatory)
+  and [BAO proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653).
+- Dynamic, grid-free Open Graph proof card.
 
 ## Next
 
@@ -34,10 +47,8 @@
 
 ## v0.2
 
-- Dune query templates for attribution replay.
-- Public attribution replay guide for verified transaction examples.
-- Local analytics dashboard.
-- Shareable progress cards for X.
+- Expand the Attribution Observatory with local analytics.
+- Add shareable progress cards for broader proof sets.
 - Pilot integration reports.
 
 ## v1

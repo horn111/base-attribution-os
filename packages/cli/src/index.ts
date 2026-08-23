@@ -8,6 +8,8 @@ import { decodeCommand } from "./commands/decode.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { encodeCommand } from "./commands/encode.js";
 import { initCommand } from "./commands/init.js";
+import { proofTransactionCommand } from "./commands/proof.js";
+import { replayCommand } from "./commands/replay.js";
 import { scanRepoCommand } from "./commands/scan-repo.js";
 import { CliError, printResult, required } from "./output.js";
 
@@ -17,6 +19,14 @@ export { decodeCommand } from "./commands/decode.js";
 export { doctorCommand, formatDoctorReport } from "./commands/doctor.js";
 export { encodeCommand } from "./commands/encode.js";
 export { initCommand } from "./commands/init.js";
+export { proofTransactionCommand } from "./commands/proof.js";
+export {
+  formatReplayReport,
+  readReplayInput,
+  replayCommand,
+  type ReplayFormat,
+  type ReplayOptions,
+} from "./commands/replay.js";
 export { normalizeScanProfile, scanRepo, scanRepoCommand } from "./commands/scan-repo.js";
 export type {
   ScanFinding,
@@ -91,6 +101,50 @@ async function run(argv: string[]): Promise<void> {
       expect: options.expect,
     });
     printResult(result, json);
+    return setExitCode(result.ok);
+  }
+
+  if (command === "proof") {
+    const format = options.format ?? (json ? "json" : "markdown");
+    const result = await proofTransactionCommand({
+      hash: required(options.hash, "--hash") as Hex,
+      rpcUrl: required(options["rpc-url"], "--rpc-url"),
+      expect: required(options.expect, "--expect"),
+      chainId: parseChainId(options["chain-id"]),
+      format,
+      output: options.output,
+    });
+
+    if (format === "json" && !options.output) {
+      console.log(JSON.stringify(result.data, null, 2));
+    } else {
+      console.log(result.message);
+    }
+    return setExitCode(result.ok);
+  }
+
+  if (command === "replay") {
+    const format = options.format ?? (json ? "json" : "human");
+    const result = await replayCommand({
+      builderCode: required(options["builder-code"], "--builder-code"),
+      input: options.input,
+      hashes: options.hashes
+        ?.split(",")
+        .map((hash) => hash.trim())
+        .filter(Boolean),
+      rpcUrl: options["rpc-url"],
+      chainId: parseChainId(options["chain-id"]),
+      explorerBaseUrl: options["explorer-base-url"],
+      format,
+      output: options.output,
+      failOnMissing: options["fail-on-missing"] !== "false",
+    });
+
+    if (format === "json" && !options.output) {
+      console.log(JSON.stringify(result.data, null, 2));
+    } else {
+      console.log(result.message);
+    }
     return setExitCode(result.ok);
   }
 
@@ -183,6 +237,18 @@ function setExitCode(ok: boolean): void {
   }
 }
 
+function parseChainId(value?: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const chainId = Number(value);
+  if (!Number.isSafeInteger(chainId) || chainId <= 0) {
+    throw new CliError(`Invalid --chain-id: ${value}`);
+  }
+  return chainId;
+}
+
 function helpText(): string {
   return `Base Attribution OS CLI
 
@@ -193,6 +259,9 @@ Usage:
   bao decode --calldata 0x...
   bao check-calldata --calldata 0x... --expect bc_abc123
   bao check-tx --hash 0x... --rpc-url https://... --expect bc_abc123
+  bao proof --hash 0x... --rpc-url https://... --expect bc_abc123 --output proof.md
+  bao replay --builder-code bc_abc123 --input dune-export.csv
+  bao replay --builder-code bc_abc123 --hashes 0x...,0x... --rpc-url https://...
   bao scan-repo --path . --builder-code bc_abc123 --profile ci
 
 Options:
@@ -204,7 +273,10 @@ Options:
   --baseline path          Ignore findings recorded in a baseline
   --write-baseline path    Write current findings as a baseline
   --format human|json|sarif
-  --output path            Write SARIF output to a file
+  --input path             Read replay transactions from Dune JSON or CSV
+  --hashes hash,...        Fetch transaction calldata from an RPC endpoint
+  --chain-id number        Set replay network (defaults to Base mainnet 8453)
+  --output path            Write SARIF or replay proof output to a file
   --fail-on-missing false Allow scan findings without failing
 `;
 }
