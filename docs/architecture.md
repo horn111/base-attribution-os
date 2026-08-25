@@ -7,7 +7,7 @@ apps, and in CI.
 ## Layers
 
 - Core: ERC-8021 suffix encode, decode, append, and validate.
-- Adapters: tiny helpers for viem, wagmi, and ethers transaction flows.
+- Adapters: helpers for viem, wagmi, ethers, EIP-5792, and ERC-4337 flows.
 - Scanner: AST-backed transaction discovery, rule evaluation, baselines, and
   SARIF output.
 - CLI: `bao doctor`, config initialization, calldata, transaction, and

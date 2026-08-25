@@ -13,6 +13,7 @@ type PackedPackage = {
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packagesToVerify = [
   { dir: "packages/core", packageName: "@base-attribution-os/core" },
+  { dir: "packages/wallet", packageName: "@base-attribution-os/wallet" },
   { dir: "packages/scanner", packageName: "@base-attribution-os/scanner" },
   { dir: "packages/viem", packageName: "@base-attribution-os/viem" },
   { dir: "packages/wagmi", packageName: "@base-attribution-os/wagmi" },
@@ -65,6 +66,7 @@ try {
     `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
 import { ethersBuilderCodeDataSuffix } from "@base-attribution-os/ethers";
 import { createAttributionConfig } from "@base-attribution-os/wagmi";
+import { attributeUserOperation, sendAttributedCalls } from "@base-attribution-os/wallet";
 
 const code = "bc_abc123";
 const viemSuffix = builderCodeDataSuffix(code);
@@ -73,6 +75,39 @@ const wagmiSuffix = createAttributionConfig({ builderCode: code }).dataSuffix;
 
 if (viemSuffix !== ethersSuffix || viemSuffix !== wagmiSuffix) {
   throw new Error("SDK adapters produced different Builder Code suffixes");
+}
+
+const calls = [];
+const provider = {
+  async request(request) {
+    calls.push(request);
+    if (request.method === "wallet_getCapabilities") {
+      return { "0x2105": { dataSuffix: { supported: true } } };
+    }
+    return "0xbatch";
+  },
+};
+const sent = await sendAttributedCalls(
+  provider,
+  {
+    chainId: "0x2105",
+    from: "0x1111111111111111111111111111111111111111",
+    calls: [{ to: "0x2222222222222222222222222222222222222222", data: "0x" }],
+  },
+  { codes: [code] },
+);
+const userOperation = attributeUserOperation(
+  { callData: "0x1234" },
+  { walletCodes: ["bc_wallet"], appDataSuffix: viemSuffix },
+);
+
+if (
+  sent.attribution.delivery !== "dataSuffix" ||
+  calls.map((request) => request.method).join(",") !==
+    "wallet_getCapabilities,wallet_sendCalls" ||
+  !userOperation.callData.endsWith("80218021802180218021802180218021")
+) {
+  throw new Error("Smart Wallet Attribution Kit smoke failed");
 }
 
 console.log("SDK adapter smoke passed");
@@ -98,6 +133,16 @@ console.log("SDK adapter smoke passed");
       "--expect",
       "bc_abc123",
     ],
+    consumerDir,
+  );
+
+  writeFileSync(
+    path.join(consumerDir, "user-op.json"),
+    JSON.stringify({ result: { callData: `0x1234${suffix.slice(2)}` } }, null, 2),
+  );
+  run(
+    "pnpm",
+    ["exec", "bao", "check-user-op", "--input", "user-op.json", "--expect", "bc_abc123"],
     consumerDir,
   );
 

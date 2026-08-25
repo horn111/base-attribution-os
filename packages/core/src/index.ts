@@ -33,6 +33,14 @@ export {
   type ValidationResult,
 } from "./validate.js";
 export {
+  createAttributionReplayReport,
+  type AttributionReplayCandidate,
+  type AttributionReplayReport,
+  type AttributionReplayStatus,
+  type AttributionReplayTransaction,
+  type CreateAttributionReplayOptions,
+} from "./replay.js";
+export {
   assertHex,
   concatHex,
   hasErc8021Marker,

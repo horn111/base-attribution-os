@@ -109,6 +109,9 @@ importers:
       '@base-attribution-os/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@base-attribution-os/wallet':
+        specifier: workspace:*
+        version: link:../../packages/wallet
 
   packages/cli:
     dependencies:
@@ -118,6 +121,9 @@ importers:
       '@base-attribution-os/scanner':
         specifier: workspace:*
         version: link:../scanner
+      '@base-attribution-os/wallet':
+        specifier: workspace:*
+        version: link:../wallet
 
   packages/core: {}
 
@@ -155,6 +161,12 @@ importers:
         version: link:../core
 
   packages/wagmi:
+    dependencies:
+      '@base-attribution-os/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/wallet:
     dependencies:
       '@base-attribution-os/core':
         specifier: workspace:*

@@ -20,7 +20,8 @@ const RULES: Record<RuleId, { description: string; name: string }> = {
   },
   BAO005: {
     name: "smart-wallet-data-suffix",
-    description: "A smart-wallet call is missing the EIP-5792 dataSuffix capability.",
+    description:
+      "A smart-wallet call is missing negotiated EIP-5792 or ERC-4337 attribution middleware.",
   },
   BAO006: {
     name: "x402-builder-code-extension",

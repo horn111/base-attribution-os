@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendDataSuffix,
+  createAttributionReplayReport,
   createDataSuffix,
   decodeAttributionFromCalldata,
   validateAttribution,
@@ -81,5 +82,55 @@ describe("@base-attribution-os/core", () => {
 
     expect(result.ok).toBe(true);
     expect(result.warnings[0]).toContain("multiple Builder Codes");
+  });
+
+  it("creates replay reports across attributed and missing transactions", () => {
+    const attributed = appendDataSuffix("0x1234", { codes: ["bc_abc123"] });
+    const wrong = appendDataSuffix("0x1234", { codes: ["bc_other"] });
+    const report = createAttributionReplayReport(
+      [
+        { hash: `0x${"11".repeat(32)}`, calldata: attributed },
+        { hash: `0x${"22".repeat(32)}`, calldata: "0x1234" },
+        { hash: `0x${"33".repeat(32)}`, calldata: wrong },
+      ],
+      {
+        builderCode: "bc_abc123",
+        generatedAt: "2026-08-23T00:00:00.000Z",
+      },
+    );
+
+    expect(report).toMatchObject({
+      ok: false,
+      attributed: 1,
+      missing: 1,
+      wrongCode: 1,
+      total: 3,
+      coverage: 33,
+      network: "Base mainnet",
+    });
+    expect(report.transactions.map((transaction) => transaction.status)).toEqual([
+      "attributed",
+      "missing-attribution",
+      "wrong-builder-code",
+    ]);
+    expect(report.transactions[0].explorerUrl).toContain("basescan.org/tx/");
+  });
+
+  it("marks unavailable replay candidates without hiding them from coverage", () => {
+    const report = createAttributionReplayReport(
+      [{ hash: `0x${"44".repeat(32)}`, error: "Transaction not found" }],
+      { builderCode: "bc_abc123" },
+    );
+
+    expect(report).toMatchObject({
+      ok: false,
+      total: 1,
+      unavailable: 1,
+      coverage: 0,
+    });
+    expect(report.transactions[0]).toMatchObject({
+      status: "unavailable",
+      error: "Transaction not found",
+    });
   });
 });

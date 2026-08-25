@@ -69,13 +69,15 @@ export function SendButton() {
 export async function send(wallet) {
   return wallet.sendTransaction({ to, data: "0x" });
 }`,
-    fixed: `import { usePrivy } from "@privy-io/react-auth";
+    fixed: `import { dataSuffix } from "@privy-io/react-auth";
 import { createDataSuffix } from "@base-attribution-os/core";
 
-const dataSuffix = createDataSuffix({ codes: ["bc_abc123"] });
+export const config = {
+  plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))],
+};
 
 export async function send(wallet) {
-  return wallet.sendTransaction({ to, data: "0x", dataSuffix });
+  return wallet.sendTransaction({ to, data: "0x" });
 }`,
   },
   {
@@ -86,17 +88,15 @@ export async function send(wallet) {
     broken: `export async function batch(wallet) {
   return wallet.sendCalls({ calls: [{ to, data: "0x" }] });
 }`,
-    fixed: `import { createDataSuffix } from "@base-attribution-os/core";
+    fixed: `import { sendAttributedCalls } from "@base-attribution-os/wallet";
 
-export async function batch(wallet) {
-  return wallet.sendCalls({
+export async function batch(provider, account) {
+  return sendAttributedCalls(provider, {
+    chainId: "0x2105",
+    from: account,
     calls: [{ to, data: "0x" }],
-    capabilities: {
-      dataSuffix: {
-        value: createDataSuffix({ codes: ["bc_abc123"] }),
-        optional: true,
-      },
-    },
+  }, {
+    codes: ["bc_abc123"],
   });
 }`,
   },
@@ -451,7 +451,7 @@ function auditSource(
         ...candidate,
         status: "missing",
         ruleId: "BAO005",
-        suggestion: "Add capabilities.dataSuffix.",
+        suggestion: "Use capability-aware Smart Wallet Attribution Kit middleware.",
       };
     if (family === "x402")
       return {
@@ -487,7 +487,10 @@ function findCandidates(source: string, family: Family): Omit<AuditPath, "status
     family === "x402"
       ? [{ marker: "x402Client", regex: /\bnew\s+x402Client\s*\(/g }]
       : family === "wallet"
-        ? [{ marker: "sendCalls", regex: /\bsendCalls\s*\(/g }]
+        ? [
+            { marker: "sendCalls", regex: /\bsendCalls\s*\(/g },
+            { marker: "sendAttributedCalls", regex: /\bsendAttributedCalls\s*\(/g },
+          ]
         : family === "rpc"
           ? [{ marker: "eth_sendTransaction", regex: /["']eth_sendTransaction["']/g }]
           : [
@@ -505,7 +508,10 @@ function findCandidates(source: string, family: Family): Omit<AuditPath, "status
 
 function attributionEvidence(source: string, family: Family): boolean {
   if (family === "x402") return /\bBuilderCodeClientExtension\b/.test(source);
-  if (family === "wallet") return /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(source);
+  if (family === "wallet")
+    return /\b(?:createAttributionProvider|sendAttributedCalls|withUserOperationAttribution)\b/.test(
+      source,
+    );
   if (family === "rpc") return /\b(?:appendDataSuffix|DATA_SUFFIX|dataSuffix)\b/.test(source);
   return /\b(?:appendDataSuffix|createDataSuffix|dataSuffix|useAttributionSuffix|withViemDataSuffix)\b/.test(
     source,

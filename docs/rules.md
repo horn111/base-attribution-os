@@ -6,7 +6,7 @@
 | `BAO002` | A different Builder Code was found.               | Use a code from `bao.config.json`.               |
 | `BAO003` | Dynamic attribution cannot be matched statically. | Make the configured code available to strict CI. |
 | `BAO004` | Transaction path is ambiguous.                    | Add an explicit supported wrapper or rule.       |
-| `BAO005` | Smart-wallet batch lacks `dataSuffix` capability. | Add `capabilities.dataSuffix`.                   |
+| `BAO005` | Smart-wallet path lacks negotiated attribution.   | Add BAO middleware or capability negotiation.    |
 | `BAO006` | x402 path lacks its Builder Code extension.       | Register or declare the official extension.      |
 
 ## Profiles
