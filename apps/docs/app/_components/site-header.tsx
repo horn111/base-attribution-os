@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function SiteHeader(props: { current?: "doctor" | "observatory" | "proof" }) {
+export function SiteHeader(props: {
+  current?: "doctor" | "observatory" | "proof" | "smart-wallets";
+}) {
   return (
     <header className="topbar">
       <Link className="brand" href="/">
@@ -25,6 +27,12 @@ export function SiteHeader(props: { current?: "doctor" | "observatory" | "proof"
           href="/observatory"
         >
           Observatory
+        </Link>
+        <Link
+          aria-current={props.current === "smart-wallets" ? "page" : undefined}
+          href="/smart-wallets"
+        >
+          Smart Wallets
         </Link>
         <a className="star-button" href="https://github.com/horn111/base-attribution-os">
           <StarIcon />

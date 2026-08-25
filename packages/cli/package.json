@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@base-attribution-os/core": "workspace:*",
-    "@base-attribution-os/scanner": "workspace:*"
+    "@base-attribution-os/scanner": "workspace:*",
+    "@base-attribution-os/wallet": "workspace:*"
   }
 }

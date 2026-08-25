@@ -13,6 +13,9 @@ export default defineConfig({
       "@base-attribution-os/wagmi": fileURLToPath(
         new URL("./packages/wagmi/src/index.ts", import.meta.url),
       ),
+      "@base-attribution-os/wallet": fileURLToPath(
+        new URL("./packages/wallet/src/index.ts", import.meta.url),
+      ),
       "@base-attribution-os/cli": fileURLToPath(
         new URL("./packages/cli/src/index.ts", import.meta.url),
       ),

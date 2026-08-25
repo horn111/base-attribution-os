@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Hex } from "@base-attribution-os/core";
 import { checkCalldataCommand } from "./commands/check-calldata.js";
 import { checkTransactionCommand } from "./commands/check-tx.js";
+import { checkUserOperationFileCommand } from "./commands/check-user-op.js";
 import { decodeCommand } from "./commands/decode.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { encodeCommand } from "./commands/encode.js";
@@ -15,6 +16,11 @@ import { CliError, printResult, required } from "./output.js";
 
 export { checkCalldataCommand } from "./commands/check-calldata.js";
 export { checkTransactionCommand } from "./commands/check-tx.js";
+export {
+  checkUserOperationCommand,
+  checkUserOperationFileCommand,
+  extractUserOperation,
+} from "./commands/check-user-op.js";
 export { decodeCommand } from "./commands/decode.js";
 export { doctorCommand, formatDoctorReport } from "./commands/doctor.js";
 export { encodeCommand } from "./commands/encode.js";
@@ -88,7 +94,7 @@ async function run(argv: string[]): Promise<void> {
   if (command === "check-calldata") {
     const result = checkCalldataCommand({
       calldata: required(options.calldata, "--calldata") as Hex,
-      expect: options.expect,
+      expect: parseExpectedCodes(options.expect),
     });
     printResult(result, json);
     return setExitCode(result.ok);
@@ -98,7 +104,16 @@ async function run(argv: string[]): Promise<void> {
     const result = await checkTransactionCommand({
       hash: required(options.hash, "--hash") as Hex,
       rpcUrl: required(options["rpc-url"], "--rpc-url"),
-      expect: options.expect,
+      expect: parseExpectedCodes(options.expect),
+    });
+    printResult(result, json);
+    return setExitCode(result.ok);
+  }
+
+  if (command === "check-user-op") {
+    const result = await checkUserOperationFileCommand({
+      input: required(options.input, "--input"),
+      expect: parseExpectedCodes(required(options.expect, "--expect")),
     });
     printResult(result, json);
     return setExitCode(result.ok);
@@ -249,6 +264,15 @@ function parseChainId(value?: string): number | undefined {
   return chainId;
 }
 
+function parseExpectedCodes(value?: string): string[] | undefined {
+  if (value === undefined) return undefined;
+  const codes = value
+    .split(",")
+    .map((code) => code.trim())
+    .filter(Boolean);
+  return codes.length > 0 ? codes : undefined;
+}
+
 function helpText(): string {
   return `Base Attribution OS CLI
 
@@ -259,6 +283,7 @@ Usage:
   bao decode --calldata 0x...
   bao check-calldata --calldata 0x... --expect bc_abc123
   bao check-tx --hash 0x... --rpc-url https://... --expect bc_abc123
+  bao check-user-op --input user-op.json --expect bc_app,bc_wallet
   bao proof --hash 0x... --rpc-url https://... --expect bc_abc123 --output proof.md
   bao replay --builder-code bc_abc123 --input dune-export.csv
   bao replay --builder-code bc_abc123 --hashes 0x...,0x... --rpc-url https://...
@@ -267,6 +292,7 @@ Usage:
 Options:
   --json                  Print machine-readable JSON
   --codes a,b             Encode multiple Builder Codes
+  --expect a,b            Require one or more Builder Codes
   --profile local|ci|strict
   --config path            Use a custom BAO config file
   --changed-since ref      Audit only files changed since a Git ref

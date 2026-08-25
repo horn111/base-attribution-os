@@ -230223,7 +230223,7 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
   "node_modules"
 ]);
 var BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
-var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|useAttributionSuffix|withAttributionSuffix|withEthersAttribution|withViemDataSuffix)\b/;
+var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 var AGENT_MARKER_REGEX = /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/;
 async function analyzeProject(options) {
   const root = import_path.default.resolve(options.root);
@@ -230300,7 +230300,9 @@ function detectFrameworks(source) {
   if (/@x402\//.test(source)) {
     frameworks.add("x402");
   }
-  if (/\b(?:sendCalls|wallet_sendCalls|useSendCalls)\b/.test(source)) {
+  if (/\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withUserOperationAttribution)\b/.test(
+    source
+  )) {
     frameworks.add("smart-wallet");
   }
   if (/\b(?:window\.ethereum|eth_sendTransaction)\b/.test(source)) {
@@ -230356,7 +230358,7 @@ function collectCandidates(sourceFile, source, frameworks) {
   );
 }
 function classifyCall(marker, requestMethod, source, frameworks) {
-  if (requestMethod === "wallet_sendCalls") {
+  if (requestMethod === "wallet_sendCalls" || requestMethod === "eth_sendUserOperation") {
     return "wallet";
   }
   if (requestMethod === "eth_sendTransaction") {
@@ -230365,7 +230367,7 @@ function classifyCall(marker, requestMethod, source, frameworks) {
   if (marker === "paymentMiddleware" || marker === "wrapFetchWithPayment") {
     return "x402";
   }
-  if (marker === "sendCalls" || marker === "useSendCalls") {
+  if (marker === "sendCalls" || marker === "useSendCalls" || marker === "sendAttributedCalls" || marker === "sendUserOperation") {
     return "wallet";
   }
   if (!marker || ![
@@ -230488,11 +230490,15 @@ function findLocalAttribution(candidate, directSource, source) {
     return void 0;
   }
   if (candidate.family === "wallet") {
-    if (/\bcapabilities\b[\s\S]*\bdataSuffix\b|\bdataSuffix\b/.test(directSource)) {
-      return { kind: "config", detail: "EIP-5792 dataSuffix capability" };
+    if (/\b(?:attributeUserOperation|sendAttributedCalls|withUserOperationAttribution)\b/.test(
+      directSource
+    ) || /\b(?:attributeUserOperation|createAttributionProvider|withUserOperationAttribution)\b/.test(
+      source
+    )) {
+      return { kind: "helper", detail: "Smart Wallet Attribution Kit middleware" };
     }
-    if (/\battributeSendCalls\b/.test(source)) {
-      return { kind: "helper", detail: "attributeSendCalls helper" };
+    if (/\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(directSource) && /\bwallet_getCapabilities\b/.test(source)) {
+      return { kind: "config", detail: "negotiated EIP-5792 dataSuffix capability" };
     }
     return void 0;
   }
@@ -230517,7 +230523,7 @@ function collectProjectEvidence(records, builderCodes) {
     const expected = codes.some((code) => builderCodes.includes(code));
     const location = locationOf(
       record.source,
-      /\bdataSuffix\b|BuilderCodeClientExtension|declareBuilderCodeExtension/
+      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withUserOperationAttribution/
     );
     const families = evidenceFamilies(record);
     for (const family of families) {
@@ -230552,9 +230558,7 @@ function evidenceFamilies(record) {
   return Array.from(families);
 }
 function hasProjectConfigEvidence(source) {
-  return /\b(?:createWalletClient|createConfig|PrivyProvider|privyConfig)\b[\s\S]*\bdataSuffix\b/.test(
-    source
-  ) || /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source) || /\bdeclareBuilderCodeExtension\s*\(/.test(source) || /\bcreateAttributionSigner\s*\(/.test(source);
+  return /\b(?:createWalletClient|createConfig)\b[\s\S]*\bdataSuffix\b/.test(source) || /\bplugins\s*:[\s\S]*\bdataSuffix\s*\(/.test(source) || /\bcreateAttributionProvider\s*\(/.test(source) || /\b(?:attributeUserOperation|withUserOperationAttribution)\s*\(/.test(source) || /\bwallet_getCapabilities\b/.test(source) && /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(source) || /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source) || /\bdeclareBuilderCodeExtension\s*\(/.test(source) || /\bcreateAttributionSigner\s*\(/.test(source);
 }
 function missingRuleFor(family) {
   if (family === "wallet") return "BAO005";
@@ -230573,7 +230577,7 @@ function missingMessage(candidate) {
 function suggestionFor(family) {
   switch (family) {
     case "wallet":
-      return "Add capabilities.dataSuffix to the sendCalls request.";
+      return "Use Smart Wallet Attribution Kit middleware or negotiate wallet_getCapabilities before adding capabilities.dataSuffix.";
     case "x402":
       return "Register BuilderCodeClientExtension or declareBuilderCodeExtension.";
     case "privy":
@@ -230743,7 +230747,7 @@ var RULES = {
   },
   BAO005: {
     name: "smart-wallet-data-suffix",
-    description: "A smart-wallet call is missing the EIP-5792 dataSuffix capability."
+    description: "A smart-wallet call is missing negotiated EIP-5792 or ERC-4337 attribution middleware."
   },
   BAO006: {
     name: "x402-builder-code-extension",

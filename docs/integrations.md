@@ -36,8 +36,18 @@ await signer.sendTransaction(
 
 ## wallets
 
-Wallet middleware should wrap the point where `sendTransaction`, `sendCalls`, or
-batched calldata is assembled.
+Use `@base-attribution-os/wallet` to negotiate `dataSuffix` before
+`wallet_sendCalls` and to append combined app/wallet codes to the final
+`userOp.callData`.
+
+```ts
+import { sendAttributedCalls } from "@base-attribution-os/wallet";
+
+await sendAttributedCalls(provider, request, { codes: ["bc_abc123"] });
+```
+
+See [Smart Wallet Attribution Kit](smart-wallet-attribution.md) for Base Account,
+Privy, fallback, middleware, and ERC-4337 verification patterns.
 
 ## agents
 

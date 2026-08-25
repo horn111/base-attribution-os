@@ -13,7 +13,7 @@ pnpm verify:release-candidate
 
 The script:
 
-- builds and packs all seven public `@base-attribution-os/*` packages;
+- builds and packs all eight public `@base-attribution-os/*` packages;
 - creates a temporary external consumer project;
 - wires unpublished internal packages through temporary `pnpm.overrides`;
 - installs the packed tarballs;

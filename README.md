@@ -38,7 +38,7 @@ transaction. BAO gives teams a repeatable control at each stage of the path.
 
 | Stage     | BAO capability                                                       |
 | --------- | -------------------------------------------------------------------- |
-| Integrate | Typed helpers for viem, wagmi, and ethers                            |
+| Integrate | Typed helpers for viem, wagmi, ethers, EIP-5792, and ERC-4337        |
 | Audit     | AST-backed analysis for supported TypeScript transaction paths       |
 | Verify    | ERC-8021 encode, decode, calldata, and Base transaction checks       |
 | Enforce   | GitHub Action annotations, changed-only checks, baselines, and SARIF |
@@ -119,6 +119,19 @@ await signer.sendTransaction(
 
 More integration patterns: [docs/integrations.md](docs/integrations.md).
 
+### Smart wallets
+
+```ts
+import { sendAttributedCalls } from "@base-attribution-os/wallet";
+
+await sendAttributedCalls(provider, request, { codes: ["bc_abc123"] });
+```
+
+The Smart Wallet Attribution Kit checks `wallet_getCapabilities` before
+`wallet_sendCalls`, fails closed by default, merges app and wallet codes, and
+appends one suffix to the final ERC-4337 `userOp.callData`. Read the
+[smart wallet guide](docs/smart-wallet-attribution.md).
+
 ## Enforce attribution in pull requests
 
 ```yaml
@@ -178,7 +191,7 @@ Choose enforcement per environment:
 | `strict` | Require evidence that matches a configured Builder Code               |
 
 Rule IDs separate missing attribution (`BAO001`), incorrect codes (`BAO002`),
-dynamic configuration (`BAO003`), smart-wallet capability gaps (`BAO005`), and
+dynamic configuration (`BAO003`), unnegotiated smart-wallet attribution (`BAO005`), and
 x402 extension gaps (`BAO006`).
 
 Read the full workflow in
@@ -230,7 +243,7 @@ and inspect BAO's
 
 ## Packages
 
-All seven public packages ship at `0.1.0`.
+The release contains eight public packages.
 
 | Package                                                                                                  | Role                                            |
 | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
@@ -238,11 +251,12 @@ All seven public packages ship at `0.1.0`.
 | [`@base-attribution-os/viem`](https://www.npmjs.com/package/@base-attribution-os/viem)                   | viem `dataSuffix` and client helpers            |
 | [`@base-attribution-os/wagmi`](https://www.npmjs.com/package/@base-attribution-os/wagmi)                 | wagmi config and React hook helpers             |
 | [`@base-attribution-os/ethers`](https://www.npmjs.com/package/@base-attribution-os/ethers)               | ethers transaction and signer helpers           |
+| [`@base-attribution-os/wallet`](https://www.npmjs.com/package/@base-attribution-os/wallet)               | EIP-5792 and ERC-4337 attribution middleware    |
 | [`@base-attribution-os/scanner`](https://www.npmjs.com/package/@base-attribution-os/scanner)             | AST rules, configuration, baselines, and SARIF  |
 | [`@base-attribution-os/cli`](https://www.npmjs.com/package/@base-attribution-os/cli)                     | `bao` audit, replay, and proof commands         |
 | [`@base-attribution-os/github-action`](https://www.npmjs.com/package/@base-attribution-os/github-action) | CI annotations, summaries, outputs, and SARIF   |
 
-The release verification script builds and packs all seven packages, installs
+The release verification script builds and packs all eight packages, installs
 their tarballs into a clean consumer project, compares adapter output, and runs
 the CLI smoke suite.
 
@@ -256,7 +270,8 @@ The scanner covers known TypeScript patterns across:
 
 - viem, wagmi, and ethers transaction calls;
 - Privy, raw RPC, and smart-wallet flows;
-- wallet `sendCalls` and batched calldata;
+- negotiated wallet `sendCalls`, Base Account, and batched calldata;
+- ERC-4337 UserOperation submission and `userOp.callData` middleware;
 - agent transaction tools;
 - x402 buyer and resource-server Builder Code extensions.
 
@@ -272,6 +287,7 @@ code path before deploy and verify the result afterward.
 | [Builder Codes primer](docs/builder-codes-primer.md)       | ERC-8021 and Builder Code fundamentals         |
 | [Configuration](docs/configuration.md)                     | `bao.config.json`, profiles, and rule severity |
 | [Integrations](docs/integrations.md)                       | viem, wagmi, ethers, wallets, and agents       |
+| [Smart Wallet Kit](docs/smart-wallet-attribution.md)       | EIP-5792, Base Account, Privy, and ERC-4337    |
 | [CI validation](docs/ci-validation.md)                     | GitHub Action setup and changed-only scans     |
 | [x402 Builder Codes](docs/x402-builder-codes.md)           | Buyer and resource-server extension checks     |
 | [SARIF and code scanning](docs/sarif-and-code-scanning.md) | GitHub code scanning output                    |

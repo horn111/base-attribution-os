@@ -14,6 +14,7 @@
 - x402 Builder Codes CI support for buyer and seller payment paths.
 - v0.1 release candidate verification script and pilot docs.
 - Update 6 Attribution Doctor with AST-backed per-call-site analysis.
+- Update 8 Smart Wallet Attribution Kit for EIP-5792 and ERC-4337 middleware.
 - Privy, raw RPC, smart-wallet, x402, and agent fixture coverage.
 - `bao.config.json`, changed-only audits, baselines, JSON, and SARIF.
 - GitHub Action inline annotations and coverage summaries.
@@ -25,7 +26,7 @@
 
 - Published `@base-attribution-os/*` packages at `v0.1.0`.
 - Stable GitHub Action ref at `v0`.
-- External consumer install verification from all seven packed packages.
+- External consumer install verification from the original seven packed packages.
 
 ## Update 7 (shipped)
 

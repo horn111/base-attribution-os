@@ -32,7 +32,8 @@ wallet.sendTransaction({ to, data: "0x" });`,
 
   it("recognizes an attributed smart-wallet call", () => {
     const paths = analyzeSource(
-      `await wallet.sendCalls({
+      `await wallet.request({ method: "wallet_getCapabilities", params: [account] });
+await wallet.sendCalls({
   calls,
   capabilities: {
     dataSuffix: { value: createDataSuffix({ codes: ["bc_abc123"] }), optional: true },
@@ -49,6 +50,39 @@ wallet.sendTransaction({ to, data: "0x" });`,
     });
   });
 
+  it("does not accept an unnegotiated dataSuffix capability", () => {
+    const paths = analyzeSource(
+      `await wallet.sendCalls({
+  calls,
+  capabilities: {
+    dataSuffix: { value: createDataSuffix({ codes: ["bc_abc123"] }), optional: true },
+  },
+});`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "missing", ruleId: "BAO005" });
+  });
+
+  it("recognizes Smart Wallet Attribution Kit helpers and UserOperation sends", () => {
+    const helper = analyzeSource(
+      `await sendAttributedCalls(provider, request, { codes: ["bc_abc123"] });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+    const rawUserOperation = analyzeSource(
+      `await provider.request({ method: "eth_sendUserOperation", params: [userOp] });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(helper[0]).toMatchObject({ family: "wallet", status: "protected" });
+    expect(rawUserOperation[0]).toMatchObject({
+      family: "wallet",
+      marker: "eth_sendUserOperation",
+      status: "missing",
+      ruleId: "BAO005",
+    });
+  });
+
   it("uses the smart-wallet rule for missing capabilities", () => {
     const paths = analyzeSource("await wallet.sendCalls({ calls });", {
       builderCodes: ["bc_abc123"],
@@ -60,9 +94,9 @@ wallet.sendTransaction({ to, data: "0x" });`,
 
   it("detects Privy and project-level attribution configuration", async () => {
     const root = await createProject({
-      "src/config.ts": `import { PrivyProvider } from "@privy-io/react-auth";
-const dataSuffix = createDataSuffix({ codes: ["bc_abc123"] });
-export const config = { dataSuffix };`,
+      "src/config.ts": `import { PrivyProvider, dataSuffix } from "@privy-io/react-auth";
+const suffix = createDataSuffix({ codes: ["bc_abc123"] });
+export const config = { plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))] };`,
       "src/send.ts": `import { usePrivy } from "@privy-io/react-auth";
 export async function send(wallet) { return wallet.sendTransaction({ to, data: "0x" }); }`,
     });
@@ -149,19 +183,24 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`;
     "wagmi-app",
     "privy-app",
     "smart-wallet-sendcalls",
+    "base-account-sendcalls",
+    "wallet-user-operation",
+    "multi-code-userop",
     "raw-rpc",
     "x402-buyer",
     "agent-transaction-tool",
   ])("validates the %s public fixture", async (fixture) => {
     const fixturesRoot = fileURLToPath(new URL("../../../fixtures", import.meta.url));
+    const builderCodes =
+      fixture === "multi-code-userop" ? ["bc_abc123", "bc_partner"] : ["bc_abc123"];
     const broken = await analyzeProject({
       root: path.join(fixturesRoot, fixture, "broken"),
-      builderCodes: ["bc_abc123"],
+      builderCodes,
       profile: "ci",
     });
     const fixed = await analyzeProject({
       root: path.join(fixturesRoot, fixture, "fixed"),
-      builderCodes: ["bc_abc123"],
+      builderCodes,
       profile: "ci",
     });
 

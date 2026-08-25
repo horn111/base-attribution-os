@@ -7,7 +7,8 @@ transaction paths. They serve three purposes:
 2. Copyable integration examples for builders.
 3. Public evidence that a BAO finding maps to a concrete code change.
 
-Current coverage includes Wagmi, Privy, raw RPC, EIP-5792 smart-wallet calls,
+Current coverage includes Wagmi, Privy, raw RPC, Base Account and EIP-5792
+smart-wallet calls, ERC-4337 UserOperations, app/wallet multi-code attribution,
 x402 buyers, and agent transaction tools.
 
 Run the fixture suite:

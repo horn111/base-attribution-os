@@ -40,6 +40,23 @@ describe("checkTransactionCommand", () => {
     });
   });
 
+  it("validates attribution nested in an ERC-4337 v0.7 PackedUserOperation", async () => {
+    const callData = appendDataSuffix("0xabcd", { codes: ["bc_wallet", "bc_app"] });
+    mockTransaction(encodeHandleOpsV07(callData));
+
+    const result = await checkTransactionCommand({
+      hash: hash(),
+      rpcUrl: "https://rpc.example",
+      expect: ["bc_wallet", "bc_app"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({
+      codes: ["bc_wallet", "bc_app"],
+      attributionPath: "erc4337-user-operation",
+    });
+  });
+
   it("reports the nested Builder Code when it does not match the expectation", async () => {
     const callData = appendDataSuffix("0x1234", { codes: ["bc_wrong"] });
     mockTransaction(encodeHandleOpsV06(callData));
@@ -115,6 +132,40 @@ function encodeHandleOpsV06(callData: Hex): Hex {
   const operations = concat([word(1), word(32), operation]);
   return concat([
     "0x1fad948c",
+    word(64),
+    addressWord("0x0000000000000000000000000000000000000001"),
+    operations,
+  ]);
+}
+
+function encodeHandleOpsV07(callData: Hex): Hex {
+  const emptyBytes = encodeBytes("0x");
+  const encodedCallData = encodeBytes(callData);
+  const staticBytes = 9 * 32;
+  const initCodeOffset = staticBytes;
+  const callDataOffset = initCodeOffset + byteLength(emptyBytes);
+  const paymasterOffset = callDataOffset + byteLength(encodedCallData);
+  const signatureOffset = paymasterOffset + byteLength(emptyBytes);
+
+  const operation = concat([
+    addressWord("0x58638325a657FedfcE35264fe253aBBae56bCDd4"),
+    word(1),
+    word(initCodeOffset),
+    word(callDataOffset),
+    word(100_000),
+    word(50_000),
+    word(1_000_000),
+    word(paymasterOffset),
+    word(signatureOffset),
+    emptyBytes,
+    encodedCallData,
+    emptyBytes,
+    emptyBytes,
+  ]);
+
+  const operations = concat([word(1), word(32), operation]);
+  return concat([
+    "0x765e827f",
     word(64),
     addressWord("0x0000000000000000000000000000000000000001"),
     operations,

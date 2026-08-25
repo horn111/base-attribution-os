@@ -25,7 +25,7 @@ Coverage: 3/4 paths protected (75%)
 + wagmi    app/mint.tsx:18 sendTransaction [protected]
 + x402     src/pay.ts:9 x402Client [protected]
 ! wallet   src/batch.ts:22 sendCalls [missing] BAO005
-  Add capabilities.dataSuffix to the sendCalls request.
+  Use capability-aware middleware or negotiate wallet_getCapabilities first.
 ```
 
 ## Supported paths
@@ -34,7 +34,8 @@ Coverage: 3/4 paths protected (75%)
 - Wagmi and Viem transaction calls and client configuration.
 - ethers signers and BAO attribution wrappers.
 - raw `eth_sendTransaction` RPC calls.
-- EIP-5792 `sendCalls` and `wallet_sendCalls` capabilities.
+- Capability-aware EIP-5792 `sendCalls` and `wallet_sendCalls` paths.
+- ERC-4337 `eth_sendUserOperation` and BAO UserOperation middleware.
 - x402 buyer and seller Builder Code extensions.
 - agent transaction tools that send Base transactions.
 

@@ -3,7 +3,7 @@ import type { CommandResult } from "../output.js";
 
 export interface CheckCalldataOptions {
   calldata: Hex;
-  expect?: string;
+  expect?: string | string[];
 }
 
 export function checkCalldataCommand(options: CheckCalldataOptions): CommandResult {

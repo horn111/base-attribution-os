@@ -6,7 +6,7 @@ import type { CommandResult } from "../output.js";
 export interface CheckTransactionOptions {
   hash: Hex;
   rpcUrl: string;
-  expect?: string;
+  expect?: string | string[];
 }
 
 export async function checkTransactionCommand(
