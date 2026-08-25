@@ -1,5 +1,25 @@
 # @base-attribution-os/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 731d226: Add Attribution Proof Loop reports, Dune JSON and CSV replay, batched RPC
+  transaction fetching, Markdown proof output, and the `bao replay` and
+  `bao proof` commands.
+- 6a538e3: Add capability-aware EIP-5792 middleware, ERC-4337 UserOperation attribution,
+  multi-code merging, UserOperation CLI validation, and stricter smart-wallet
+  Doctor coverage.
+
+### Patch Changes
+
+- edf4656: Validate ERC-8021 attribution inside ERC-4337 `handleOps` UserOperation calldata.
+- Updated dependencies [731d226]
+- Updated dependencies [6a538e3]
+  - @base-attribution-os/core@0.2.0
+  - @base-attribution-os/wallet@0.1.0
+  - @base-attribution-os/scanner@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

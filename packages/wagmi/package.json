@@ -1,6 +1,6 @@
 {
   "name": "@base-attribution-os/wagmi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Wagmi helpers for Base Builder Code attribution.",
   "type": "module",
   "license": "MIT",
