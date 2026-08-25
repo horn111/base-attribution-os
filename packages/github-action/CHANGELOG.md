@@ -1,5 +1,15 @@
 # @base-attribution-os/github-action
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [edf4656]
+- Updated dependencies [731d226]
+- Updated dependencies [6a538e3]
+  - @base-attribution-os/cli@0.2.0
+  - @base-attribution-os/scanner@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

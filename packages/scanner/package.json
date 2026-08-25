@@ -1,6 +1,6 @@
 {
   "name": "@base-attribution-os/scanner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AST-backed Builder Code attribution analysis for Base applications.",
   "type": "module",
   "license": "MIT",
