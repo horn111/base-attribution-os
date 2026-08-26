@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import wordmark from "../_assets/bao-wordmark.png";
 
 export function SiteHeader(props: {
   current?: "doctor" | "observatory" | "proof" | "smart-wallets";
@@ -13,7 +14,7 @@ export function SiteHeader(props: {
           className="brand-wordmark"
           height={65}
           priority
-          src="/bao-wordmark.png"
+          src={wordmark}
           width={172}
         />
         <span>Base Attribution OS</span>
