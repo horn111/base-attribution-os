@@ -129,6 +129,28 @@ pre {
   color: var(--text-accent);
 }
 
+.x-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--text) !important;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.x-button:hover {
+  border-color: #0052ff;
+  color: var(--text-accent) !important;
+}
+
+.x-button svg {
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
 .star-button {
   display: inline-flex;
   align-items: center;
