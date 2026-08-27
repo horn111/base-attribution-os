@@ -1,6 +1,7 @@
 # Release Checklist
 
 Use this checklist for every public package and GitHub Action release.
+Package and project versions follow the [versioning policy](versioning.md).
 
 ## Release candidate verification
 
@@ -35,7 +36,10 @@ debugging a failed smoke run.
   package.
 - Verify the Vercel demo production URL still loads.
 - Confirm README and workflow snippets use the intended immutable release ref.
-- Review the Changeset summary and generated package versions.
+- Run `pnpm changeset status` and review every projected package version against
+  the approved release brief.
+- Confirm the maintainer has recorded validation from at least three external
+  or self-owned production apps.
 
 ## Release step
 
@@ -45,6 +49,7 @@ Only after an explicit release decision:
 - publish packages and create the immutable GitHub release tag;
 - move the floating `v0` tag only after the immutable Action ref passes its
   smoke test;
+- confirm `v0^{}` and the immutable release tag resolve to the same commit;
 - confirm the final npm and GitHub release links resolve.
 
 ## Post-release proof

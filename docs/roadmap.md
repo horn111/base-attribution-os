@@ -46,14 +46,31 @@
   and [BAO proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653).
 - Dynamic, grid-free Open Graph proof card.
 
-## Next
+## v0.3 baseline (merged, unreleased)
 
-- Complete release hardening for protocol validation, adapter transparency,
-  scanner confidence, package metadata, and CI.
-- Validate rules against at least three external or self-owned production apps.
+- Enforce the Base Builder Code format and custom-registry chain IDs.
+- Preserve adapter prototypes and method context across viem and ethers.
+- Validate scanner configuration, stabilize fingerprints, and respect rule
+  severity in SARIF.
+- Verify all eight packed packages and the bundled GitHub Action before release.
+- Publish package-level READMEs and complete npm metadata.
+
+## v0.3 planning
+
+The release brief will lock the product scope before feature implementation.
+The project uses independent package versions within the `v0.3.0` release
+train, as defined in the [versioning policy](versioning.md).
+
+Release gate owned by the maintainer:
+
+- Validate rules against at least three external or self-owned production apps
+  and record the evidence before the release candidate.
+
+Candidate work for the release brief:
+
 - Add public x402 seller and multi-file wallet fixtures.
 - Tune project-level evidence across more monorepo layouts.
-- Public fixture set for real transaction calldata.
+- Add a public fixture set for real transaction calldata.
 
 ## Future v0 releases
 

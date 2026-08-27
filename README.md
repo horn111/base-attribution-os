@@ -295,6 +295,7 @@ code path before deploy and verify the result afterward.
 | [Incremental adoption](docs/incremental-adoption.md)       | Baselines for existing attribution debt        |
 | [Architecture](docs/architecture.md)                       | Package boundaries and trust model             |
 | [Attribution Proof Loop](docs/attribution-proof-loop.md)   | Dune and RPC replay with public proof reports  |
+| [Versioning](docs/versioning.md)                           | Release trains, package versions, and tags     |
 | [Roadmap](docs/roadmap.md)                                 | Shipped work and planned milestones            |
 
 Primary references:
