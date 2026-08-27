@@ -18,5 +18,6 @@ yarn-error.log*
 
 /docs/grant/
 /docs/grant-brief.md
-/docs/launch/weekly-update-template.md
-/docs/launch/x-posts.md
+/docs/launch/
+/apps/docs/public/social/
+/apps/docs/public/bao-x-header*.png
