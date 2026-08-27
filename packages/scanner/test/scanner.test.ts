@@ -1,9 +1,15 @@
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { analyzeProject, analyzeSource, reportToSarif, writeBaseline } from "../src/index.js";
+import {
+  analyzeProject,
+  analyzeSource,
+  loadBaoConfig,
+  reportToSarif,
+  writeBaseline,
+} from "../src/index.js";
 
 describe("@base-attribution-os/scanner", () => {
   it("reports every transaction path in a source file", () => {
@@ -92,7 +98,7 @@ await wallet.sendCalls({
     expect(paths[0]).toMatchObject({ status: "missing", ruleId: "BAO005" });
   });
 
-  it("detects Privy and project-level attribution configuration", async () => {
+  it("recognizes the project-level Privy dataSuffix plugin", async () => {
     const root = await createProject({
       "src/config.ts": `import { PrivyProvider, dataSuffix } from "@privy-io/react-auth";
 const suffix = createDataSuffix({ codes: ["bc_abc123"] });
@@ -107,6 +113,23 @@ export async function send(wallet) { return wallet.sendTransaction({ to, data: "
       family: "privy",
       status: "protected",
       confidence: "medium",
+    });
+  });
+
+  it("fails strict scans when attribution exists only in another file", async () => {
+    const root = await createProject({
+      "src/config.ts": `import { createWalletClient } from "viem";
+export const client = createWalletClient({ dataSuffix: createDataSuffix({ codes: ["bc_abc123"] }) });`,
+      "src/send.ts": `import { createWalletClient } from "viem";
+wallet.sendTransaction({ to, data: "0x" });`,
+    });
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+
+    expect(report.ok).toBe(false);
+    expect(report.transactionPaths[0]).toMatchObject({
+      status: "unresolved",
+      ruleId: "BAO004",
+      severity: "error",
     });
   });
 
@@ -156,6 +179,36 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`;
     expect(report.transactionPaths[0].baseline).toBe(true);
   });
 
+  it("keeps baseline fingerprints stable when lines move", async () => {
+    const root = await createProject({
+      "src/send.ts": 'wallet.sendTransaction({ to, data: "0x" });',
+    });
+    const initial = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "ci" });
+    await writeBaseline(initial, ".bao-baseline.json");
+    await writeFile(
+      path.join(root, "src/send.ts"),
+      '// moved by a comment\nwallet.sendTransaction({ to, data: "0x" });',
+    );
+    const report = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "ci",
+      baseline: ".bao-baseline.json",
+    });
+
+    expect(report.transactionPaths[0].baseline).toBe(true);
+  });
+
+  it("gives identical call sites distinct baseline fingerprints", () => {
+    const paths = analyzeSource(
+      `wallet.sendTransaction({ to, data: "0x" });
+wallet.sendTransaction({ to, data: "0x" });`,
+      { builderCodes: ["bc_abc123"], profile: "ci" },
+    );
+
+    expect(new Set(paths.map((entry) => entry.fingerprint)).size).toBe(2);
+  });
+
   it("emits SARIF with BAO rule IDs and source locations", async () => {
     const root = await createProject({
       "src/send.ts": "wallet.sendCalls({ calls });",
@@ -168,6 +221,21 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`;
     expect(sarif.runs[0].results[0].ruleId).toBe("BAO005");
   });
 
+  it("omits disabled findings from SARIF", async () => {
+    const root = await createProject({
+      "src/send.ts": 'wallet.sendTransaction({ to, data: "0x" });',
+    });
+    const report = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "strict",
+      rules: { "missing-attribution": "off" },
+    });
+    const sarif = reportToSarif(report) as { runs: Array<{ results: unknown[] }> };
+
+    expect(sarif.runs[0].results).toEqual([]);
+  });
+
   it("writes and reads a project configuration", async () => {
     const root = await createProject({ "src/index.ts": "export {};" });
     await writeFile(
@@ -175,8 +243,30 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`;
       JSON.stringify({ builderCodes: ["bc_abc123"], profile: "ci" }),
     );
 
-    const source = await readFile(path.join(root, "bao.config.json"), "utf8");
-    expect(source).toContain("bc_abc123");
+    const loaded = await loadBaoConfig(root);
+    expect(loaded?.config.builderCodes).toEqual(["bc_abc123"]);
+  });
+
+  it("rejects malformed project configuration", async () => {
+    const root = await createProject({
+      "bao.config.json": JSON.stringify({ builderCodes: [123], profile: "production" }),
+    });
+
+    await expect(loadBaoConfig(root)).rejects.toThrow("builderCodes");
+  });
+
+  it("matches root files with a double-star exclude", async () => {
+    const root = await createProject({
+      "send.test.ts": 'wallet.sendTransaction({ to, data: "0x" });',
+    });
+    const report = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "ci",
+      exclude: ["**/*.test.*"],
+    });
+
+    expect(report.checkedFiles).toBe(0);
   });
 
   it.each([

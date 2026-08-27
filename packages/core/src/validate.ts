@@ -83,7 +83,7 @@ export function validateBuilderCodes(codes: string[]): string[] {
     }
 
     if (!BUILDER_CODE_PATTERN.test(code)) {
-      errors.push(`Builder Code "${code}" contains unsupported characters`);
+      errors.push(`Builder Code "${code}" must be 1-32 lowercase letters, digits, or underscores`);
     }
   }
 

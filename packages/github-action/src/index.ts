@@ -7,6 +7,7 @@ import {
   reportToSarif,
   type AttributionReport,
 } from "@base-attribution-os/scanner";
+import { resolveActionProfile, resolveFailOnMissing } from "./options.js";
 
 async function main(): Promise<void> {
   const repoPath = path.resolve(core.getInput("path") || ".");
@@ -20,7 +21,7 @@ async function main(): Promise<void> {
   }
 
   const paths = splitInput(core.getInput("paths"));
-  const profile = core.getInput("profile") || config?.profile || "ci";
+  const profile = resolveActionProfile(core.getInput("profile"), config?.profile);
   const changedOnly = core.getBooleanInput("changed-only");
   const changedSince = changedOnly ? resolveBaseRef() : undefined;
   const baseline = core.getInput("baseline") || config?.baseline;
@@ -40,9 +41,7 @@ async function main(): Promise<void> {
   await writeSarif(repoPath, report);
   setOutputs(report);
 
-  const failOnMissingInput = core.getInput("fail-on-missing");
-  const failOnMissing =
-    failOnMissingInput.length === 0 ? true : failOnMissingInput.toLowerCase() !== "false";
+  const failOnMissing = resolveFailOnMissing(core.getInput("fail-on-missing"));
 
   if (!report.ok && failOnMissing) {
     core.setFailed(`Base attribution validation failed with ${report.summary.errors} error(s).`);

@@ -16,7 +16,8 @@ const RULES: Record<RuleId, { description: string; name: string }> = {
   },
   BAO004: {
     name: "ambiguous-path",
-    description: "A transaction path could not be classified with high confidence.",
+    description:
+      "Project-level attribution evidence cannot be linked to a transaction path with high confidence.",
   },
   BAO005: {
     name: "smart-wallet-data-suffix",
@@ -32,7 +33,10 @@ const RULES: Record<RuleId, { description: string; name: string }> = {
 export function reportToSarif(report: AttributionReport): object {
   const findings = report.transactionPaths.filter(
     (entry): entry is TransactionPath & { ruleId: RuleId } =>
-      entry.status !== "protected" && entry.ruleId !== undefined && !entry.baseline,
+      entry.status !== "protected" &&
+      entry.ruleId !== undefined &&
+      entry.severity !== "off" &&
+      !entry.baseline,
   );
 
   return {

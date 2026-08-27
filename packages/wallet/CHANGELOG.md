@@ -12,10 +12,3 @@
 
 - Updated dependencies [731d226]
   - @base-attribution-os/core@0.2.0
-
-## 0.1.0
-
-### Minor Changes
-
-- Add the first Smart Wallet Attribution Kit release with EIP-5792 capability
-  negotiation, strict fallback, ERC-4337 middleware, and multi-code validation.

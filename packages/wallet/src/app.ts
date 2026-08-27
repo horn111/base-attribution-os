@@ -222,9 +222,8 @@ function unique(values: string[]): string[] {
 }
 
 function readRegistryFromInput(input: AttributionInput): AttributionRegistry | undefined {
-  if (!("codeRegistry" in input) && !("codeRegistryAddress" in input)) return undefined;
-  const address = input.codeRegistry?.address ?? input.codeRegistryAddress;
-  return address ? { address, chainId: input.codeRegistry?.chainId } : undefined;
+  if (!("codeRegistry" in input)) return undefined;
+  return input.codeRegistry;
 }
 
 function sameRegistry(

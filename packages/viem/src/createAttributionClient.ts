@@ -12,7 +12,7 @@ export type AttributionClientOptions = AttributionInput & {
 
 export type TransactionSender = (request: TransactionLike) => Promise<unknown> | unknown;
 
-export type ViemClientLike = Record<string, unknown> & {
+export type ViemClientLike = {
   sendTransaction?: TransactionSender;
   writeContract?: TransactionSender;
 };
@@ -45,31 +45,32 @@ export function createAttributionClient<TClient extends ViemClientLike>(
   sendTransaction?: (request: TransactionLike) => Promise<unknown>;
   writeContract?: (request: TransactionLike) => Promise<unknown>;
 } {
-  const wrapped: Record<string, unknown> = {
-    ...client,
-    attribution: options,
-  };
   const attribution = options as AttributionInput;
   const sendTransaction = client.sendTransaction;
   const writeContract = client.writeContract;
+  const withAttribution = (request: TransactionLike) =>
+    options.preferDataSuffixField
+      ? withViemDataSuffix(request, attribution)
+      : withAttributionSuffix(request, attribution);
+  const wrapped = new Proxy(client, {
+    get(target, property) {
+      if (property === "attribution") return options;
+      if (property === "sendTransaction" && typeof sendTransaction === "function") {
+        return (request: TransactionLike) =>
+          Promise.resolve(sendTransaction.call(target, withAttribution(request)));
+      }
+      if (property === "writeContract" && typeof writeContract === "function") {
+        return (request: TransactionLike) =>
+          Promise.resolve(writeContract.call(target, withAttribution(request)));
+      }
 
-  if (typeof sendTransaction === "function") {
-    wrapped.sendTransaction = (request: TransactionLike) =>
-      sendTransaction(
-        options.preferDataSuffixField
-          ? withViemDataSuffix(request, attribution)
-          : withAttributionSuffix(request, attribution),
-      );
-  }
-
-  if (typeof writeContract === "function") {
-    wrapped.writeContract = (request: TransactionLike) =>
-      writeContract(
-        options.preferDataSuffixField
-          ? withViemDataSuffix(request, attribution)
-          : withAttributionSuffix(request, attribution),
-      );
-  }
+      const value = Reflect.get(target, property, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+    has(target, property) {
+      return property === "attribution" || Reflect.has(target, property);
+    },
+  });
 
   return wrapped as TClient & {
     attribution: AttributionClientOptions;

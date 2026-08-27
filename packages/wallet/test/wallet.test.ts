@@ -279,9 +279,11 @@ describe("wallet-side UserOperation attribution", () => {
   });
 
   it("enforces the ERC-8021 byte limit after code merging", () => {
-    expect(() =>
-      attributeUserOperation({ callData: "0x" }, { walletCodes: [`bc_${"x".repeat(253)}`] }),
-    ).toThrow(/255 bytes or less/);
+    const walletCodes = Array.from({ length: 8 }, (_, index) => `bc_${index}${"x".repeat(28)}`);
+
+    expect(() => attributeUserOperation({ callData: "0x" }, { walletCodes })).toThrow(
+      /255 bytes or less/,
+    );
   });
 });
 

@@ -116,35 +116,27 @@ function readRegistryData(dataBeforeCodes: Hex):
   | undefined {
   const byteLength = hexByteLength(dataBeforeCodes);
 
-  if (byteLength < 20) {
+  if (byteLength < 22) {
     return undefined;
   }
 
   const maybeChainIdLength = hexToNumber(sliceHex(dataBeforeCodes, -1));
 
-  if (maybeChainIdLength > 0 && byteLength >= 20 + maybeChainIdLength + 1) {
-    const registryData = sliceHex(dataBeforeCodes, -(20 + maybeChainIdLength + 1));
-    const address = sliceHex(registryData, 0, 20);
-    const chainIdHex = sliceHex(registryData, 20, 20 + maybeChainIdLength);
-    const transactionData = sliceHex(dataBeforeCodes, 0, -(20 + maybeChainIdLength + 1));
-
-    return {
-      registry: {
-        address,
-        chainId: BigInt(chainIdHex),
-      },
-      registryData,
-      transactionData,
-    };
+  if (maybeChainIdLength === 0 || byteLength < 20 + maybeChainIdLength + 1) {
+    return undefined;
   }
 
-  const registryData = sliceHex(dataBeforeCodes, -20);
+  const registryByteLength = 20 + maybeChainIdLength + 1;
+  const registryData = sliceHex(dataBeforeCodes, -registryByteLength);
+  const address = sliceHex(registryData, 0, 20);
+  const chainIdHex = sliceHex(registryData, 20, 20 + maybeChainIdLength);
 
   return {
     registry: {
-      address: registryData,
+      address,
+      chainId: BigInt(chainIdHex),
     },
     registryData,
-    transactionData: sliceHex(dataBeforeCodes, 0, -20),
+    transactionData: sliceHex(dataBeforeCodes, 0, -registryByteLength),
   };
 }

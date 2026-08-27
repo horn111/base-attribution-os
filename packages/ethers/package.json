@@ -4,12 +4,25 @@
   "description": "Tiny ethers helpers for Base Builder Code attribution.",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/horn111/base-attribution-os.git",
+    "directory": "packages/ethers"
+  },
+  "homepage": "https://github.com/horn111/base-attribution-os#readme",
+  "bugs": {
+    "url": "https://github.com/horn111/base-attribution-os/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
