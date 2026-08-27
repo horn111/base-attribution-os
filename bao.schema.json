@@ -10,7 +10,7 @@
     "builderCodes": {
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string", "pattern": "^bc_[A-Za-z0-9._:-]+$" }
+      "items": { "type": "string", "pattern": "^[a-z0-9_]{1,32}$" }
     },
     "profile": { "enum": ["local", "ci", "strict"] },
     "include": { "type": "array", "items": { "type": "string" } },

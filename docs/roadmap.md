@@ -28,6 +28,13 @@
 - Stable GitHub Action ref at `v0`.
 - External consumer install verification from the original seven packed packages.
 
+## v0.2 (shipped)
+
+- Smart Wallet Attribution Kit for EIP-5792 and ERC-4337 flows.
+- Attribution Proof Loop with Dune and RPC replay.
+- Eight-package release verification and public proof surfaces.
+- Wider scanner coverage for Privy, raw RPC, smart wallets, x402, and agents.
+
 ## Update 7 (shipped)
 
 - Pure replay API in `@base-attribution-os/core`.
@@ -41,12 +48,14 @@
 
 ## Next
 
+- Complete release hardening for protocol validation, adapter transparency,
+  scanner confidence, package metadata, and CI.
 - Validate rules against at least three external or self-owned production apps.
 - Add public x402 seller and multi-file wallet fixtures.
 - Tune project-level evidence across more monorepo layouts.
 - Public fixture set for real transaction calldata.
 
-## v0.2
+## Future v0 releases
 
 - Expand the Attribution Observatory with local analytics.
 - Add shareable progress cards for broader proof sets.

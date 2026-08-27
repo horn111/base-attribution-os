@@ -14,7 +14,7 @@ enforces coverage in CI.
 [Live demo](https://base-attribution-os.vercel.app) ·
 [Attribution Observatory](https://base-attribution-os.vercel.app/observatory) ·
 [Published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653) ·
-[v0.1.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.1.0) ·
+[v0.2.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.2.0) ·
 [npm packages](https://www.npmjs.com/org/base-attribution-os) ·
 [Documentation](docs/attribution-doctor.md)
 
@@ -148,11 +148,11 @@ jobs:
   attribution:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: horn111/base-attribution-os/packages/github-action@v0
+      - uses: horn111/base-attribution-os/packages/github-action@v0.2.0
         with:
           builder-code: bc_abc123
           profile: ci
@@ -167,8 +167,8 @@ jobs:
 ```
 
 The Action reports checked files, detected transaction paths, protected paths,
-coverage, and findings. The `v0` tag follows the current compatible v0 release;
-pin `v0.1.0` when your workflow requires an immutable ref.
+coverage, and findings. Pin the immutable `v0.2.0` release in production
+workflows. Moving the floating `v0` ref is a separate release step.
 
 ## Attribution Doctor
 
@@ -191,8 +191,9 @@ Choose enforcement per environment:
 | `strict` | Require evidence that matches a configured Builder Code               |
 
 Rule IDs separate missing attribution (`BAO001`), incorrect codes (`BAO002`),
-dynamic configuration (`BAO003`), unnegotiated smart-wallet attribution (`BAO005`), and
-x402 extension gaps (`BAO006`).
+dynamic configuration (`BAO003`), unresolved project-level evidence (`BAO004`),
+unnegotiated smart-wallet attribution (`BAO005`), and x402 extension gaps
+(`BAO006`).
 
 Read the full workflow in
 [docs/attribution-doctor.md](docs/attribution-doctor.md).

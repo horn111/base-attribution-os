@@ -30,5 +30,5 @@
 | `baseline`     | Existing findings accepted during incremental rollout. |
 
 Command-line values override config values. Builder Codes are public project
-identifiers, but private keys, RPC secrets, and wallet credentials never belong
-in this file.
+identifiers and must contain 1-32 lowercase letters, numbers, or underscores.
+Private keys, RPC secrets, and wallet credentials never belong in this file.

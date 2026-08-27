@@ -1,7 +1,9 @@
 import "./globals.css";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL("https://base-attribution-os.vercel.app"),
   title: "Base Attribution OS - Attribution Doctor",
   description:
     "Audit Base Builder Code coverage across transaction paths before they reach production.",

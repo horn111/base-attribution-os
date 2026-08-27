@@ -6,15 +6,15 @@ on:
 jobs:
   attribution:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./packages/github-action
         with:
-          builder-code: bc_abc123
-          paths: "src,app,packages,examples"
-          profile: ci
           changed-only: "true"
           base-ref: ${{ github.event.pull_request.base.sha }}
           sarif-output: bao-results.sarif

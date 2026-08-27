@@ -39,4 +39,30 @@ describe("@base-attribution-os/ethers", () => {
     });
     expect((sent[0] as { data: string }).data).toContain("80218021802180218021802180218021");
   });
+
+  it("preserves signer prototypes and private method context", async () => {
+    class DemoSigner {
+      readonly sent: unknown[] = [];
+      readonly #label = "demo";
+
+      label() {
+        return this.#label;
+      }
+
+      sendTransaction(request: unknown) {
+        this.sent.push(request);
+        return { hash: "0xabc", label: this.#label };
+      }
+    }
+
+    const signer = new DemoSigner();
+    const wrapped = createAttributionSigner(signer, { codes: ["baseapp"] });
+
+    const result = await wrapped.sendTransaction({ data: "0x1234" });
+
+    expect(wrapped).toBeInstanceOf(DemoSigner);
+    expect(wrapped.label()).toBe("demo");
+    expect(result).toMatchObject({ label: "demo" });
+    expect((signer.sent[0] as { data: string }).data).toContain("80218021802180218021802180218021");
+  });
 });

@@ -23,7 +23,6 @@ inputs:
   profile:
     description: "Scanner profile: local reports findings without failing by default, ci fails obvious missing attribution, strict requires the expected Builder Code in candidate files."
     required: false
-    default: "ci"
   fail-on-missing:
     description: "Override the selected profile's default failure behavior."
     required: false

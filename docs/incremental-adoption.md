@@ -12,10 +12,10 @@ bao doctor --changed-since origin/main
 The GitHub Action exposes the same mode:
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v6
   with:
     fetch-depth: 0
-- uses: horn111/base-attribution-os/packages/github-action@v0
+- uses: horn111/base-attribution-os/packages/github-action@v0.2.0
   with:
     builder-code: bc_abc123
     changed-only: "true"

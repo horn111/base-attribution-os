@@ -55,6 +55,45 @@ describe("@base-attribution-os/core", () => {
     });
   });
 
+  it("rejects schema 1 attribution without a registry chain ID", () => {
+    expect(() =>
+      createDataSuffix({
+        id: 1,
+        codes: ["baseapp"],
+        codeRegistry: {
+          address: "0xcccccccccccccccccccccccccccccccccccccccc",
+        },
+      } as unknown as Parameters<typeof createDataSuffix>[0]),
+    ).toThrow("codeRegistry.chainId");
+  });
+
+  it("rejects unsafe numeric registry chain IDs", () => {
+    expect(() =>
+      createDataSuffix({
+        id: 1,
+        codes: ["baseapp"],
+        codeRegistry: {
+          address: "0xcccccccccccccccccccccccccccccccccccccccc",
+          chainId: Number.MAX_SAFE_INTEGER + 1,
+        },
+      }),
+    ).toThrow("safe integer");
+  });
+
+  it("rejects schema 1 registry data with a zero chain ID length", () => {
+    const invalidSchemaOne =
+      `0x${"dd".repeat(40)}${"aa".repeat(19)}00${"62617365617070"}0701${MARKER}` as Hex;
+
+    expect(decodeAttributionFromCalldata(invalidSchemaOne)).toBeUndefined();
+  });
+
+  it("rejects unsupported Builder Code formats while encoding", () => {
+    expect(() => createDataSuffix({ codes: ["Not A Builder Code"] })).toThrow(
+      "1-32 lowercase letters",
+    );
+    expect(() => createDataSuffix({ codes: ["a".repeat(33)] })).toThrow("1-32 lowercase letters");
+  });
+
   it("reports invalid hex", () => {
     const result = validateAttribution({ calldata: "0x123" as Hex });
 

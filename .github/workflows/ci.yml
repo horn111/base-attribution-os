@@ -8,8 +8,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.4
@@ -18,5 +19,9 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod
       - run: pnpm check
       - run: pnpm build
+      - run: pnpm size
+      - run: pnpm verify:release-candidate
+      - run: git diff --exit-code -- packages/github-action/dist/index.cjs

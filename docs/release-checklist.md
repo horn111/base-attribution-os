@@ -1,7 +1,6 @@
-# v0.1 Release Checklist
+# Release Checklist
 
-This checklist records the verification and publication steps for the first
-public release.
+Use this checklist for every public package and GitHub Action release.
 
 ## Release candidate verification
 
@@ -18,6 +17,7 @@ The script:
 - wires unpublished internal packages through temporary `pnpm.overrides`;
 - installs the packed tarballs;
 - runs `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`;
+- runs the packed GitHub Action bundle with the candidate configuration;
 - removes the temporary workspace unless `BAO_KEEP_RELEASE_SMOKE=1` is set.
 
 No tarballs or temporary consumer files should be committed.
@@ -25,23 +25,26 @@ No tarballs or temporary consumer files should be committed.
 Set `BAO_VERBOSE_RELEASE_SMOKE=1` if you need full package-manager output while
 debugging a failed smoke run.
 
-## Before `v0.1.0`
+## Before the release
 
-- Confirm the npm org `@base-attribution-os` is available and owned by the
-  maintainer.
-- Run `pnpm format`, `pnpm check`, `pnpm build`, and
-  `pnpm verify:release-candidate`.
+- Run `pnpm format`, `pnpm audit --prod`, `pnpm check`, `pnpm build`,
+  `pnpm size`, and `pnpm verify:release-candidate`.
+- Confirm the committed GitHub Action bundle matches its TypeScript source:
+  `git diff --exit-code -- packages/github-action/dist/index.cjs`.
+- Confirm npm trusted publishing or `NPM_TOKEN` is configured for every public
+  package.
 - Verify the Vercel demo production URL still loads.
-- Confirm README install snippets and package versions match `v0.1.0`.
-- Open or link at least one pilot/integration request.
+- Confirm README and workflow snippets use the intended immutable release ref.
+- Review the Changeset summary and generated package versions.
 
 ## Release step
 
 Only after an explicit release decision:
 
-- publish packages as `v0.1.0`;
-- create GitHub tags `v0.1.0` and `v0`;
-- confirm GitHub Action snippets use `@v0`;
+- merge the version PR after all required checks pass;
+- publish packages and create the immutable GitHub release tag;
+- move the floating `v0` tag only after the immutable Action ref passes its
+  smoke test;
 - confirm the final npm and GitHub release links resolve.
 
 ## Post-release proof

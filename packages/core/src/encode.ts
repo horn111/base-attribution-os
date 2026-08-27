@@ -1,4 +1,5 @@
 import {
+  BUILDER_CODE_PATTERN,
   ERC8021_SUFFIX,
   MAX_CODES_BYTE_LENGTH,
   SCHEMA_CANONICAL_REGISTRY,
@@ -18,7 +19,7 @@ export type AttributionSchemaId = typeof SCHEMA_CANONICAL_REGISTRY | typeof SCHE
 
 export interface AttributionRegistry {
   address: Hex;
-  chainId?: number | bigint;
+  chainId: number | bigint;
 }
 
 export interface CanonicalAttributionInput {
@@ -29,8 +30,7 @@ export interface CanonicalAttributionInput {
 export interface CustomRegistryAttributionInput {
   codes: string[];
   id?: typeof SCHEMA_CUSTOM_REGISTRY;
-  codeRegistry?: AttributionRegistry;
-  codeRegistryAddress?: Hex;
+  codeRegistry: AttributionRegistry;
 }
 
 export type AttributionInput = CanonicalAttributionInput | CustomRegistryAttributionInput;
@@ -83,11 +83,7 @@ export function appendDataSuffix(data: Hex | undefined, input: AttributionInput)
 }
 
 export function getSchemaId(input: AttributionInput): AttributionSchemaId {
-  if (
-    input.id === SCHEMA_CUSTOM_REGISTRY ||
-    "codeRegistry" in input ||
-    "codeRegistryAddress" in input
-  ) {
+  if (input.id === SCHEMA_CUSTOM_REGISTRY || "codeRegistry" in input) {
     return SCHEMA_CUSTOM_REGISTRY;
   }
 
@@ -100,22 +96,34 @@ export function normalizeCodes(codes: string[]): string[] {
   }
 
   return codes.map((code) => {
-    const normalized = code.trim();
+    if (typeof code !== "string") {
+      throw new Error("Builder Codes must be strings");
+    }
 
-    if (normalized.length === 0) {
+    if (code.length === 0) {
       throw new Error("Builder Codes cannot be empty");
     }
 
-    if (normalized.includes(",")) {
+    if (code.trim() !== code) {
+      throw new Error("Builder Codes cannot be padded");
+    }
+
+    if (code.includes(",")) {
       throw new Error("Builder Codes cannot contain commas");
     }
 
-    return normalized;
+    if (!BUILDER_CODE_PATTERN.test(code)) {
+      throw new Error(
+        `Builder Code "${code}" must be 1-32 lowercase letters, digits, or underscores`,
+      );
+    }
+
+    return code;
   });
 }
 
 function registryToData(input: CustomRegistryAttributionInput): Hex {
-  const address = input.codeRegistry?.address ?? input.codeRegistryAddress;
+  const address = input.codeRegistry?.address;
 
   if (!address) {
     throw new Error("schema 1 attribution requires codeRegistry.address");
@@ -130,7 +138,11 @@ function registryToData(input: CustomRegistryAttributionInput): Hex {
   const chainId = input.codeRegistry?.chainId;
 
   if (chainId === undefined) {
-    return address.toLowerCase() as Hex;
+    throw new Error("schema 1 attribution requires codeRegistry.chainId");
+  }
+
+  if (typeof chainId === "number" && (!Number.isSafeInteger(chainId) || chainId < 0)) {
+    throw new Error("codeRegistry.chainId must be a non-negative safe integer or bigint");
   }
 
   const chainIdHex = bigintToMinimalHex(typeof chainId === "bigint" ? chainId : BigInt(chainId));

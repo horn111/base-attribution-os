@@ -4,12 +4,25 @@
   "description": "GitHub Action wrapper for Base Attribution OS repo scans.",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/horn111/base-attribution-os.git",
+    "directory": "packages/github-action"
+  },
+  "homepage": "https://github.com/horn111/base-attribution-os#readme",
+  "bugs": {
+    "url": "https://github.com/horn111/base-attribution-os/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "action.yml",
-    "dist"
+    "dist",
+    "README.md"
   ],
   "main": "./dist/index.cjs",
   "scripts": {

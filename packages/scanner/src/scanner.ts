@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { createDataSuffix } from "@base-attribution-os/core";
+import { createDataSuffix, validateBuilderCodes } from "@base-attribution-os/core";
 import ts from "typescript";
 import { readBaseline } from "./baseline.js";
 import { SCAN_PROFILES } from "./types.js";
@@ -30,7 +30,7 @@ const SKIPPED_DIRECTORIES = new Set([
   "dist",
   "node_modules",
 ]);
-const BUILDER_CODE_REGEX = /\bbc_[A-Za-z0-9._:-]+\b/g;
+const BUILDER_CODE_REGEX = /\bbc_[a-z0-9_]{1,29}\b/g;
 const ATTRIBUTION_HELPER_REGEX =
   /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 const AGENT_MARKER_REGEX =
@@ -67,6 +67,7 @@ interface Candidate {
 }
 
 export async function analyzeProject(options: AnalyzeProjectOptions): Promise<AttributionReport> {
+  assertBuilderCodes(options.builderCodes);
   const root = path.resolve(options.root);
   const profile = normalizeProfile(options.profile);
   const baseline = await readBaseline(root, options.baseline);
@@ -107,6 +108,7 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<At
 }
 
 export function analyzeSource(source: string, options: SourceAnalysisOptions): TransactionPath[] {
+  assertBuilderCodes(options.builderCodes);
   const relativePath = options.relativePath ?? "source.ts";
   const profile = normalizeProfile(options.profile);
   const sourceFile = ts.createSourceFile(
@@ -118,14 +120,23 @@ export function analyzeSource(source: string, options: SourceAnalysisOptions): T
   );
   const frameworks = detectFrameworks(source);
   const candidates = collectCandidates(sourceFile, source, frameworks);
+  const fingerprintOccurrences = new Map<string, number>();
 
-  return candidates.map((candidate) =>
-    evaluateCandidate(sourceFile, source, candidate, {
+  return candidates.map((candidate) => {
+    const fingerprintKey = [
+      candidate.family,
+      candidate.marker,
+      normalizeFingerprintSource(candidate.node.getText(sourceFile)),
+    ].join(":");
+    const fingerprintOccurrence = (fingerprintOccurrences.get(fingerprintKey) ?? 0) + 1;
+    fingerprintOccurrences.set(fingerprintKey, fingerprintOccurrence);
+
+    return evaluateCandidate(sourceFile, source, candidate, fingerprintOccurrence, {
       ...options,
       profile,
       relativePath,
-    }),
-  );
+    });
+  });
 }
 
 export function detectFrameworks(source: string): string[] {
@@ -277,6 +288,7 @@ function evaluateCandidate(
   sourceFile: ts.SourceFile,
   source: string,
   candidate: Candidate,
+  fingerprintOccurrence: number,
   options: Required<Pick<SourceAnalysisOptions, "builderCodes" | "relativePath">> &
     SourceAnalysisOptions & { profile: ScanProfile },
 ): TransactionPath {
@@ -289,8 +301,12 @@ function evaluateCandidate(
   );
   const directCodes = discoverBuilderCodes(directSource);
   const fileCodes = discoverBuilderCodes(source);
-  const hasExpectedDirectCode = directCodes.some((code) => options.builderCodes.includes(code));
-  const hasExpectedFileCode = fileCodes.some((code) => options.builderCodes.includes(code));
+  const hasExpectedDirectCode = options.builderCodes.some((code) =>
+    containsBuilderCode(directSource, code),
+  );
+  const hasExpectedFileCode = options.builderCodes.some((code) =>
+    containsBuilderCode(source, code),
+  );
   const hasExpectedSuffix = expectedSuffixes.some((suffix) =>
     source.toLowerCase().includes(suffix),
   );
@@ -332,9 +348,16 @@ function evaluateCandidate(
     status = "protected";
     message = `${candidate.marker} is protected by Builder Code attribution.`;
     confidence = hasExpectedDirectCode ? "high" : "medium";
-  } else if (projectEvidence?.expected) {
+  } else if (projectEvidence?.expected && candidate.family === "privy") {
     status = "protected";
-    message = `${candidate.marker} is covered by project-level Builder Code configuration.`;
+    message = `${candidate.marker} is covered by the project-level Privy dataSuffix plugin.`;
+    confidence = "medium";
+  } else if (projectEvidence?.expected) {
+    status = "unresolved";
+    ruleId = "BAO004";
+    message = `${candidate.marker} has project-level Builder Code configuration, but this call site is not statically linked to it.`;
+    suggestion =
+      "Pass dataSuffix at this call site or expose an import path the scanner can verify.";
     confidence = "medium";
   } else if (localAttribution || projectEvidence?.dynamic) {
     status = "unresolved";
@@ -349,13 +372,14 @@ function evaluateCandidate(
     suggestion = suggestionFor(candidate.family);
   }
 
-  const severity = severityFor(status, options.profile, options.rules);
+  const severity = severityFor(status, ruleId, options.profile, options.rules);
   const fingerprint = createFingerprint(
     ruleId ?? "protected",
     options.relativePath,
     candidate.family,
     candidate.marker,
-    start.line + 1,
+    normalizeFingerprintSource(directSource),
+    fingerprintOccurrence,
   );
   const isBaseline = options.baseline?.has(fingerprint) ?? false;
 
@@ -384,7 +408,7 @@ function findLocalAttribution(
 ): { detail: string; kind: AttributionEvidence["kind"] } | undefined {
   if (candidate.family === "x402") {
     const hasClientExtension =
-      candidate.marker === "x402Client" &&
+      (candidate.marker === "x402Client" || candidate.marker === "wrapFetchWithPayment") &&
       /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source);
     const hasSellerExtension =
       candidate.marker === "paymentMiddleware" && /\bdeclareBuilderCodeExtension\s*\(/.test(source);
@@ -438,8 +462,7 @@ function collectProjectEvidence(
       continue;
     }
 
-    const codes = discoverBuilderCodes(record.source);
-    const expected = codes.some((code) => builderCodes.includes(code));
+    const expected = builderCodes.some((code) => containsBuilderCode(record.source, code));
     const location = locationOf(
       record.source,
       /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withUserOperationAttribution/,
@@ -530,17 +553,20 @@ function suggestionFor(family: TransactionFamily): string {
 
 function severityFor(
   status: TransactionPath["status"],
+  ruleId: RuleId | undefined,
   profile: ScanProfile,
   rules?: BaoRuleConfig,
 ): FindingSeverity {
   if (status === "protected") return "off";
 
   const configured =
-    status === "missing"
-      ? rules?.["missing-attribution"]
-      : status === "wrong-code"
-        ? rules?.["wrong-builder-code"]
-        : rules?.["dynamic-attribution"];
+    ruleId === "BAO004"
+      ? rules?.["ambiguous-path"]
+      : status === "missing"
+        ? rules?.["missing-attribution"]
+        : status === "wrong-code"
+          ? rules?.["wrong-builder-code"]
+          : rules?.["dynamic-attribution"];
 
   if (configured) return configured;
   if (profile === "local") return "warning";
@@ -631,11 +657,26 @@ function pathRuleMatches(file: string, rule: string): boolean {
   if (!normalized.includes("*")) {
     return file === normalized || file.startsWith(`${normalized}/`);
   }
-  const escaped = normalized.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  const pattern = escaped
-    .replaceAll("**", "::DOUBLE::")
-    .replaceAll("*", "[^/]*")
-    .replaceAll("::DOUBLE::", ".*");
+  let pattern = "";
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const character = normalized[index];
+    const next = normalized[index + 1];
+    const afterNext = normalized[index + 2];
+
+    if (character === "*" && next === "*" && afterNext === "/") {
+      pattern += "(?:.*/)?";
+      index += 2;
+    } else if (character === "*" && next === "*") {
+      pattern += ".*";
+      index += 1;
+    } else if (character === "*") {
+      pattern += "[^/]*";
+    } else {
+      pattern += character.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    }
+  }
+
   return new RegExp(`^${pattern}$`).test(file);
 }
 
@@ -664,6 +705,21 @@ function propertyName(name: ts.PropertyName): string | undefined {
 
 function discoverBuilderCodes(source: string): string[] {
   return Array.from(new Set(source.match(BUILDER_CODE_REGEX) ?? []));
+}
+
+function containsBuilderCode(source: string, code: string): boolean {
+  return (
+    source.includes(`"${code}"`) || source.includes(`'${code}'`) || source.includes(`\`${code}\``)
+  );
+}
+
+function assertBuilderCodes(codes: string[]): void {
+  const errors = validateBuilderCodes(codes);
+  if (errors.length > 0) throw new Error(errors.join("; "));
+}
+
+function normalizeFingerprintSource(source: string): string {
+  return source.replace(/\s+/g, " ").trim();
 }
 
 function confidenceFor(

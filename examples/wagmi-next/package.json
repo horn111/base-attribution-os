@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next typegen && tsc -p tsconfig.json --noEmit",
+    "build": "next build",
     "build:next": "next build",
     "clean": "rimraf .next",
     "dev": "next dev",

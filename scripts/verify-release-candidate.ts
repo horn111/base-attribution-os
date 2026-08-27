@@ -1,4 +1,12 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -194,6 +202,32 @@ await walletClient.sendTransaction({
   );
   run("pnpm", ["exec", "bao", "doctor"], consumerDir);
 
+  const actionSummary = path.join(consumerDir, "action-summary.md");
+  const actionOutput = path.join(consumerDir, "action-output.txt");
+  writeFileSync(actionSummary, "");
+  writeFileSync(actionOutput, "");
+  run("node", ["node_modules/@base-attribution-os/github-action/dist/index.cjs"], consumerDir, {
+    GITHUB_OUTPUT: actionOutput,
+    GITHUB_STEP_SUMMARY: actionSummary,
+    "INPUT_BASE-REF": "",
+    INPUT_BASELINE: "",
+    "INPUT_BUILDER-CODE": "",
+    "INPUT_CHANGED-ONLY": "false",
+    INPUT_CONFIG: "bao.config.json",
+    "INPUT_FAIL-ON-MISSING": "true",
+    INPUT_PATH: consumerDir,
+    INPUT_PATHS: "",
+    INPUT_PROFILE: "",
+    "INPUT_SARIF-OUTPUT": "action-results.sarif",
+  });
+
+  if (!existsSync(path.join(consumerDir, "action-results.sarif"))) {
+    throw new Error("GitHub Action smoke did not create SARIF output");
+  }
+  if (!readFileSync(actionOutput, "utf8").includes("strict")) {
+    throw new Error("GitHub Action smoke did not apply the config profile");
+  }
+
   log("release candidate smoke passed");
   log(`packed packages: ${packed.map((entry) => entry.packageName).join(", ")}`);
 } catch (error) {
@@ -242,7 +276,12 @@ function readSuffix(output: string): string {
   return suffix;
 }
 
-function run(command: string, args: string[], cwd: string): { stdout: string } {
+function run(
+  command: string,
+  args: string[],
+  cwd: string,
+  extraEnv: Record<string, string> = {},
+): { stdout: string } {
   log(`${command} ${args.join(" ")}`);
   const invocation = resolveCommand(command, args);
   const result = spawnSync(invocation.command, invocation.args, {
@@ -251,6 +290,7 @@ function run(command: string, args: string[], cwd: string): { stdout: string } {
     env: {
       ...process.env,
       CI: "true",
+      ...extraEnv,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
