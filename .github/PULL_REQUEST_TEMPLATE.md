@@ -18,4 +18,4 @@ Choose all that apply:
 - [ ] CI enforcement
 - [ ] wallet middleware
 - [ ] agent flow
-- [ ] docs or launch material
+- [ ] documentation

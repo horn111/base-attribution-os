@@ -33,7 +33,7 @@ Every PR should explain which attribution path it affects:
 - CI enforcement
 - wallet middleware
 - agent flow
-- docs or launch material
+- documentation
 
 ## Attribution cases
 
