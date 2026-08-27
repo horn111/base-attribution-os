@@ -15,9 +15,6 @@ jobs:
           fetch-depth: 0
       - uses: ./packages/github-action
         with:
-          builder-code: bc_abc123
-          paths: "src,app,packages,examples"
-          profile: ci
           changed-only: "true"
           base-ref: ${{ github.event.pull_request.base.sha }}
           sarif-output: bao-results.sarif

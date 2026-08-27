@@ -1,0 +1,13 @@
+{
+  "$schema": "./bao.schema.json",
+  "builderCodes": ["bc_abc123"],
+  "profile": "ci",
+  "include": ["examples"],
+  "exclude": ["**/*.test.*", "**/*.spec.*", "**/fixtures/**", "**/generated/**", "**/dist/**"],
+  "rules": {
+    "missing-attribution": "error",
+    "wrong-builder-code": "error",
+    "dynamic-attribution": "warning",
+    "ambiguous-path": "warning"
+  }
+}
