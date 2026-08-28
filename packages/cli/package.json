@@ -1,6 +1,6 @@
 {
   "name": "@base-attribution-os/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI validator for Base Builder Code attribution.",
   "type": "module",
   "license": "MIT",

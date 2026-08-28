@@ -1,5 +1,20 @@
 # @base-attribution-os/scanner
 
+## 0.3.0
+
+### Minor Changes
+
+- a9c6951: Harden attribution before the next public release: enforce the Base Builder Code
+  format, require a chain ID for custom registries, preserve adapter prototype and
+  method context, validate scanner configuration, stabilize baselines, respect
+  rule severity in SARIF, and verify the packed GitHub Action in release smoke
+  tests.
+
+### Patch Changes
+
+- Updated dependencies [a9c6951]
+  - @base-attribution-os/core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

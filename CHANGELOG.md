@@ -5,7 +5,7 @@ All notable changes to Base Attribution OS will be documented here.
 This project uses Changesets. Each package release should include a short note
 that explains the attribution workflow it improves.
 
-## 0.3.0 - Unreleased
+## 0.3.0 - 2026-08-28
 
 - Enforce the Base Builder Code format and require chain IDs for custom
   registries.
