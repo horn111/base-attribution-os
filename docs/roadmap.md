@@ -57,20 +57,24 @@
 
 ## v0.3 planning
 
-The release brief will lock the product scope before feature implementation.
+The [v0.3.0 release brief](releases/v0.3.0.md) locks the product scope.
 The project uses independent package versions within the `v0.3.0` release
 train, as defined in the [versioning policy](versioning.md).
 
 Release gate owned by the maintainer:
 
-- Validate rules against at least three external or self-owned production apps
-  and record the evidence before the release candidate.
+- Complete one deep production pilot against Stack the Bag using the versioned
+  candidate packages. Keep the full report private and publish a sanitized
+  summary.
 
-Candidate work for the release brief:
+Included fixture work:
 
 - Add public x402 seller and multi-file wallet fixtures.
-- Tune project-level evidence across more monorepo layouts.
 - Add a public fixture set for real transaction calldata.
+
+Deferred beyond v0.3:
+
+- Tune project-level evidence across more monorepo layouts.
 
 ## Future v0 releases
 

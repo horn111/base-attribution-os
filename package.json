@@ -41,7 +41,7 @@
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "test": "vitest run",
-    "test:fixtures": "vitest run packages/scanner/test/scanner.test.ts",
+    "test:fixtures": "vitest run packages/scanner/test/scanner.test.ts packages/core/test/calldata-fixtures.test.ts",
     "test:watch": "vitest",
     "typecheck": "turbo run typecheck",
     "check": "pnpm lint && pnpm typecheck && pnpm test",

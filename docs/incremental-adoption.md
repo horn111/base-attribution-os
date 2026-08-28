@@ -15,7 +15,7 @@ The GitHub Action exposes the same mode:
 - uses: actions/checkout@v6
   with:
     fetch-depth: 0
-- uses: horn111/base-attribution-os/packages/github-action@v0.2.0
+- uses: horn111/base-attribution-os/packages/github-action@v0.3.0
   with:
     builder-code: bc_abc123
     changed-only: "true"

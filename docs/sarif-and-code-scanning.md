@@ -10,7 +10,7 @@ bao doctor --format sarif --output bao.sarif
 The GitHub Action can create the same file:
 
 ```yaml
-- uses: horn111/base-attribution-os/packages/github-action@v0.2.0
+- uses: horn111/base-attribution-os/packages/github-action@v0.3.0
   with:
     builder-code: bc_abc123
     sarif-output: bao.sarif

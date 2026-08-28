@@ -1,0 +1,39 @@
+{
+  "source": {
+    "chainId": 8453,
+    "network": "Base mainnet",
+    "hash": "0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926",
+    "explorerUrl": "https://basescan.org/tx/0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926",
+    "builderCode": "bc_vwmzy653"
+  },
+  "cases": [
+    {
+      "id": "attributed",
+      "provenance": "onchain",
+      "calldata": "0x62635f76776d7a793635330b0080218021802180218021802180218021",
+      "expect": "bc_vwmzy653",
+      "outcome": "attributed"
+    },
+    {
+      "id": "missing",
+      "provenance": "derived",
+      "calldata": "0x1234",
+      "expect": "bc_vwmzy653",
+      "outcome": "missing"
+    },
+    {
+      "id": "wrong-code",
+      "provenance": "derived",
+      "calldata": "0x62635f6f74686572080080218021802180218021802180218021",
+      "expect": "bc_vwmzy653",
+      "outcome": "wrong-code"
+    },
+    {
+      "id": "invalid",
+      "provenance": "derived",
+      "calldata": "0x123",
+      "expect": "bc_vwmzy653",
+      "outcome": "invalid"
+    }
+  ]
+}

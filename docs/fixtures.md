@@ -9,7 +9,9 @@ transaction paths. They serve three purposes:
 
 Current coverage includes Wagmi, Privy, raw RPC, Base Account and EIP-5792
 smart-wallet calls, ERC-4337 UserOperations, app/wallet multi-code attribution,
-x402 buyers, and agent transaction tools.
+x402 buyers and sellers, multi-file wallet wrappers, and agent transaction
+tools. The calldata fixture set anchors decoder tests to public Base mainnet
+data while keeping derived negative cases explicit.
 
 Run the fixture suite:
 
@@ -17,5 +19,7 @@ Run the fixture suite:
 pnpm test:fixtures
 ```
 
-New fixtures should include `broken/` and `fixed/` directories, use
-`bc_abc123`, and add an assertion to the scanner test table.
+New source fixtures should include `broken/` and `fixed/` directories, use
+`bc_abc123`, and add an assertion with an expected profile and rule to the
+scanner test table. Calldata fixtures must record their onchain provenance and
+label every derived case.
