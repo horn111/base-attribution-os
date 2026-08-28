@@ -230258,7 +230258,7 @@ var SKIPPED_DIRECTORIES = /* @__PURE__ */ new Set([
   "node_modules"
 ]);
 var BUILDER_CODE_REGEX = /\bbc_[a-z0-9_]{1,29}\b/g;
-var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
+var ATTRIBUTION_HELPER_REGEX = /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 var AGENT_MARKER_REGEX = /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/;
 async function analyzeProject(options) {
   assertBuilderCodes(options.builderCodes);
@@ -230345,7 +230345,7 @@ function detectFrameworks(source) {
   if (/@x402\//.test(source)) {
     frameworks.add("x402");
   }
-  if (/\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withUserOperationAttribution)\b/.test(
+  if (/\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
     source
   )) {
     frameworks.add("smart-wallet");
@@ -230546,9 +230546,9 @@ function findLocalAttribution(candidate, directSource, source) {
     return void 0;
   }
   if (candidate.family === "wallet") {
-    if (/\b(?:attributeUserOperation|sendAttributedCalls|withUserOperationAttribution)\b/.test(
+    if (/\b(?:attributeUserOperation|sendAttributedCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
       directSource
-    ) || /\b(?:attributeUserOperation|createAttributionProvider|withUserOperationAttribution)\b/.test(
+    ) || /\b(?:attributeUserOperation|createAttributionProvider|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
       source
     )) {
       return { kind: "helper", detail: "Smart Wallet Attribution Kit middleware" };
@@ -230578,7 +230578,7 @@ function collectProjectEvidence(records, builderCodes) {
     const expected = builderCodes.some((code) => containsBuilderCode(record.source, code));
     const location = locationOf(
       record.source,
-      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withUserOperationAttribution/
+      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withDataSuffixCapability|withUserOperationAttribution/
     );
     const families = evidenceFamilies(record);
     for (const family of families) {
@@ -230613,7 +230613,9 @@ function evidenceFamilies(record) {
   return Array.from(families);
 }
 function hasProjectConfigEvidence(source) {
-  return /\b(?:createWalletClient|createConfig)\b[\s\S]*\bdataSuffix\b/.test(source) || /\bplugins\s*:[\s\S]*\bdataSuffix\s*\(/.test(source) || /\bcreateAttributionProvider\s*\(/.test(source) || /\b(?:attributeUserOperation|withUserOperationAttribution)\s*\(/.test(source) || /\bwallet_getCapabilities\b/.test(source) && /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(source) || /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source) || /\bdeclareBuilderCodeExtension\s*\(/.test(source) || /\bcreateAttributionSigner\s*\(/.test(source);
+  return /\b(?:createWalletClient|createConfig)\b[\s\S]*\bdataSuffix\b/.test(source) || /\bplugins\s*:[\s\S]*\bdataSuffix\s*\(/.test(source) || /\bcreateAttributionProvider\s*\(/.test(source) || /\b(?:attributeUserOperation|withDataSuffixCapability|withUserOperationAttribution)\s*\(/.test(
+    source
+  ) || /\bwallet_getCapabilities\b/.test(source) && /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(source) || /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source) || /\bdeclareBuilderCodeExtension\s*\(/.test(source) || /\bcreateAttributionSigner\s*\(/.test(source);
 }
 function missingRuleFor(family) {
   if (family === "wallet") return "BAO005";

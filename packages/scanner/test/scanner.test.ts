@@ -58,6 +58,19 @@ await wallet.sendCalls({
     });
   });
 
+  it("recognizes the public dataSuffix capability helper", () => {
+    const paths = analyzeSource(
+      `import { withDataSuffixCapability } from "@base-attribution-os/wallet";
+provider.request({
+  method: "wallet_sendCalls",
+  params: [withDataSuffixCapability(request, { codes: ["bc_abc123"] })],
+});`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ family: "wallet", status: "protected" });
+  });
+
   it("does not accept an unnegotiated dataSuffix capability", () => {
     const paths = analyzeSource(
       `await wallet.sendCalls({

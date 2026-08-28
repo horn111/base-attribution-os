@@ -32,7 +32,7 @@ const SKIPPED_DIRECTORIES = new Set([
 ]);
 const BUILDER_CODE_REGEX = /\bbc_[a-z0-9_]{1,29}\b/g;
 const ATTRIBUTION_HELPER_REGEX =
-  /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
+  /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 const AGENT_MARKER_REGEX =
   /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/;
 
@@ -158,7 +158,7 @@ export function detectFrameworks(source: string): string[] {
     frameworks.add("x402");
   }
   if (
-    /\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withUserOperationAttribution)\b/.test(
+    /\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
       source,
     )
   ) {
@@ -420,10 +420,10 @@ function findLocalAttribution(
 
   if (candidate.family === "wallet") {
     if (
-      /\b(?:attributeUserOperation|sendAttributedCalls|withUserOperationAttribution)\b/.test(
+      /\b(?:attributeUserOperation|sendAttributedCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
         directSource,
       ) ||
-      /\b(?:attributeUserOperation|createAttributionProvider|withUserOperationAttribution)\b/.test(
+      /\b(?:attributeUserOperation|createAttributionProvider|withDataSuffixCapability|withUserOperationAttribution)\b/.test(
         source,
       )
     ) {
@@ -465,7 +465,7 @@ function collectProjectEvidence(
     const expected = builderCodes.some((code) => containsBuilderCode(record.source, code));
     const location = locationOf(
       record.source,
-      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withUserOperationAttribution/,
+      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withDataSuffixCapability|withUserOperationAttribution/,
     );
     const families = evidenceFamilies(record);
 
@@ -511,7 +511,9 @@ function hasProjectConfigEvidence(source: string): boolean {
     /\b(?:createWalletClient|createConfig)\b[\s\S]*\bdataSuffix\b/.test(source) ||
     /\bplugins\s*:[\s\S]*\bdataSuffix\s*\(/.test(source) ||
     /\bcreateAttributionProvider\s*\(/.test(source) ||
-    /\b(?:attributeUserOperation|withUserOperationAttribution)\s*\(/.test(source) ||
+    /\b(?:attributeUserOperation|withDataSuffixCapability|withUserOperationAttribution)\s*\(/.test(
+      source,
+    ) ||
     (/\bwallet_getCapabilities\b/.test(source) &&
       /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(source)) ||
     /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source) ||

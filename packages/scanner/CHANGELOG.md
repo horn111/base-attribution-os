@@ -8,7 +8,8 @@
   format, require a chain ID for custom registries, preserve adapter prototype and
   method context, validate scanner configuration, stabilize baselines, respect
   rule severity in SARIF, and verify the packed GitHub Action in release smoke
-  tests.
+  tests. Recognize the public `withDataSuffixCapability` wallet helper during
+  strict scans.
 
 ### Patch Changes
 
