@@ -9,6 +9,8 @@ import {
   loadBaoConfig,
   reportToSarif,
   writeBaseline,
+  type RuleId,
+  type ScanProfile,
 } from "../src/index.js";
 
 describe("@base-attribution-os/scanner", () => {
@@ -269,32 +271,42 @@ wallet.sendTransaction({ to, data: "0x" });`,
     expect(report.checkedFiles).toBe(0);
   });
 
-  it.each([
-    "wagmi-app",
-    "privy-app",
-    "smart-wallet-sendcalls",
-    "base-account-sendcalls",
-    "wallet-user-operation",
-    "multi-code-userop",
-    "raw-rpc",
-    "x402-buyer",
-    "agent-transaction-tool",
-  ])("validates the %s public fixture", async (fixture) => {
+  const publicFixtures: Array<{
+    fixture: string;
+    profile: ScanProfile;
+    expectedRule: RuleId;
+  }> = [
+    { fixture: "wagmi-app", profile: "ci", expectedRule: "BAO001" },
+    { fixture: "privy-app", profile: "ci", expectedRule: "BAO001" },
+    { fixture: "smart-wallet-sendcalls", profile: "ci", expectedRule: "BAO005" },
+    { fixture: "base-account-sendcalls", profile: "ci", expectedRule: "BAO005" },
+    { fixture: "wallet-user-operation", profile: "ci", expectedRule: "BAO005" },
+    { fixture: "multi-code-userop", profile: "ci", expectedRule: "BAO005" },
+    { fixture: "multi-file-wallet", profile: "strict", expectedRule: "BAO004" },
+    { fixture: "raw-rpc", profile: "ci", expectedRule: "BAO001" },
+    { fixture: "x402-buyer", profile: "ci", expectedRule: "BAO006" },
+    { fixture: "x402-seller", profile: "ci", expectedRule: "BAO006" },
+    { fixture: "agent-transaction-tool", profile: "ci", expectedRule: "BAO001" },
+  ];
+
+  it.each(publicFixtures)("validates the $fixture public fixture", async (fixtureCase) => {
+    const { expectedRule, fixture, profile } = fixtureCase;
     const fixturesRoot = fileURLToPath(new URL("../../../fixtures", import.meta.url));
     const builderCodes =
       fixture === "multi-code-userop" ? ["bc_abc123", "bc_partner"] : ["bc_abc123"];
     const broken = await analyzeProject({
       root: path.join(fixturesRoot, fixture, "broken"),
       builderCodes,
-      profile: "ci",
+      profile,
     });
     const fixed = await analyzeProject({
       root: path.join(fixturesRoot, fixture, "fixed"),
       builderCodes,
-      profile: "ci",
+      profile,
     });
 
     expect(broken.ok).toBe(false);
+    expect(broken.transactionPaths.some((entry) => entry.ruleId === expectedRule)).toBe(true);
     expect(fixed.ok).toBe(true);
     expect(fixed.summary.protected).toBeGreaterThan(0);
   });

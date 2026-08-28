@@ -152,7 +152,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: horn111/base-attribution-os/packages/github-action@v0.2.0
+      - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
         with:
           builder-code: bc_abc123
           profile: ci
@@ -167,7 +167,7 @@ jobs:
 ```
 
 The Action reports checked files, detected transaction paths, protected paths,
-coverage, and findings. Pin the immutable `v0.2.0` release in production
+coverage, and findings. Pin the immutable `v0.3.0` release in production
 workflows. Moving the floating `v0` ref is a separate release step.
 
 ## Attribution Doctor

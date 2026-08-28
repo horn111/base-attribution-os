@@ -14,4 +14,9 @@ scanner rules.
 | `multi-code-userop`      | app + wallet codes     | one merged ERC-8021 suffix         |
 | `raw-rpc`                | `eth_sendTransaction`  | suffix appended to calldata        |
 | `x402-buyer`             | x402 paid fetch        | `BuilderCodeClientExtension`       |
+| `x402-seller`            | x402 resource server   | declared Builder Code extension    |
+| `multi-file-wallet`      | wallet wrapper         | locally verifiable BAO helper      |
 | `agent-transaction-tool` | autonomous send        | attributed transaction wrapper     |
+
+Real and derived transaction calldata snapshots live under `calldata/`. They
+exercise decoding and validation without making RPC requests.

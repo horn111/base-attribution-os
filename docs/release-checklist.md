@@ -28,8 +28,9 @@ debugging a failed smoke run.
 
 ## Before the release
 
-- Run `pnpm format`, `pnpm audit --prod`, `pnpm check`, `pnpm build`,
-  `pnpm size`, and `pnpm verify:release-candidate`.
+- Run `pnpm prepare:release`, `pnpm format`, `pnpm audit --prod`, `pnpm check`,
+  `pnpm test:fixtures`, `pnpm build`, `pnpm size`, and
+  `pnpm verify:release-candidate`.
 - Confirm the committed GitHub Action bundle matches its TypeScript source:
   `git diff --exit-code -- packages/github-action/dist/index.cjs`.
 - Confirm npm trusted publishing or `NPM_TOKEN` is configured for every public
@@ -38,8 +39,9 @@ debugging a failed smoke run.
 - Confirm README and workflow snippets use the intended immutable release ref.
 - Run `pnpm changeset status` and review every projected package version against
   the approved release brief.
-- Confirm the maintainer has recorded validation from at least three external
-  or self-owned production apps.
+- Confirm the maintainer has completed the Stack the Bag deep pilot against the
+  versioned candidate packages. Record the full result privately and include a
+  sanitized summary in the release notes.
 
 ## Release step
 

@@ -5,6 +5,18 @@ All notable changes to Base Attribution OS will be documented here.
 This project uses Changesets. Each package release should include a short note
 that explains the attribution workflow it improves.
 
+## 0.3.0 - Unreleased
+
+- Enforce the Base Builder Code format and require chain IDs for custom
+  registries.
+- Preserve viem and ethers adapter prototypes and method context.
+- Validate scanner configuration, stabilize fingerprints, and respect rule
+  severity in SARIF.
+- Add public x402 seller, multi-file wallet, and Base mainnet calldata fixtures.
+- Verify all eight packed packages and the bundled GitHub Action against a
+  temporary external consumer.
+- Qualify the release through the Stack the Bag production pilot.
+
 ## 0.2.0 - 2026-08-25
 
 - Add capability-aware EIP-5792 and ERC-4337 attribution middleware in the new
