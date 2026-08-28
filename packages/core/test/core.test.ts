@@ -87,6 +87,27 @@ describe("@base-attribution-os/core", () => {
     expect(decodeAttributionFromCalldata(invalidSchemaOne)).toBeUndefined();
   });
 
+  it("rejects zero-length code payloads before they can consume transaction calldata", () => {
+    const malformed = `0x62635f6162633132330000${MARKER}` as Hex;
+    const standalone = `0x0000${MARKER}` as Hex;
+
+    expect(decodeAttributionFromCalldata(malformed)).toBeUndefined();
+    expect(decodeAttributionFromCalldata(standalone)).toBeUndefined();
+    expect(validateAttribution({ calldata: malformed, expect: "bc_abc123" }).ok).toBe(false);
+  });
+
+  it.each([",bc_abc123", "bc_abc123,", "bc_abc123,,bc_partner"])(
+    "rejects non-canonical empty code elements in %s",
+    (codes) => {
+      const schemaZero = rawDataSuffix(codes, 0);
+      const schemaOne = rawDataSuffix(codes, 1);
+
+      expect(decodeAttributionFromCalldata(schemaZero)).toBeUndefined();
+      expect(decodeAttributionFromCalldata(schemaOne)).toBeUndefined();
+      expect(validateAttribution({ calldata: schemaZero, expect: "bc_abc123" }).ok).toBe(false);
+    },
+  );
+
   it("rejects unsupported Builder Code formats while encoding", () => {
     expect(() => createDataSuffix({ codes: ["Not A Builder Code"] })).toThrow(
       "1-32 lowercase letters",
@@ -173,3 +194,11 @@ describe("@base-attribution-os/core", () => {
     });
   });
 });
+
+function rawDataSuffix(codes: string, schemaId: 0 | 1): Hex {
+  const codesHex = Buffer.from(codes, "utf8").toString("hex");
+  const codesLength = (codesHex.length / 2).toString(16).padStart(2, "0");
+  const registryData = schemaId === 1 ? "cccccccccccccccccccccccccccccccccccccccc210502" : "";
+
+  return `0x${registryData}${codesHex}${codesLength}0${schemaId}${MARKER}`;
+}

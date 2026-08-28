@@ -38,6 +38,67 @@ wallet.sendTransaction({ to, data: "0x" });`,
     expect(paths[0]).toMatchObject({ status: "missing", ruleId: "BAO001" });
   });
 
+  it.each([
+    'const note = "bc_abc123";',
+    '/* "bc_abc123" */',
+    'const unrelatedSuffix = "62635f616263313233090080218021802180218021802180218021";',
+  ])("does not let unlinked evidence protect a dynamic call: %s", (unlinkedEvidence) => {
+    const paths = analyzeSource(
+      `${unlinkedEvidence}
+const dataSuffix = getSuffixAtRuntime();
+wallet.sendTransaction({ to, data: "0x", dataSuffix });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({
+      status: "unresolved",
+      ruleId: "BAO003",
+      severity: "error",
+    });
+  });
+
+  it.each(['note: "bc_abc123"', 'note: "62635f616263313233090080218021802180218021802180218021"'])(
+    "does not accept unrelated evidence inside a transaction call: %s",
+    (unlinkedField) => {
+      const paths = analyzeSource(
+        `const dataSuffix = getSuffixAtRuntime();
+wallet.sendTransaction({ to, data: "0x", dataSuffix, ${unlinkedField} });`,
+        { builderCodes: ["bc_abc123"], profile: "strict" },
+      );
+
+      expect(paths[0]).toMatchObject({
+        status: "unresolved",
+        ruleId: "BAO003",
+        severity: "error",
+      });
+    },
+  );
+
+  it("does not accept an unrelated field in a linked dataSuffix object", () => {
+    const paths = analyzeSource(
+      `const dataSuffix = { value: getSuffixAtRuntime(), note: "bc_abc123" };
+wallet.sendTransaction({ to, data: "0x", dataSuffix });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({
+      status: "unresolved",
+      ruleId: "BAO003",
+      severity: "error",
+    });
+  });
+
+  it("follows a linked local suffix alias to the configured Builder Code", () => {
+    const paths = analyzeSource(
+      `const configuredCode = "bc_abc123";
+const dataSuffix = createDataSuffix({ codes: [configuredCode] });
+wallet.sendTransaction({ to, data: "0x", dataSuffix });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "protected", confidence: "medium" });
+  });
+
   it("recognizes an attributed smart-wallet call", () => {
     const paths = analyzeSource(
       `await wallet.request({ method: "wallet_getCapabilities", params: [account] });
@@ -129,6 +190,122 @@ export async function send(wallet) { return wallet.sendTransaction({ to, data: "
       status: "protected",
       confidence: "medium",
     });
+  });
+
+  it("fails strict Privy scans when project configuration is not linked to the provider", async () => {
+    const root = await createProject({
+      "src/config.ts": `import { dataSuffix } from "@privy-io/react-auth";
+export const config = { plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))] };`,
+      "src/send.ts": `import { usePrivy } from "@privy-io/react-auth";
+export async function send(wallet) { return wallet.sendTransaction({ to, data: "0x" }); }`,
+    });
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+
+    expect(report.ok).toBe(false);
+    expect(report.transactionPaths[0]).toMatchObject({
+      family: "privy",
+      status: "unresolved",
+      ruleId: "BAO004",
+      severity: "error",
+    });
+  });
+
+  it("recognizes a strict Privy path linked through its configured provider", async () => {
+    const root = await createProject({
+      "src/config.ts": `import { dataSuffix } from "@privy-io/react-auth";
+import { createDataSuffix } from "@base-attribution-os/core";
+export const privyConfig = {
+  plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))],
+};`,
+      "src/app.tsx": `import { PrivyProvider, usePrivy as useAuth } from "@privy-io/react-auth";
+import { privyConfig } from "./config";
+function SendButton() {
+  const { sendTransaction } = useAuth();
+  return <button onClick={() => sendTransaction({ to, data: "0x" })}>Send</button>;
+}
+export function App() {
+  return <PrivyProvider appId={appId} config={privyConfig}><SendButton /></PrivyProvider>;
+}`,
+    });
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+
+    expect(report.ok).toBe(true);
+    expect(report.transactionPaths[0]).toMatchObject({
+      family: "privy",
+      status: "protected",
+      confidence: "medium",
+    });
+  });
+
+  it("does not let an unrelated export from an evidence file configure Privy", async () => {
+    const root = await createProject({
+      "src/config.ts": `import { dataSuffix } from "@privy-io/react-auth";
+export const privyConfig = {
+  plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))],
+};
+export const unrelated = {};`,
+      "src/app.tsx": `import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
+import { unrelated } from "./config";
+function SendButton() {
+  const { sendTransaction } = usePrivy();
+  return <button onClick={() => sendTransaction({ to, data: "0x" })}>Send</button>;
+}
+export function App() {
+  return <PrivyProvider appId={appId} config={unrelated}><SendButton /></PrivyProvider>;
+}`,
+    });
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+
+    expect(report.ok).toBe(false);
+    expect(report.transactionPaths[0]).toMatchObject({
+      status: "unresolved",
+      ruleId: "BAO004",
+      severity: "error",
+    });
+  });
+
+  it("recognizes a namespace Privy hook linked through its configured provider", async () => {
+    const root = await createProject({
+      "src/config.ts": `import { dataSuffix } from "@privy-io/react-auth";
+export const privyConfig = {
+  plugins: [dataSuffix(createDataSuffix({ codes: ["bc_abc123"] }))],
+};`,
+      "src/app.tsx": `import { PrivyProvider } from "@privy-io/react-auth";
+import * as Privy from "@privy-io/react-auth";
+import { privyConfig } from "./config";
+function SendButton() {
+  const { sendTransaction } = Privy.usePrivy();
+  return <button onClick={() => sendTransaction({ to, data: "0x" })}>Send</button>;
+}
+export function App() {
+  return <PrivyProvider appId={appId} config={privyConfig}><SendButton /></PrivyProvider>;
+}`,
+    });
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+
+    expect(report.ok).toBe(true);
+    expect(report.transactionPaths[0]).toMatchObject({ status: "protected" });
+  });
+
+  it("does not link an x402 extension registered on a shadowed client", () => {
+    const paths = analyzeSource(
+      `import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { BuilderCodeClientExtension } from "@x402/extensions/builder-code";
+export function createPaidFetch() {
+  const client = new x402Client();
+  return wrapFetchWithPayment(fetch, client);
+}
+export function configureOtherClient(otherClient) {
+  const client = otherClient;
+  client.registerExtension(new BuilderCodeClientExtension("bc_abc123"));
+}`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths).toHaveLength(2);
+    expect(paths.every((entry) => entry.status === "missing" && entry.ruleId === "BAO006")).toBe(
+      true,
+    );
   });
 
   it("fails strict scans when attribution exists only in another file", async () => {

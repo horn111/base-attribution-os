@@ -51,12 +51,17 @@ export function decodeAttributionFromCalldata(data: Hex): DecodedAttribution | u
   const codesLength = hexToNumber(sliceHex(beforeSchema, -1));
   const beforeCodesLength = sliceHex(beforeSchema, 0, -1);
 
-  if (hexByteLength(beforeCodesLength) < codesLength) {
+  if (codesLength === 0 || hexByteLength(beforeCodesLength) < codesLength) {
     return undefined;
   }
 
   const codesHex = sliceHex(beforeCodesLength, -codesLength);
-  const codes = hexToString(codesHex).split(",").filter(Boolean);
+  const codes = hexToString(codesHex).split(",");
+
+  if (codes.some((code) => code.length === 0)) {
+    return undefined;
+  }
+
   const beforeSuffixData = sliceHex(beforeCodesLength, 0, -codesLength);
 
   if (schemaId === SCHEMA_CUSTOM_REGISTRY) {

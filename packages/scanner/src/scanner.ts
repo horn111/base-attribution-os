@@ -48,6 +48,7 @@ interface ProjectEvidence {
   evidence: AttributionEvidence;
   expected: boolean;
   dynamic: boolean;
+  exportedBindings: string[];
 }
 
 interface SourceAnalysisOptions {
@@ -64,6 +65,12 @@ interface Candidate {
   marker: string;
   node: ts.Node;
   confidence: TransactionPath["confidence"];
+}
+
+interface LinkedSyntax {
+  identifiers: Set<string>;
+  literals: Set<string>;
+  memberAccesses: Set<string>;
 }
 
 export async function analyzeProject(options: AnalyzeProjectOptions): Promise<AttributionReport> {
@@ -294,28 +301,54 @@ function evaluateCandidate(
 ): TransactionPath {
   const start = sourceFile.getLineAndCharacterOfPosition(candidate.node.getStart(sourceFile));
   const directSource = candidate.node.getText(sourceFile);
+  const attributionRoots = collectAttributionRoots(candidate);
+  const directSyntax = collectAttributionSyntax(sourceFile, attributionRoots, false);
+  const linkedSyntax = collectAttributionSyntax(sourceFile, attributionRoots, true);
+  const x402Registration =
+    candidate.family === "x402"
+      ? collectX402Registration(sourceFile, candidate)
+      : { found: false, literals: new Set<string>() };
+
+  for (const literal of x402Registration.literals) {
+    linkedSyntax.literals.add(literal);
+  }
+
   const expectedSuffixes = options.builderCodes.map((code) =>
     createDataSuffix({ codes: [code] })
       .slice(2)
       .toLowerCase(),
   );
-  const directCodes = discoverBuilderCodes(directSource);
-  const fileCodes = discoverBuilderCodes(source);
+  const directCodes = discoverBuilderCodesInLiterals(directSyntax.literals);
+  const linkedCodes = discoverBuilderCodesInLiterals(linkedSyntax.literals);
   const hasExpectedDirectCode = options.builderCodes.some((code) =>
-    containsBuilderCode(directSource, code),
+    directSyntax.literals.has(code),
   );
-  const hasExpectedFileCode = options.builderCodes.some((code) =>
-    containsBuilderCode(source, code),
+  const hasExpectedLinkedCode = options.builderCodes.some((code) =>
+    linkedSyntax.literals.has(code),
   );
   const hasExpectedSuffix = expectedSuffixes.some((suffix) =>
-    source.toLowerCase().includes(suffix),
+    Array.from(linkedSyntax.literals).some((literal) =>
+      literal.toLowerCase().replace(/^0x/, "").includes(suffix),
+    ),
   );
   const wrongDirectCode = directCodes.find((code) => !options.builderCodes.includes(code));
-  const wrongFileCode = fileCodes.find((code) => !options.builderCodes.includes(code));
-  const localAttribution = findLocalAttribution(candidate, directSource, source);
+  const wrongLinkedCode = linkedCodes.find((code) => !options.builderCodes.includes(code));
+  const localAttribution = findLocalAttribution(
+    candidate,
+    directSource,
+    source,
+    x402Registration.found,
+  );
+  const familyEvidence =
+    options.globalEvidence?.filter((entry) => entry.family === candidate.family) ?? [];
+  const linkedProjectEvidence = familyEvidence.find(
+    (entry) =>
+      entry.expected &&
+      candidate.family === "privy" &&
+      isPrivyProjectEvidenceLinked(sourceFile, candidate, entry, options.builderCodes),
+  );
   const projectEvidence =
-    options.globalEvidence?.find((entry) => entry.family === candidate.family && entry.expected) ??
-    options.globalEvidence?.find((entry) => entry.family === candidate.family);
+    linkedProjectEvidence ?? familyEvidence.find((entry) => entry.expected) ?? familyEvidence[0];
   const evidence: AttributionEvidence[] = [];
 
   if (localAttribution) {
@@ -335,7 +368,7 @@ function evaluateCandidate(
   let suggestion: string | undefined;
   let confidence = candidate.confidence;
 
-  const wrongCode = wrongDirectCode ?? (localAttribution ? wrongFileCode : undefined);
+  const wrongCode = wrongDirectCode ?? (localAttribution ? wrongLinkedCode : undefined);
   if (wrongCode && !hasExpectedDirectCode && !hasExpectedSuffix) {
     status = "wrong-code";
     ruleId = "BAO002";
@@ -343,12 +376,16 @@ function evaluateCandidate(
     suggestion = "Replace it with a Builder Code from bao.config.json.";
   } else if (
     localAttribution &&
-    (hasExpectedDirectCode || hasExpectedFileCode || hasExpectedSuffix)
+    (hasExpectedDirectCode || hasExpectedLinkedCode || hasExpectedSuffix)
   ) {
     status = "protected";
     message = `${candidate.marker} is protected by Builder Code attribution.`;
     confidence = hasExpectedDirectCode ? "high" : "medium";
-  } else if (projectEvidence?.expected && candidate.family === "privy") {
+  } else if (
+    projectEvidence?.expected &&
+    candidate.family === "privy" &&
+    (options.profile !== "strict" || linkedProjectEvidence)
+  ) {
     status = "protected";
     message = `${candidate.marker} is covered by the project-level Privy dataSuffix plugin.`;
     confidence = "medium";
@@ -405,11 +442,12 @@ function findLocalAttribution(
   candidate: Candidate,
   directSource: string,
   source: string,
+  hasLinkedX402Registration = false,
 ): { detail: string; kind: AttributionEvidence["kind"] } | undefined {
   if (candidate.family === "x402") {
     const hasClientExtension =
       (candidate.marker === "x402Client" || candidate.marker === "wrapFetchWithPayment") &&
-      /\bregisterExtension\s*\([\s\S]*\bBuilderCodeClientExtension\b/.test(source);
+      hasLinkedX402Registration;
     const hasSellerExtension =
       candidate.marker === "paymentMiddleware" && /\bdeclareBuilderCodeExtension\s*\(/.test(source);
     if (hasClientExtension || hasSellerExtension) {
@@ -451,6 +489,733 @@ function findLocalAttribution(
   return undefined;
 }
 
+function collectLinkedSyntax(sourceFile: ts.SourceFile, root: ts.Node): LinkedSyntax {
+  const syntax: LinkedSyntax = {
+    identifiers: new Set(),
+    literals: new Set(),
+    memberAccesses: new Set(),
+  };
+  const declarations = collectValueDeclarations(sourceFile);
+  const visitedValues = new Set<ts.Node>();
+
+  function visit(node: ts.Node): void {
+    if (isValueLiteral(node)) {
+      syntax.literals.add(node.text);
+    }
+
+    if (ts.isIdentifier(node) && isReferenceIdentifier(node)) {
+      syntax.identifiers.add(node.text);
+      const declaration = findVisibleDeclaration(
+        declarations,
+        node.text,
+        node.getStart(sourceFile),
+      );
+      const value = declaration ? declarationValue(declaration.node) : undefined;
+
+      if (value && !visitedValues.has(value)) {
+        visitedValues.add(value);
+        visit(value);
+      }
+    }
+
+    if (ts.isPropertyAccessExpression(node)) {
+      syntax.memberAccesses.add(node.getText(sourceFile));
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(root);
+  return syntax;
+}
+
+function collectAttributionSyntax(
+  sourceFile: ts.SourceFile,
+  roots: ts.Node[],
+  followDeclarations: boolean,
+): LinkedSyntax {
+  const syntax: LinkedSyntax = {
+    identifiers: new Set(),
+    literals: new Set(),
+    memberAccesses: new Set(),
+  };
+  const declarations = followDeclarations ? collectValueDeclarations(sourceFile) : [];
+  const visitedValues = new Set<ts.Node>();
+  const evidenceProperties = new Set([
+    "appDataSuffix",
+    "capabilities",
+    "codes",
+    "dataSuffix",
+    "value",
+    "walletCodes",
+  ]);
+
+  function visit(node: ts.Node): void {
+    if (isValueLiteral(node)) syntax.literals.add(node.text);
+    if (ts.isPropertyAccessExpression(node)) syntax.memberAccesses.add(node.getText(sourceFile));
+
+    if (ts.isIdentifier(node) && isReferenceIdentifier(node)) {
+      syntax.identifiers.add(node.text);
+      if (followDeclarations) {
+        const declaration = findVisibleDeclaration(
+          declarations,
+          node.text,
+          node.getStart(sourceFile),
+        );
+        const value = declaration ? declarationValue(declaration.node) : undefined;
+        if (value && !visitedValues.has(value)) {
+          visitedValues.add(value);
+          visit(value);
+        }
+      }
+      return;
+    }
+
+    if (ts.isObjectLiteralExpression(node)) {
+      for (const property of node.properties) {
+        const name =
+          ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)
+            ? propertyName(property.name)
+            : undefined;
+        if (!name || !evidenceProperties.has(name)) continue;
+        if (ts.isPropertyAssignment(property)) visit(property.initializer);
+        else if (ts.isShorthandPropertyAssignment(property)) visit(property.name);
+      }
+      return;
+    }
+
+    if (ts.isCallExpression(node) || ts.isNewExpression(node)) {
+      const marker = expressionName(node.expression);
+      for (const argument of attributionArguments(marker, node.arguments ?? [])) visit(argument);
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  for (const root of roots) visit(root);
+  return syntax;
+}
+
+function attributionArguments(
+  marker: string | undefined,
+  args: readonly ts.Expression[],
+): readonly ts.Expression[] {
+  switch (marker) {
+    case "appendDataSuffix":
+    case "attributeSendCalls":
+    case "attributeUserOperation":
+    case "createAttributionProvider":
+    case "createAttributionSigner":
+    case "withAttributionSuffix":
+    case "withDataSuffixCapability":
+    case "withEthersAttribution":
+    case "withUserOperationAttribution":
+    case "withViemDataSuffix":
+      return args[1] ? [args[1]] : [];
+    case "sendAttributedCalls":
+      return args[2] ? [args[2]] : [];
+    case "BuilderCodeClientExtension":
+    case "builderCodeDataSuffix":
+    case "createConfig":
+    case "createDataSuffix":
+    case "createWalletClient":
+    case "dataSuffix":
+    case "declareBuilderCodeExtension":
+    case "ethersBuilderCodeDataSuffix":
+    case "registerExtension":
+    case "toDataSuffix":
+    case "useAttributionSuffix":
+      return args;
+    default:
+      return [];
+  }
+}
+
+function collectAttributionRoots(candidate: Candidate): ts.Node[] {
+  const roots: ts.Node[] = [];
+  const seen = new Set<ts.Node>();
+
+  function add(node: ts.Node): void {
+    if (!seen.has(node)) {
+      seen.add(node);
+      roots.push(node);
+    }
+  }
+
+  if (candidate.marker === "sendAttributedCalls") {
+    add(candidate.node);
+    return roots;
+  }
+
+  function visitX402Extensions(node: ts.Node): void {
+    if (
+      ts.isCallExpression(node) &&
+      expressionName(node.expression) === "declareBuilderCodeExtension"
+    ) {
+      add(node);
+      return;
+    }
+    ts.forEachChild(node, visitX402Extensions);
+  }
+
+  function visit(node: ts.Node): void {
+    if (ts.isPropertyAssignment(node) && propertyName(node.name) === "dataSuffix") {
+      add(node.initializer);
+      return;
+    }
+    if (ts.isShorthandPropertyAssignment(node) && node.name.text === "dataSuffix") {
+      add(node.name);
+      return;
+    }
+    if (
+      candidate.family === "x402" &&
+      ts.isPropertyAssignment(node) &&
+      propertyName(node.name) === "extensions"
+    ) {
+      visitX402Extensions(node.initializer);
+      return;
+    }
+    if (
+      candidate.marker === "eth_sendUserOperation" &&
+      ts.isPropertyAssignment(node) &&
+      propertyName(node.name) === "params" &&
+      ts.isArrayLiteralExpression(node.initializer) &&
+      node.initializer.elements[0]
+    ) {
+      add(node.initializer.elements[0]);
+      return;
+    }
+    if (
+      ts.isPropertyAssignment(node) &&
+      propertyName(node.name) === "data" &&
+      /(?:suffix|Suffix|DATA_SUFFIX)/.test(node.initializer.getText())
+    ) {
+      add(node.initializer);
+      return;
+    }
+
+    if (
+      ts.isPropertyAssignment(node) &&
+      (propertyName(node.name) === "capabilities" || propertyName(node.name) === "params")
+    ) {
+      visit(node.initializer);
+      return;
+    }
+    if (
+      ts.isPropertyAssignment(node) &&
+      (ts.isObjectLiteralExpression(node.initializer) ||
+        ts.isArrayLiteralExpression(node.initializer))
+    ) {
+      visit(node.initializer);
+      return;
+    }
+
+    if (ts.isCallExpression(node) && node !== candidate.node) {
+      const marker = expressionName(node.expression);
+      if (marker && ATTRIBUTION_HELPER_REGEX.test(marker)) {
+        add(node);
+      }
+      return;
+    }
+
+    if (ts.isObjectLiteralExpression(node)) {
+      for (const property of node.properties) {
+        visit(property);
+      }
+      return;
+    }
+
+    if (ts.isArrayLiteralExpression(node)) {
+      for (const element of node.elements) visit(element);
+    }
+  }
+
+  if (ts.isCallExpression(candidate.node)) {
+    for (const argument of candidate.node.arguments) visit(argument);
+  }
+  return roots;
+}
+
+interface ValueDeclaration {
+  name: string;
+  node: ts.Declaration;
+  scope: ts.Node;
+}
+
+function collectValueDeclarations(sourceFile: ts.SourceFile): ValueDeclaration[] {
+  const declarations: ValueDeclaration[] = [];
+
+  function addBindingNames(name: ts.BindingName, node: ts.Declaration): void {
+    if (ts.isIdentifier(name)) {
+      declarations.push({ name: name.text, node, scope: declarationScope(node, sourceFile) });
+      return;
+    }
+
+    for (const element of name.elements) {
+      if (ts.isBindingElement(element)) {
+        addBindingNames(element.name, node);
+      }
+    }
+  }
+
+  function visit(node: ts.Node): void {
+    if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
+      addBindingNames(node.name, node);
+    } else if (ts.isFunctionDeclaration(node) && node.name) {
+      declarations.push({
+        name: node.name.text,
+        node,
+        scope: declarationScope(node, sourceFile),
+      });
+    } else if (ts.isImportClause(node) && node.name) {
+      declarations.push({ name: node.name.text, node, scope: sourceFile });
+    } else if (ts.isImportSpecifier(node)) {
+      declarations.push({ name: node.name.text, node, scope: sourceFile });
+    } else if (ts.isNamespaceImport(node)) {
+      declarations.push({ name: node.name.text, node, scope: sourceFile });
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return declarations;
+}
+
+function findVisibleDeclaration(
+  declarations: ValueDeclaration[],
+  name: string,
+  referencePosition: number,
+): ValueDeclaration | undefined {
+  return declarations
+    .filter((entry) => {
+      const scopeStart = entry.scope.getStart();
+      const scopeEnd = entry.scope.getEnd();
+      const isHoisted =
+        ts.isFunctionDeclaration(entry.node) ||
+        ts.isImportClause(entry.node) ||
+        ts.isImportSpecifier(entry.node) ||
+        ts.isNamespaceImport(entry.node);
+
+      return (
+        entry.name === name &&
+        scopeStart <= referencePosition &&
+        referencePosition <= scopeEnd &&
+        (isHoisted || entry.node.getStart() <= referencePosition)
+      );
+    })
+    .sort((left, right) => {
+      const scopeDifference =
+        left.scope.getEnd() -
+        left.scope.getStart() -
+        (right.scope.getEnd() - right.scope.getStart());
+      return scopeDifference || right.node.getStart() - left.node.getStart();
+    })[0];
+}
+
+function declarationScope(node: ts.Node, sourceFile: ts.SourceFile): ts.Node {
+  let current = node.parent;
+
+  while (current && current !== sourceFile) {
+    if (ts.isBlock(current) || ts.isFunctionLike(current) || ts.isModuleBlock(current)) {
+      return current;
+    }
+    current = current.parent;
+  }
+
+  return sourceFile;
+}
+
+function declarationValue(node: ts.Declaration): ts.Node | undefined {
+  if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
+    return node.initializer;
+  }
+  if (ts.isFunctionDeclaration(node)) {
+    return node.body;
+  }
+  return undefined;
+}
+
+function isReferenceIdentifier(node: ts.Identifier): boolean {
+  const parent = node.parent;
+
+  if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
+  if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
+  if (ts.isMethodDeclaration(parent) && parent.name === node) return false;
+  if (ts.isVariableDeclaration(parent) && parent.name === node) return false;
+  if (ts.isParameter(parent) && parent.name === node) return false;
+  if (ts.isBindingElement(parent) && parent.name === node) return false;
+  if (ts.isFunctionDeclaration(parent) && parent.name === node) return false;
+  if (ts.isImportClause(parent) || ts.isImportSpecifier(parent) || ts.isNamespaceImport(parent)) {
+    return false;
+  }
+  if (ts.isJsxAttribute(parent) && parent.name === node) return false;
+
+  return true;
+}
+
+function isValueLiteral(node: ts.Node): node is ts.StringLiteralLike {
+  if (!ts.isStringLiteral(node) && !ts.isNoSubstitutionTemplateLiteral(node)) {
+    return false;
+  }
+
+  const parent = node.parent;
+  if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
+  if (ts.isMethodDeclaration(parent) && parent.name === node) return false;
+  if (ts.isImportDeclaration(parent) && parent.moduleSpecifier === node) return false;
+  if (ts.isExportDeclaration(parent) && parent.moduleSpecifier === node) return false;
+
+  return true;
+}
+
+function collectX402Registration(
+  sourceFile: ts.SourceFile,
+  candidate: Candidate,
+): { found: boolean; literals: Set<string> } {
+  const literals = new Set<string>();
+  let found = false;
+  const declarations = collectValueDeclarations(sourceFile);
+  const clientDeclarations = new Set<ts.Declaration>();
+  let current: ts.Node | undefined = candidate.node;
+
+  while (current && current !== sourceFile) {
+    if (ts.isVariableDeclaration(current) && ts.isIdentifier(current.name)) {
+      if (
+        ts.isNewExpression(candidate.node) &&
+        expressionName(candidate.node.expression) === "x402Client"
+      ) {
+        clientDeclarations.add(current);
+      }
+      break;
+    }
+    current = current.parent;
+  }
+
+  function traceClientDeclaration(
+    declaration: ValueDeclaration,
+    chain: ts.Declaration[] = [],
+  ): boolean {
+    if (chain.includes(declaration.node)) return false;
+    const value = declarationValue(declaration.node);
+    const nextChain = [...chain, declaration.node];
+
+    if (value && ts.isNewExpression(value) && expressionName(value.expression) === "x402Client") {
+      for (const entry of nextChain) clientDeclarations.add(entry);
+      return true;
+    }
+
+    if (value && ts.isIdentifier(value)) {
+      const next = findVisibleDeclaration(declarations, value.text, value.getStart(sourceFile));
+      if (next && traceClientDeclaration(next, nextChain)) {
+        for (const entry of nextChain) clientDeclarations.add(entry);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function collectCandidateClients(node: ts.Node): void {
+    if (ts.isIdentifier(node) && isReferenceIdentifier(node)) {
+      const declaration = findVisibleDeclaration(
+        declarations,
+        node.text,
+        node.getStart(sourceFile),
+      );
+      if (declaration) traceClientDeclaration(declaration);
+    }
+    ts.forEachChild(node, collectCandidateClients);
+  }
+
+  collectCandidateClients(candidate.node);
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "registerExtension" &&
+      ts.isIdentifier(node.expression.expression)
+    ) {
+      const receiver = findVisibleDeclaration(
+        declarations,
+        node.expression.expression.text,
+        node.expression.expression.getStart(sourceFile),
+      );
+      if (receiver && clientDeclarations.has(receiver.node)) {
+        found = true;
+        for (const literal of collectAttributionSyntax(sourceFile, [node], true).literals) {
+          literals.add(literal);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return { found, literals };
+}
+
+function collectProjectConfigNodes(sourceFile: ts.SourceFile): ts.Node[] {
+  const nodes: ts.Node[] = [];
+  const configCalls = new Set([
+    "attributeUserOperation",
+    "createAttributionProvider",
+    "createAttributionSigner",
+    "dataSuffix",
+    "declareBuilderCodeExtension",
+    "registerExtension",
+    "withDataSuffixCapability",
+    "withUserOperationAttribution",
+  ]);
+
+  function visit(node: ts.Node): void {
+    if (ts.isCallExpression(node)) {
+      const marker = expressionName(node.expression);
+      if (
+        (marker && configCalls.has(marker)) ||
+        ((marker === "createWalletClient" || marker === "createConfig") &&
+          /\bdataSuffix\b/.test(node.getText(sourceFile)))
+      ) {
+        nodes.push(node);
+      }
+    } else if (
+      ts.isNewExpression(node) &&
+      expressionName(node.expression) === "BuilderCodeClientExtension"
+    ) {
+      nodes.push(node);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return nodes.sort((left, right) => left.getStart(sourceFile) - right.getStart(sourceFile));
+}
+
+function exportedBindingsForNode(node: ts.Node): string[] {
+  let current: ts.Node | undefined = node;
+
+  while (current) {
+    if (ts.isVariableDeclaration(current) && ts.isIdentifier(current.name)) {
+      let statement: ts.Node | undefined = current.parent;
+      while (statement && !ts.isVariableStatement(statement)) statement = statement.parent;
+      const exported =
+        statement &&
+        ts.isVariableStatement(statement) &&
+        statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+      return exported ? [current.name.text] : [];
+    }
+    if (ts.isExportAssignment(current)) {
+      return ["default"];
+    }
+    current = current.parent;
+  }
+
+  return [];
+}
+
+function isPrivyProjectEvidenceLinked(
+  sourceFile: ts.SourceFile,
+  candidate: Candidate,
+  evidence: ProjectEvidence,
+  builderCodes: string[],
+): boolean {
+  const candidateSyntax = collectLinkedSyntax(sourceFile, candidate.node);
+  if (!referencesPrivyHook(sourceFile, candidateSyntax)) {
+    return false;
+  }
+
+  const componentName = containingFunctionName(candidate.node);
+  const importedBindings = importedBindingsForEvidence(sourceFile, evidence);
+  let linked = false;
+
+  function visit(node: ts.Node): void {
+    if (linked || !ts.isJsxElement(node) || jsxTagName(node.openingElement) !== "PrivyProvider") {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const config = node.openingElement.attributes.properties.find(
+      (attribute): attribute is ts.JsxAttribute =>
+        ts.isJsxAttribute(attribute) && attribute.name.getText(sourceFile) === "config",
+    );
+    const configExpression =
+      config?.initializer && ts.isJsxExpression(config.initializer)
+        ? config.initializer.expression
+        : undefined;
+
+    if (!configExpression) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const configSyntax = collectLinkedSyntax(sourceFile, configExpression);
+    const configEvidenceSyntax = collectAttributionSyntax(sourceFile, [configExpression], true);
+    const configUsesEvidence =
+      (normalizePath(evidence.evidence.file) === normalizePath(sourceFile.fileName) &&
+        builderCodes.some((code) => configEvidenceSyntax.literals.has(code))) ||
+      Array.from(importedBindings).some((binding) =>
+        binding.includes(".")
+          ? configSyntax.memberAccesses.has(binding)
+          : configSyntax.identifiers.has(binding),
+      );
+    const candidateIsChild =
+      (candidate.node.getStart(sourceFile) >= node.getStart(sourceFile) &&
+        candidate.node.getEnd() <= node.getEnd()) ||
+      (componentName ? jsxContainsComponent(node, componentName, sourceFile) : false);
+
+    linked = configUsesEvidence && candidateIsChild;
+    if (!linked) ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return linked;
+}
+
+function containingFunctionName(node: ts.Node): string | undefined {
+  let current: ts.Node | undefined = node.parent;
+
+  while (current) {
+    if (ts.isFunctionDeclaration(current) && current.name) {
+      return current.name.text;
+    }
+    if (
+      (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) &&
+      ts.isVariableDeclaration(current.parent) &&
+      ts.isIdentifier(current.parent.name)
+    ) {
+      return current.parent.name.text;
+    }
+    current = current.parent;
+  }
+
+  return undefined;
+}
+
+function jsxContainsComponent(
+  root: ts.JsxElement,
+  componentName: string,
+  sourceFile: ts.SourceFile,
+): boolean {
+  let found = false;
+
+  function visit(node: ts.Node): void {
+    if (found) return;
+    if (
+      (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+      node.tagName.getText(sourceFile) === componentName
+    ) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  for (const child of root.children) visit(child);
+  return found;
+}
+
+function jsxTagName(node: ts.JsxOpeningElement): string {
+  return ts.isIdentifier(node.tagName) ? node.tagName.text : node.tagName.getText();
+}
+
+function importedBindingsForEvidence(
+  sourceFile: ts.SourceFile,
+  evidence: ProjectEvidence,
+): Set<string> {
+  const bindings = new Set<string>();
+  const exportedBindings = new Set(evidence.exportedBindings);
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      !statement.importClause ||
+      !moduleSpecifierMatchesFile(
+        sourceFile.fileName,
+        statement.moduleSpecifier.text,
+        evidence.evidence.file,
+      )
+    ) {
+      continue;
+    }
+
+    if (statement.importClause.name && exportedBindings.has("default")) {
+      bindings.add(statement.importClause.name.text);
+    }
+    const namedBindings = statement.importClause.namedBindings;
+    if (namedBindings && ts.isNamespaceImport(namedBindings)) {
+      for (const exportedBinding of exportedBindings) {
+        if (exportedBinding !== "default") {
+          bindings.add(`${namedBindings.name.text}.${exportedBinding}`);
+        }
+      }
+    } else if (namedBindings) {
+      for (const element of namedBindings.elements) {
+        const importedName = element.propertyName?.text ?? element.name.text;
+        if (exportedBindings.has(importedName)) bindings.add(element.name.text);
+      }
+    }
+  }
+
+  return bindings;
+}
+
+function referencesPrivyHook(sourceFile: ts.SourceFile, syntax: LinkedSyntax): boolean {
+  const identifierHooks = new Set<string>();
+  const memberHooks = new Set<string>();
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== "@privy-io/react-auth" ||
+      !statement.importClause?.namedBindings
+    ) {
+      continue;
+    }
+
+    const namedBindings = statement.importClause.namedBindings;
+    if (ts.isNamespaceImport(namedBindings)) {
+      memberHooks.add(`${namedBindings.name.text}.usePrivy`);
+      memberHooks.add(`${namedBindings.name.text}.useWallets`);
+      continue;
+    }
+
+    for (const element of namedBindings.elements) {
+      const importedName = element.propertyName?.text ?? element.name.text;
+      if (importedName === "usePrivy" || importedName === "useWallets") {
+        identifierHooks.add(element.name.text);
+      }
+    }
+  }
+
+  return (
+    Array.from(identifierHooks).some((hook) => syntax.identifiers.has(hook)) ||
+    Array.from(memberHooks).some((hook) => syntax.memberAccesses.has(hook))
+  );
+}
+
+function moduleSpecifierMatchesFile(
+  currentFile: string,
+  moduleSpecifier: string,
+  evidenceFile: string,
+): boolean {
+  if (!moduleSpecifier.startsWith(".")) return false;
+
+  const resolved = normalizePath(
+    path.posix.normalize(
+      path.posix.join(path.posix.dirname(normalizePath(currentFile)), moduleSpecifier),
+    ),
+  );
+  return normalizeModuleId(resolved) === normalizeModuleId(normalizePath(evidenceFile));
+}
+
+function normalizeModuleId(file: string): string {
+  return file.replace(/\.(?:[cm]?[jt]sx?)$/, "").replace(/\/index$/, "");
+}
+
 function collectProjectEvidence(
   records: SourceRecord[],
   builderCodes: string[],
@@ -462,11 +1227,29 @@ function collectProjectEvidence(
       continue;
     }
 
-    const expected = builderCodes.some((code) => containsBuilderCode(record.source, code));
-    const location = locationOf(
+    const sourceFile = ts.createSourceFile(
+      record.relativePath,
       record.source,
-      /\bdataSuffix\b|attributeUserOperation|BuilderCodeClientExtension|createAttributionProvider|declareBuilderCodeExtension|withDataSuffixCapability|withUserOperationAttribution/,
+      ts.ScriptTarget.Latest,
+      true,
+      scriptKindFor(record.relativePath),
     );
+    const configNodes = collectProjectConfigNodes(sourceFile);
+
+    if (configNodes.length === 0) {
+      continue;
+    }
+
+    const expectedNodes = configNodes.filter((node) => {
+      const literals = collectAttributionSyntax(sourceFile, [node], true).literals;
+      return builderCodes.some((code) => literals.has(code));
+    });
+    const expected = expectedNodes.length > 0;
+    const exportedBindings = Array.from(
+      new Set(expectedNodes.flatMap((node) => exportedBindingsForNode(node))),
+    );
+    const location =
+      sourceFile.getLineAndCharacterOfPosition(configNodes[0].getStart(sourceFile)).line + 1;
     const families = evidenceFamilies(record);
 
     for (const family of families) {
@@ -474,6 +1257,7 @@ function collectProjectEvidence(
         family,
         expected,
         dynamic: !expected,
+        exportedBindings,
         evidence: {
           kind: "config",
           detail: "project-level attribution configuration",
@@ -705,13 +1489,9 @@ function propertyName(name: ts.PropertyName): string | undefined {
   return undefined;
 }
 
-function discoverBuilderCodes(source: string): string[] {
-  return Array.from(new Set(source.match(BUILDER_CODE_REGEX) ?? []));
-}
-
-function containsBuilderCode(source: string, code: string): boolean {
-  return (
-    source.includes(`"${code}"`) || source.includes(`'${code}'`) || source.includes(`\`${code}\``)
+function discoverBuilderCodesInLiterals(literals: Set<string>): string[] {
+  return Array.from(
+    new Set(Array.from(literals).flatMap((literal) => literal.match(BUILDER_CODE_REGEX) ?? [])),
   );
 }
 
@@ -730,11 +1510,6 @@ function confidenceFor(
 ): TransactionPath["confidence"] {
   if (family === "viem" && !frameworks.includes("viem")) return "low";
   return "high";
-}
-
-function locationOf(source: string, regex: RegExp): number {
-  const index = source.search(regex);
-  return index < 0 ? 1 : source.slice(0, index).split(/\r?\n/).length;
 }
 
 function createFingerprint(...parts: Array<string | number>): string {
