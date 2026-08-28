@@ -14,7 +14,7 @@ enforces coverage in CI.
 [Live demo](https://base-attribution-os.vercel.app) ·
 [Attribution Observatory](https://base-attribution-os.vercel.app/observatory) ·
 [Published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653) ·
-[v0.2.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.2.0) ·
+[v0.3.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.3.0) ·
 [npm packages](https://www.npmjs.com/org/base-attribution-os) ·
 [Documentation](docs/attribution-doctor.md)
 
