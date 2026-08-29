@@ -179,36 +179,49 @@ async function resolveCalldata(
   rpcUrl: string | undefined,
   fetcher: typeof fetch,
 ): Promise<AttributionReplayCandidate[]> {
-  const unresolved = candidates.filter((candidate) => candidate.calldata === undefined);
-
-  if (unresolved.length === 0) {
-    return candidates;
-  }
-
   if (!rpcUrl) {
     return candidates.map((candidate) =>
       candidate.calldata === undefined
         ? { ...candidate, error: "calldata missing; pass --rpc-url to fetch it" }
-        : candidate,
+        : { ...candidate, verified: false },
     );
   }
 
   const fetched = await fetchTransactions(
-    unresolved.map((candidate) => candidate.hash),
+    candidates.map((candidate) => candidate.hash),
     rpcUrl,
     fetcher,
   );
 
   return candidates.map((candidate) => {
-    if (candidate.calldata !== undefined) {
-      return candidate;
+    const remote = fetched.get(candidate.hash);
+    if (!remote || remote.error || remote.calldata === undefined) {
+      return {
+        ...candidate,
+        ...remote,
+        hash: candidate.hash,
+        source: candidate.source,
+        verified: false,
+      };
+    }
+    if (
+      candidate.calldata !== undefined &&
+      candidate.calldata.toLowerCase() !== remote.calldata.toLowerCase()
+    ) {
+      return {
+        ...candidate,
+        calldata: undefined,
+        verified: false,
+        error: "supplied calldata does not match the RPC transaction",
+      };
     }
 
     return {
       ...candidate,
-      ...fetched.get(candidate.hash),
+      ...remote,
       hash: candidate.hash,
       source: candidate.source,
+      verified: true,
     };
   });
 }
@@ -243,7 +256,7 @@ async function fetchTransactions(
 
   const payload = (await response.json()) as Array<{
     id?: number;
-    result?: { input?: Hex; data?: Hex; blockNumber?: Hex } | null;
+    result?: { hash?: Hex; input?: Hex; data?: Hex; blockNumber?: Hex } | null;
     error?: { message?: string };
   }>;
 
@@ -263,6 +276,8 @@ async function fetchTransactions(
       fetched.set(hash, { error: `RPC error: ${entry.error.message ?? "unknown error"}` });
     } else if (!entry.result) {
       fetched.set(hash, { error: "Transaction not found" });
+    } else if (!entry.result.hash || entry.result.hash.toLowerCase() !== hash.toLowerCase()) {
+      fetched.set(hash, { error: "RPC response transaction hash mismatch" });
     } else {
       fetched.set(hash, {
         calldata: entry.result.input ?? entry.result.data ?? "0x",
@@ -292,13 +307,16 @@ function formatHumanReport(report: AttributionReplayReport): string {
     `Network: ${report.network} (${report.chainId})`,
     `Coverage: ${report.attributed}/${report.total} transactions attributed (${report.coverage}%)`,
     `Missing: ${report.missing}  Wrong code: ${report.wrongCode}  Invalid: ${report.invalid}  Unavailable: ${report.unavailable}`,
+    `Verified by RPC: ${report.verified}/${report.total}`,
     "",
   ];
 
   for (const transaction of report.transactions) {
     const icon = transaction.status === "attributed" ? "+" : "!";
-    const codes = transaction.codes.length ? ` [${transaction.codes.join(", ")}]` : "";
-    lines.push(`${icon} ${transaction.hash} ${transaction.status}${codes}`);
+    const displayCodes = transaction.status === "invalid-attribution" ? [] : transaction.codes;
+    const codes = displayCodes.length ? ` [${displayCodes.join(", ")}]` : "";
+    const verification = transaction.verified ? "" : " [unverified input]";
+    lines.push(`${icon} ${transaction.hash} ${transaction.status}${codes}${verification}`);
   }
 
   return lines.join("\n");
@@ -306,8 +324,9 @@ function formatHumanReport(report: AttributionReplayReport): string {
 
 function formatMarkdownReport(report: AttributionReplayReport): string {
   const status = report.ok ? "Verified" : "Attention required";
+  const title = report.ok ? "Attribution Proof" : "Attribution Replay";
   const lines = [
-    `# Attribution Proof: ${report.builderCode}`,
+    `# ${title}: ${report.builderCode}`,
     "",
     `**${status}.** ${report.attributed} of ${report.total} transactions carry the expected Builder Code (${report.coverage}% coverage).`,
     "",
@@ -317,6 +336,7 @@ function formatMarkdownReport(report: AttributionReplayReport): string {
     `- Wrong code: ${report.wrongCode}`,
     `- Invalid: ${report.invalid}`,
     `- Unavailable: ${report.unavailable}`,
+    `- RPC verified: ${report.verified}/${report.total}`,
     "",
     "| Transaction | Status | Builder Codes |",
     "| --- | --- | --- |",
@@ -326,7 +346,11 @@ function formatMarkdownReport(report: AttributionReplayReport): string {
     const hash = transaction.explorerUrl
       ? `[${shortHash(transaction.hash)}](${transaction.explorerUrl})`
       : shortHash(transaction.hash);
-    lines.push(`| ${hash} | ${transaction.status} | ${transaction.codes.join(", ") || "—"} |`);
+    const transactionStatus = transaction.verified
+      ? transaction.status
+      : `${transaction.status} (unverified input)`;
+    const displayCodes = transaction.status === "invalid-attribution" ? [] : transaction.codes;
+    lines.push(`| ${hash} | ${transactionStatus} | ${displayCodes.join(", ") || "—"} |`);
   }
 
   lines.push("", "_Generated by Base Attribution OS._");

@@ -10,12 +10,15 @@
   "wrongCode": 0,
   "invalid": 0,
   "unavailable": 0,
+  "verified": 1,
+  "unverified": 0,
   "coverage": 100,
   "transactions": [
     {
       "hash": "0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926",
       "calldata": "0x62635f76776d7a793635330b0080218021802180218021802180218021",
       "blockNumber": "0x2dd765d",
+      "verified": true,
       "status": "attributed",
       "codes": ["bc_vwmzy653"],
       "schemaId": 0,

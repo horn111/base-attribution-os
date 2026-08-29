@@ -61,7 +61,7 @@ export function createAttributionClient<TClient extends ViemClientLike>(
       }
       if (property === "writeContract" && typeof writeContract === "function") {
         return (request: TransactionLike) =>
-          Promise.resolve(writeContract.call(target, withAttribution(request)));
+          Promise.resolve(writeContract.call(target, withViemDataSuffix(request, attribution)));
       }
 
       const value = Reflect.get(target, property, target);

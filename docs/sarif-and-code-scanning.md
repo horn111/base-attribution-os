@@ -15,7 +15,7 @@ The GitHub Action can create the same file:
     builder-code: bc_abc123
     sarif-output: bao.sarif
 
-- uses: github/codeql-action/upload-sarif@v4
+- uses: github/codeql-action/upload-sarif@fddeee1a7ece751b577e409a89057319e3172939 # v4
   with:
     sarif_file: bao.sarif
 ```

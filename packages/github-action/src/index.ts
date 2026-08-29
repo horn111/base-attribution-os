@@ -7,7 +7,7 @@ import {
   reportToSarif,
   type AttributionReport,
 } from "@base-attribution-os/scanner";
-import { resolveActionProfile, resolveFailOnMissing } from "./options.js";
+import { resolveActionProfile, resolveFailOnMissing, resolveWorkspaceOutput } from "./options.js";
 
 async function main(): Promise<void> {
   const repoPath = path.resolve(core.getInput("path") || ".");
@@ -43,7 +43,11 @@ async function main(): Promise<void> {
 
   const failOnMissing = resolveFailOnMissing(core.getInput("fail-on-missing"));
 
-  if (!report.ok && failOnMissing) {
+  if (report.summary.total === 0 && failOnMissing) {
+    core.setFailed(
+      "Base attribution validation found no transaction paths in the configured scope.",
+    );
+  } else if (!report.ok && failOnMissing) {
     core.setFailed(`Base attribution validation failed with ${report.summary.errors} error(s).`);
   }
 }
@@ -116,7 +120,7 @@ async function writeSarif(root: string, report: AttributionReport): Promise<void
   const output = core.getInput("sarif-output");
   if (!output) return;
 
-  const target = path.resolve(root, output);
+  const target = resolveWorkspaceOutput(root, output);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, `${JSON.stringify(reportToSarif(report), null, 2)}\n`, "utf8");
   core.setOutput("sarif-file", target);

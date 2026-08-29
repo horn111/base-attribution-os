@@ -9,18 +9,21 @@ name: Validate Attribution
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   attribution:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
       - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
         with:
           builder-code: bc_abc123
-          profile: "ci"
-          changed-only: "true"
+          profile: "strict"
+          changed-only: "false"
           sarif-output: "bao.sarif"
           fail-on-missing: "true"
 ```
@@ -55,6 +58,6 @@ Findings include:
 - attribution status and BAO rule ID
 - evidence, confidence, and suggested fix
 
-For large existing repos, use `changed-only` or a baseline. See
+For large existing repos, use `changed-only` or a baseline only as an explicit rollout mode. See
 [incremental-adoption.md](incremental-adoption.md). The Action also writes a
 coverage table to GitHub Step Summary and can emit SARIF.

@@ -13,10 +13,16 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: ./packages/github-action
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          changed-only: "true"
-          base-ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .bao-trusted
+          persist-credentials: false
+      - uses: horn111/base-attribution-os/packages/github-action@61f0b9f971021ec01354874049651a0bf96663ce
+        with:
+          config: .bao-trusted/bao.config.json
+          profile: strict
+          fail-on-missing: "true"
           sarif-output: bao-results.sarif
       - uses: github/codeql-action/upload-sarif@fddeee1a7ece751b577e409a89057319e3172939 # v4
         if: ${{ always() && hashFiles('bao-results.sarif') != '' }}

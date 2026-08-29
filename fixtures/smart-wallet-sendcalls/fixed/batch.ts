@@ -14,7 +14,7 @@ export async function batch(wallet) {
     capabilities: {
       dataSuffix: {
         value: createDataSuffix({ codes: ["bc_abc123"] }),
-        optional: true,
+        optional: false,
       },
     },
   });

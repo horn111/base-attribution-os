@@ -73,7 +73,11 @@ describe("attribution replay CLI", () => {
           requests.map((request) => ({
             jsonrpc: "2.0",
             id: request.id,
-            result: { input: calldata, blockNumber: "0x1" },
+            result: {
+              hash: request.id === 1 ? HASH_ONE : HASH_TWO,
+              input: calldata,
+              blockNumber: "0x1",
+            },
           })),
         ),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -99,10 +103,13 @@ describe("attribution replay CLI", () => {
     const calldata = appendDataSuffix("0x", { codes: ["bc_abc123"] });
     const fetcher = vi.fn(
       async () =>
-        new Response(JSON.stringify([{ jsonrpc: "2.0", id: 1, result: { input: calldata } }]), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify([{ jsonrpc: "2.0", id: 1, result: { hash: HASH_ONE, input: calldata } }]),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
     ) as typeof fetch;
 
     const result = await proofTransactionCommand({
@@ -116,5 +123,50 @@ describe("attribution replay CLI", () => {
     expect(result.ok).toBe(true);
     expect(await readFile(output, "utf8")).toContain("# Attribution Proof: bc_abc123");
     expect(await readFile(output, "utf8")).toContain("100% coverage");
+  });
+
+  it("does not label offline calldata as a verified proof", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "bao-offline-replay-"));
+    const input = path.join(root, "input.json");
+    const calldata = appendDataSuffix("0x", { codes: ["bc_abc123"] });
+    await writeFile(input, JSON.stringify([{ hash: HASH_ONE, calldata }]));
+
+    const result = await replayCommand({
+      builderCode: "bc_abc123",
+      input,
+      format: "markdown",
+    });
+    const report = result.data as AttributionReplayReport;
+
+    expect(result.ok).toBe(false);
+    expect(report).toMatchObject({ attributed: 1, verified: 0, unverified: 1 });
+    expect(result.message).toContain("# Attribution Replay: bc_abc123");
+    expect(result.message).toContain("unverified input");
+    expect(report.transactions[0].explorerUrl).toBeUndefined();
+  });
+
+  it("rejects supplied calldata that does not match RPC", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "bao-mismatch-replay-"));
+    const input = path.join(root, "input.json");
+    const supplied = appendDataSuffix("0x", { codes: ["bc_abc123"] });
+    const remote = appendDataSuffix("0x1234", { codes: ["bc_abc123"] });
+    await writeFile(input, JSON.stringify([{ hash: HASH_ONE, calldata: supplied }]));
+    const fetcher = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify([{ jsonrpc: "2.0", id: 1, result: { hash: HASH_ONE, input: remote } }]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    ) as typeof fetch;
+
+    const result = await replayCommand({
+      builderCode: "bc_abc123",
+      input,
+      rpcUrl: "https://mainnet.base.org",
+      fetcher,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("Unavailable: 1");
   });
 });

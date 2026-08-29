@@ -33,6 +33,9 @@
   "engines": {
     "node": ">=20.11"
   },
+  "resolutions": {
+    "esbuild": "0.28.2"
+  },
   "scripts": {
     "build": "turbo run build",
     "clean": "turbo run clean",

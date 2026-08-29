@@ -19,36 +19,43 @@ export interface PublishedProofReport {
   transactions: PublishedProofTransaction[];
 }
 
-const publishedProofs: Record<string, PublishedProofReport> = {
-  bc_vwmzy653: {
-    builderCode: "bc_vwmzy653",
-    chainId: 8453,
-    network: "Base mainnet",
-    generatedAt: "2026-08-19T14:27:20.000Z",
-    coverage: 100,
-    total: 1,
-    attributed: 1,
-    missing: 0,
-    transactions: [
-      {
-        hash: "0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926",
-        timestamp: "Verified on Base mainnet",
-        status: "attributed",
-        codes: ["bc_vwmzy653"],
-        explorerUrl:
-          "https://basescan.org/tx/0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926",
-        source: "BAO onchain proof",
-      },
-    ],
-  },
+const snapshotTransaction = proofSnapshot.transactions[0];
+if (!proofSnapshot.ok || !snapshotTransaction || snapshotTransaction.status !== "attributed") {
+  throw new Error("Published proof snapshot must contain one verified attributed transaction.");
+}
+
+const publishedProof: PublishedProofReport = {
+  builderCode: proofSnapshot.builderCode,
+  chainId: proofSnapshot.chainId,
+  network: proofSnapshot.network,
+  generatedAt: proofSnapshot.generatedAt,
+  coverage: proofSnapshot.coverage,
+  total: proofSnapshot.total,
+  attributed: proofSnapshot.attributed,
+  missing: proofSnapshot.missing,
+  transactions: [
+    {
+      hash: snapshotTransaction.hash,
+      timestamp: `Verified in block ${snapshotTransaction.blockNumber}`,
+      status: "attributed",
+      codes: snapshotTransaction.codes,
+      explorerUrl: snapshotTransaction.explorerUrl,
+      source: "BAO onchain proof snapshot",
+    },
+  ],
 };
 
-export const featuredProof = publishedProofs.bc_vwmzy653;
+const publishedProofs: Record<string, PublishedProofReport> = {
+  [publishedProof.builderCode]: publishedProof,
+};
+
+export const featuredProof = publishedProof;
 
 export function getPublishedProof(code: string): PublishedProofReport | undefined {
-  return publishedProofs[code];
+  return Object.hasOwn(publishedProofs, code) ? publishedProofs[code] : undefined;
 }
 
 export function shortHash(hash: string): string {
   return `${hash.slice(0, 10)}…${hash.slice(-8)}`;
 }
+import proofSnapshot from "../../../proofs/bc_vwmzy653.json";

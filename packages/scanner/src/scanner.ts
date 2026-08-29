@@ -22,6 +22,10 @@ import type {
 
 const execFile = promisify(execFileCallback);
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
+const MAX_SOURCE_FILES = 5_000;
+const MAX_SOURCE_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_TOTAL_SOURCE_BYTES = 50 * 1024 * 1024;
+const SOURCE_READ_CONCURRENCY = 16;
 const SKIPPED_DIRECTORIES = new Set([
   ".git",
   ".next",
@@ -30,7 +34,6 @@ const SKIPPED_DIRECTORIES = new Set([
   "dist",
   "node_modules",
 ]);
-const BUILDER_CODE_REGEX = /\bbc_[a-z0-9_]{1,29}\b/g;
 const ATTRIBUTION_HELPER_REGEX =
   /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 const AGENT_MARKER_REGEX =
@@ -79,17 +82,7 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<At
   const profile = normalizeProfile(options.profile);
   const baseline = await readBaseline(root, options.baseline);
   const files = await resolveFiles(root, options);
-  const records = await Promise.all(
-    files.map(async (absolutePath): Promise<SourceRecord> => {
-      const source = await fs.readFile(absolutePath, "utf8");
-      return {
-        absolutePath,
-        relativePath: normalizePath(path.relative(root, absolutePath)),
-        source,
-        frameworks: detectFrameworks(source),
-      };
-    }),
-  );
+  const records = await readSourceRecords(root, files);
   const globalEvidence = collectProjectEvidence(records, options.builderCodes);
   const transactionPaths = records.flatMap((record) =>
     analyzeSource(record.source, {
@@ -215,7 +208,7 @@ function collectCandidates(
     }
 
     if (ts.isCallExpression(node)) {
-      const marker = expressionName(node.expression);
+      const marker = resolveCallMarker(sourceFile, node.expression);
       const requestMethod = marker === "request" ? readRequestMethod(node) : undefined;
       const resolvedMarker = requestMethod ?? marker;
       const family = classifyCall(marker, requestMethod, source, frameworks);
@@ -328,11 +321,12 @@ function evaluateCandidate(
   );
   const hasExpectedSuffix = expectedSuffixes.some((suffix) =>
     Array.from(linkedSyntax.literals).some((literal) =>
-      literal.toLowerCase().replace(/^0x/, "").includes(suffix),
+      literal.toLowerCase().replace(/^0x/, "").endsWith(suffix),
     ),
   );
   const wrongDirectCode = directCodes.find((code) => !options.builderCodes.includes(code));
   const wrongLinkedCode = linkedCodes.find((code) => !options.builderCodes.includes(code));
+  const untrustedLocalHelper = hasLocallyDeclaredAttributionHelper(directSource, source);
   const localAttribution = findLocalAttribution(
     candidate,
     directSource,
@@ -376,6 +370,7 @@ function evaluateCandidate(
     suggestion = "Replace it with a Builder Code from bao.config.json.";
   } else if (
     localAttribution &&
+    !untrustedLocalHelper &&
     (hasExpectedDirectCode || hasExpectedLinkedCode || hasExpectedSuffix)
   ) {
     status = "protected";
@@ -469,7 +464,8 @@ function findLocalAttribution(
     }
     if (
       /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(directSource) &&
-      /\bwallet_getCapabilities\b/.test(source)
+      /\bwallet_getCapabilities\b/.test(source) &&
+      hasRequiredDataSuffixCapability(candidate.node)
     ) {
       return { kind: "config", detail: "negotiated EIP-5792 dataSuffix capability" };
     }
@@ -479,7 +475,10 @@ function findLocalAttribution(
   if (/\bdataSuffix\b/.test(directSource)) {
     return { kind: "config", detail: "transaction dataSuffix" };
   }
-  if (ATTRIBUTION_HELPER_REGEX.test(directSource)) {
+  if (
+    ATTRIBUTION_HELPER_REGEX.test(directSource) &&
+    !hasLocallyDeclaredAttributionHelper(directSource, source)
+  ) {
     return { kind: "helper", detail: "Builder Code attribution helper" };
   }
   if (/\bdata\b\s*:\s*[^,}\n]+(?:suffix|Suffix|DATA_SUFFIX)/.test(directSource)) {
@@ -1398,6 +1397,49 @@ async function resolveFiles(root: string, options: AnalyzeProjectOptions): Promi
     .sort();
 }
 
+async function readSourceRecords(root: string, files: string[]): Promise<SourceRecord[]> {
+  if (files.length > MAX_SOURCE_FILES) {
+    throw new Error(`Source scan exceeds the ${MAX_SOURCE_FILES} file limit.`);
+  }
+
+  let totalBytes = 0;
+  for (let index = 0; index < files.length; index += SOURCE_READ_CONCURRENCY) {
+    const chunk = files.slice(index, index + SOURCE_READ_CONCURRENCY);
+    const stats = await Promise.all(chunk.map((file) => fs.stat(file)));
+    for (let offset = 0; offset < chunk.length; offset += 1) {
+      const size = stats[offset].size;
+      if (size > MAX_SOURCE_FILE_BYTES) {
+        throw new Error(
+          `${normalizePath(path.relative(root, chunk[offset]))} exceeds the 2 MiB source file limit.`,
+        );
+      }
+      totalBytes += size;
+      if (totalBytes > MAX_TOTAL_SOURCE_BYTES) {
+        throw new Error("Source scan exceeds the 50 MiB aggregate limit.");
+      }
+    }
+  }
+
+  const records: SourceRecord[] = [];
+  for (let index = 0; index < files.length; index += SOURCE_READ_CONCURRENCY) {
+    const chunk = files.slice(index, index + SOURCE_READ_CONCURRENCY);
+    records.push(
+      ...(await Promise.all(
+        chunk.map(async (absolutePath): Promise<SourceRecord> => {
+          const source = await fs.readFile(absolutePath, "utf8");
+          return {
+            absolutePath,
+            relativePath: normalizePath(path.relative(root, absolutePath)),
+            source,
+            frameworks: detectFrameworks(source),
+          };
+        }),
+      )),
+    );
+  }
+  return records;
+}
+
 async function collectSourceFiles(root: string): Promise<string[]> {
   const stat = await fs.stat(root).catch(() => undefined);
   if (!stat) return [];
@@ -1418,9 +1460,11 @@ async function collectSourceFiles(root: string): Promise<string[]> {
 }
 
 async function changedFiles(root: string, ref: string): Promise<Set<string>> {
-  const { stdout } = await execFile("git", ["diff", "--name-only", `${ref}...HEAD`, "--"], {
-    cwd: root,
-  });
+  const { stdout } = await execFile(
+    "git",
+    ["diff", "--name-only", "--end-of-options", `${ref}...HEAD`, "--"],
+    { cwd: root },
+  );
   return new Set(
     stdout
       .split(/\r?\n/)
@@ -1481,6 +1525,58 @@ function readRequestMethod(node: ts.CallExpression): string | undefined {
 function expressionName(expression: ts.Expression): string | undefined {
   if (ts.isIdentifier(expression)) return expression.text;
   if (ts.isPropertyAccessExpression(expression)) return expression.name.text;
+  if (
+    ts.isElementAccessExpression(expression) &&
+    expression.argumentExpression &&
+    ts.isStringLiteralLike(expression.argumentExpression)
+  ) {
+    return expression.argumentExpression.text;
+  }
+  return undefined;
+}
+
+function resolveCallMarker(
+  sourceFile: ts.SourceFile,
+  expression: ts.Expression,
+  visited = new Set<ts.Node>(),
+): string | undefined {
+  const direct = expressionName(expression);
+  if (!ts.isIdentifier(expression)) return direct;
+
+  const declarations = collectValueDeclarations(sourceFile);
+  const declaration = findVisibleDeclaration(
+    declarations,
+    expression.text,
+    expression.getStart(sourceFile),
+  );
+  if (!declaration || visited.has(declaration.node)) return direct;
+  visited.add(declaration.node);
+
+  if (ts.isImportSpecifier(declaration.node)) {
+    return declaration.node.propertyName?.text ?? declaration.node.name.text;
+  }
+
+  if (ts.isVariableDeclaration(declaration.node)) {
+    const bindingMarker = markerFromBindingName(declaration.node.name, expression.text);
+    if (bindingMarker) return bindingMarker;
+    if (declaration.node.initializer) {
+      return resolveCallMarker(sourceFile, declaration.node.initializer, visited) ?? direct;
+    }
+  }
+
+  return direct;
+}
+
+function markerFromBindingName(name: ts.BindingName, localName: string): string | undefined {
+  if (!ts.isObjectBindingPattern(name)) return undefined;
+
+  for (const element of name.elements) {
+    if (ts.isIdentifier(element.name) && element.name.text === localName) {
+      return propertyName(element.propertyName ?? element.name);
+    }
+    const nested = markerFromBindingName(element.name, localName);
+    if (nested) return nested;
+  }
   return undefined;
 }
 
@@ -1491,8 +1587,45 @@ function propertyName(name: ts.PropertyName): string | undefined {
 
 function discoverBuilderCodesInLiterals(literals: Set<string>): string[] {
   return Array.from(
-    new Set(Array.from(literals).flatMap((literal) => literal.match(BUILDER_CODE_REGEX) ?? [])),
+    new Set(Array.from(literals).filter((literal) => validateBuilderCodes([literal]).length === 0)),
   );
+}
+
+function hasRequiredDataSuffixCapability(root: ts.Node): boolean {
+  let required = false;
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isPropertyAssignment(node) &&
+      propertyName(node.name) === "dataSuffix" &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      required = node.initializer.properties.some(
+        (property) =>
+          ts.isPropertyAssignment(property) &&
+          propertyName(property.name) === "optional" &&
+          property.initializer.kind === ts.SyntaxKind.FalseKeyword,
+      );
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(root);
+  return required;
+}
+
+function hasLocallyDeclaredAttributionHelper(directSource: string, source: string): boolean {
+  const helpers = Array.from(
+    directSource.matchAll(
+      /\b(appendDataSuffix|attributeSendCalls|attributeUserOperation|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\s*\(/g,
+    ),
+    (match) => match[1],
+  );
+  return helpers.some((helper) => {
+    const escaped = helper.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b(?:function|class|const|let|var)\\s+${escaped}\\b`).test(source);
+  });
 }
 
 function assertBuilderCodes(codes: string[]): void {

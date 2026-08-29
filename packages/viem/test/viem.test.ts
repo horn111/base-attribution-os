@@ -49,4 +49,27 @@ describe("@base-attribution-os/viem", () => {
     expect(wrapped.ping()).toBe(1);
     expect((client.sent[0] as { data: string }).data).toContain("80218021802180218021802180218021");
   });
+
+  it("uses viem dataSuffix for ABI writeContract requests", async () => {
+    const written: unknown[] = [];
+    const client = {
+      writeContract(request: unknown) {
+        written.push(request);
+        return { hash: "0xabc" };
+      },
+    };
+    const wrapped = createAttributionClient(client, { codes: ["baseapp"] });
+
+    await wrapped.writeContract({
+      address: "0x0000000000000000000000000000000000000001",
+      abi: [],
+      functionName: "mint",
+    });
+
+    expect(written[0]).toMatchObject({
+      dataSuffix: createDataSuffix({ codes: ["baseapp"] }),
+      functionName: "mint",
+    });
+    expect(written[0]).not.toHaveProperty("data");
+  });
 });

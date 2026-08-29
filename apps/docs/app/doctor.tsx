@@ -17,6 +17,10 @@ interface AuditPath {
   suggestion?: string;
 }
 
+interface AuditCandidate extends Omit<AuditPath, "status"> {
+  index: number;
+}
+
 interface AuditResult {
   ok: boolean;
   coverage: number;
@@ -159,10 +163,7 @@ export default function DoctorPage() {
     () => auditSource(source, activeExample.family, builderCode.trim(), profile),
     [activeExample.family, builderCode, profile, source],
   );
-  const actionYaml = useMemo(
-    () => createActionYaml(builderCode.trim(), profile),
-    [builderCode, profile],
-  );
+  const actionYaml = useMemo(() => createActionYaml(builderCode.trim()), [builderCode]);
   const lineNumbers = source.split(/\r?\n/).map((_, index) => index + 1);
 
   function selectExample(example: Example): void {
@@ -197,7 +198,7 @@ export default function DoctorPage() {
             Audit transaction paths across Base apps, wallets, x402 routes, and agents before they
             reach production.
           </p>
-          <code className="hero-command">bao doctor --changed-since origin/main</code>
+          <code className="hero-command">bao scan-repo --profile strict</code>
         </div>
       </section>
 
@@ -294,7 +295,7 @@ export default function DoctorPage() {
       <section className="bento-card output-card">
         <div className="output-header">
           <div className="editor-header-title">
-            <p className="card-kicker">Changed-only CI</p>
+            <p className="card-kicker">Full-project strict CI</p>
             <h2>validate-attribution.yml</h2>
           </div>
           <CopyButton copied={copied === "action"} onClick={() => copyText("action", actionYaml)} />
@@ -344,13 +345,17 @@ function AuditResultPanel(props: { profile: Profile; result: AuditResult }) {
       <div className="card-header result-heading">
         <div>
           <p className="card-kicker">Doctor report</p>
-          <h2>{props.result.ok ? "Ready for CI" : "Action required"}</h2>
+          <h2>{props.result.ok ? "Fixture check passed" : "Action required"}</h2>
         </div>
         <div className={`status-badge ${props.result.ok ? "passing" : "failing"}`}>
           <span className="status-dot" />
           <span>{props.result.ok ? "passing" : "failing"}</span>
         </div>
       </div>
+      <p className="field-hint">
+        This browser preview checks one illustrative snippet. Use the full-project strict CLI or
+        packed Action for merge and release decisions.
+      </p>
       <div className="metrics-row doctor-metrics">
         <Metric label="profile" value={props.profile} />
         <Metric label="paths" value={props.result.paths.length} />
@@ -411,42 +416,48 @@ function auditSource(
   profile: Profile,
 ): AuditResult {
   const candidates = findCandidates(source, family);
-  const discoveredCodes: string[] = source.match(/\bbc_[A-Za-z0-9._:-]+\b/g) ?? [];
-  const hasExpectedCode = builderCode.length > 0 && discoveredCodes.includes(builderCode);
-  const wrongCode = discoveredCodes.find((code) => code !== builderCode);
-  const helper = attributionEvidence(source, family);
   const paths = candidates.map((candidate): AuditPath => {
+    const evidenceSource = attributionEvidence(source, family, candidate);
+    const discoveredCodes: string[] = evidenceSource?.match(/\bbc_[A-Za-z0-9._:-]+\b/g) ?? [];
+    const hasExpectedCode = builderCode.length > 0 && discoveredCodes.includes(builderCode);
+    const wrongCode = discoveredCodes.find((code) => code !== builderCode);
+    const helper = evidenceSource !== undefined;
+    const path = {
+      family: candidate.family,
+      line: candidate.line,
+      marker: candidate.marker,
+    };
     if (wrongCode && !hasExpectedCode)
       return {
-        ...candidate,
+        ...path,
         status: "wrong-code",
         ruleId: "BAO002",
         suggestion: "Use the configured Builder Code.",
       };
-    if (helper && hasExpectedCode) return { ...candidate, status: "protected" };
+    if (helper && hasExpectedCode) return { ...path, status: "protected" };
     if (helper)
       return {
-        ...candidate,
+        ...path,
         status: "unresolved",
         ruleId: "BAO003",
         suggestion: "Expose the Builder Code to strict CI.",
       };
     if (family === "wallet")
       return {
-        ...candidate,
+        ...path,
         status: "missing",
         ruleId: "BAO005",
         suggestion: "Use capability-aware Smart Wallet Attribution Kit middleware.",
       };
     if (family === "x402")
       return {
-        ...candidate,
+        ...path,
         status: "missing",
         ruleId: "BAO006",
         suggestion: "Register the official Builder Code extension.",
       };
     return {
-      ...candidate,
+      ...path,
       status: "missing",
       ruleId: "BAO001",
       suggestion: "Add dataSuffix or a BAO helper.",
@@ -460,14 +471,14 @@ function auditSource(
       (entry.status === "unresolved" && profiles[profile].unresolvedFails),
   );
   return {
-    ok: profile === "local" || failures.length === 0,
+    ok: paths.length > 0 && (profile === "local" || failures.length === 0),
     coverage: paths.length === 0 ? 100 : Math.round((protectedCount / paths.length) * 100),
     protected: protectedCount,
     paths,
   };
 }
 
-function findCandidates(source: string, family: Family): Omit<AuditPath, "status">[] {
+function findCandidates(source: string, family: Family): AuditCandidate[] {
   const patterns =
     family === "x402"
       ? [{ marker: "x402Client", regex: /\bnew\s+x402Client\s*\(/g }]
@@ -487,45 +498,121 @@ function findCandidates(source: string, family: Family): Omit<AuditPath, "status
       family,
       marker,
       line: lineNumberAtIndex(source, match.index ?? 0),
+      index: match.index ?? 0,
     })),
   );
 }
 
-function attributionEvidence(source: string, family: Family): boolean {
-  if (family === "x402") return /\bBuilderCodeClientExtension\b/.test(source);
-  if (family === "wallet")
-    return /\b(?:createAttributionProvider|sendAttributedCalls|withUserOperationAttribution)\b/.test(
-      source,
+function attributionEvidence(
+  source: string,
+  family: Family,
+  candidate: AuditCandidate,
+): string | undefined {
+  if (family === "x402") {
+    const declarationStart = Math.max(0, source.lastIndexOf("const ", candidate.index));
+    const declaration = source.slice(declarationStart, candidate.index + 64);
+    const clientName = declaration.match(
+      /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new\s+x402Client\s*\(/,
+    )?.[1];
+    if (!clientName) return undefined;
+    const escapedClient = clientName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const registration = source.match(
+      new RegExp(
+        `\\b${escapedClient}\\.registerExtension\\s*\\(\\s*new\\s+BuilderCodeClientExtension\\s*\\([^;]+`,
+      ),
+    )?.[0];
+    return registration;
+  }
+
+  const callStart =
+    family === "rpc"
+      ? Math.max(0, source.lastIndexOf("request(", candidate.index))
+      : candidate.index;
+  const direct = callSourceAt(source, callStart);
+  if (family === "wallet") {
+    return /\b(?:sendAttributedCalls|withUserOperationAttribution|attributeUserOperation)\b/.test(
+      direct,
+    )
+      ? direct
+      : undefined;
+  }
+  if (family === "rpc") {
+    return /\b(?:appendDataSuffix|DATA_SUFFIX|dataSuffix)\b/.test(direct) ? direct : undefined;
+  }
+  if (
+    /\b(?:appendDataSuffix|createDataSuffix|useAttributionSuffix|withViemDataSuffix)\b/.test(direct)
+  ) {
+    return direct;
+  }
+  if (/\bdataSuffix\b/.test(direct)) {
+    const declarations = Array.from(
+      source
+        .slice(0, candidate.index)
+        .matchAll(
+          /\bconst\s+dataSuffix\s*=\s*(?:useAttributionSuffix|createDataSuffix|builderCodeDataSuffix)\s*\([^;]+/g,
+        ),
     );
-  if (family === "rpc") return /\b(?:appendDataSuffix|DATA_SUFFIX|dataSuffix)\b/.test(source);
-  return /\b(?:appendDataSuffix|createDataSuffix|dataSuffix|useAttributionSuffix|withViemDataSuffix)\b/.test(
-    source,
-  );
+    const declaration = declarations.at(-1)?.[0];
+    return declaration ? `${declaration}\n${direct}` : undefined;
+  }
+  return undefined;
+}
+
+function callSourceAt(source: string, start: number): string {
+  const open = source.indexOf("(", start);
+  if (open < 0) return source.slice(start, source.indexOf("\n", start));
+  let depth = 0;
+  let quote: '"' | "'" | "`" | undefined;
+  let escaped = false;
+
+  for (let index = open; index < source.length; index += 1) {
+    const character = source[index];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === quote) quote = undefined;
+      continue;
+    }
+    if (character === '"' || character === "'" || character === "`") {
+      quote = character;
+      continue;
+    }
+    if (character === "(") depth += 1;
+    if (character === ")") {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, index + 1);
+    }
+  }
+  return source.slice(start);
 }
 
 function lineNumberAtIndex(source: string, index: number): number {
   return source.slice(0, index).split(/\r?\n/).length;
 }
 
-function createActionYaml(builderCode: string, profile: Profile): string {
+function createActionYaml(builderCode: string): string {
+  const quotedBuilderCode = JSON.stringify(builderCode || "bc_abc123");
   return `name: Attribution Doctor
 
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   attribution:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: horn111/base-attribution-os/packages/github-action@main
+      - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
         with:
-          builder-code: ${builderCode || "bc_abc123"}
-          profile: ${profile}
-          changed-only: true
-          sarif-output: bao.sarif`;
+          builder-code: ${quotedBuilderCode}
+          profile: strict
+          changed-only: "false"
+          fail-on-missing: "true"`;
 }
 
 function CopyIcon() {

@@ -148,19 +148,19 @@ jobs:
   attribution:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
 
       - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
         with:
           builder-code: bc_abc123
-          profile: ci
-          changed-only: "true"
-          base-ref: ${{ github.event.pull_request.base.sha }}
+          profile: strict
+          changed-only: "false"
+          fail-on-missing: "true"
           sarif-output: bao-results.sarif
 
-      - uses: github/codeql-action/upload-sarif@v4
+      - uses: github/codeql-action/upload-sarif@fddeee1a7ece751b577e409a89057319e3172939 # v4
         if: ${{ always() && hashFiles('bao-results.sarif') != '' }}
         with:
           sarif_file: bao-results.sarif

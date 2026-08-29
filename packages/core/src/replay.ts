@@ -12,6 +12,7 @@ export type AttributionReplayStatus =
 export interface AttributionReplayCandidate {
   hash: Hex;
   calldata?: Hex;
+  verified?: boolean;
   blockNumber?: number | string;
   timestamp?: string;
   source?: string;
@@ -37,6 +38,8 @@ export interface AttributionReplayReport {
   wrongCode: number;
   invalid: number;
   unavailable: number;
+  verified: number;
+  unverified: number;
   coverage: number;
   transactions: AttributionReplayTransaction[];
 }
@@ -74,10 +77,11 @@ export function createAttributionReplayReport(
   const wrongCode = countStatus(transactions, "wrong-builder-code");
   const invalid = countStatus(transactions, "invalid-attribution");
   const unavailable = countStatus(transactions, "unavailable");
+  const verified = transactions.filter((transaction) => transaction.verified).length;
   const total = transactions.length;
 
   return {
-    ok: total > 0 && attributed === total,
+    ok: total > 0 && attributed === total && verified === total,
     builderCode: options.builderCode,
     chainId,
     network,
@@ -88,6 +92,8 @@ export function createAttributionReplayReport(
     wrongCode,
     invalid,
     unavailable,
+    verified,
+    unverified: total - verified,
     coverage: total === 0 ? 0 : Math.round((attributed / total) * 100),
     transactions,
   };
@@ -98,9 +104,10 @@ function analyzeCandidate(
   builderCode: string,
   explorerBaseUrl?: string,
 ): AttributionReplayTransaction {
-  const explorerUrl = explorerBaseUrl
-    ? `${explorerBaseUrl.replace(/\/$/, "")}/tx/${candidate.hash}`
-    : undefined;
+  const explorerUrl =
+    explorerBaseUrl && candidate.verified
+      ? `${explorerBaseUrl.replace(/\/$/, "")}/tx/${candidate.hash}`
+      : undefined;
 
   if (candidate.error || candidate.calldata === undefined) {
     return {
@@ -132,6 +139,18 @@ function analyzeCandidate(
       status: hasMarker(candidate.calldata) ? "invalid-attribution" : "missing-attribution",
       codes: [],
       explorerUrl,
+    };
+  }
+
+  const decodedCodeErrors = validateBuilderCodes(decoded.codes);
+  if (decodedCodeErrors.length > 0) {
+    return {
+      ...candidate,
+      status: "invalid-attribution",
+      codes: decoded.codes,
+      schemaId: decoded.id,
+      explorerUrl,
+      error: decodedCodeErrors.join("; "),
     };
   }
 

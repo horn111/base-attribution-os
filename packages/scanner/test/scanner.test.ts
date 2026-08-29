@@ -99,13 +99,26 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`,
     expect(paths[0]).toMatchObject({ status: "protected", confidence: "medium" });
   });
 
+  it("rejects a dataSuffix literal with bytes after the ERC-8021 marker", () => {
+    const paths = analyzeSource(
+      `wallet.sendTransaction({
+  to,
+  data: "0x",
+  dataSuffix: "0x62635f616263313233090080218021802180218021802180218021ff",
+});`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "unresolved", ruleId: "BAO003" });
+  });
+
   it("recognizes an attributed smart-wallet call", () => {
     const paths = analyzeSource(
       `await wallet.request({ method: "wallet_getCapabilities", params: [account] });
 await wallet.sendCalls({
   calls,
   capabilities: {
-    dataSuffix: { value: createDataSuffix({ codes: ["bc_abc123"] }), optional: true },
+    dataSuffix: { value: createDataSuffix({ codes: ["bc_abc123"] }), optional: false },
   },
 });`,
       { builderCodes: ["bc_abc123"], profile: "strict" },
@@ -144,6 +157,46 @@ provider.request({
     );
 
     expect(paths[0]).toMatchObject({ status: "missing", ruleId: "BAO005" });
+  });
+
+  it("does not accept an optional dataSuffix capability as strict protection", () => {
+    const paths = analyzeSource(
+      `await wallet.request({ method: "wallet_getCapabilities", params: [account] });
+await wallet.sendCalls({
+  calls,
+  capabilities: {
+    dataSuffix: { value: createDataSuffix({ codes: ["bc_abc123"] }), optional: true },
+  },
+});`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "missing", ruleId: "BAO005" });
+  });
+
+  it("reports non-prefixed wrong Builder Codes as BAO002", () => {
+    const paths = analyzeSource(
+      `wallet.sendTransaction({
+  to,
+  dataSuffix: createDataSuffix({ codes: ["morpho"] }),
+});`,
+      { builderCodes: ["baseapp"], profile: "ci" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "wrong-code", ruleId: "BAO002", severity: "error" });
+  });
+
+  it("does not trust a locally declared no-op attribution helper", () => {
+    const paths = analyzeSource(
+      `function createDataSuffix() { return "0x"; }
+wallet.sendTransaction({
+  to,
+  dataSuffix: createDataSuffix({ codes: ["bc_abc123"] }),
+});`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ status: "unresolved", ruleId: "BAO003" });
   });
 
   it("recognizes Smart Wallet Attribution Kit helpers and UserOperation sends", () => {
@@ -342,6 +395,26 @@ wallet.sendTransaction({ to, data: "0x" });`,
     });
   });
 
+  it("detects aliased, destructured, imported, and computed transaction entrypoints", () => {
+    const sources = [
+      `const submit = wallet.sendTransaction; submit({ to, data: "0x" });`,
+      `const { sendTransaction: submit } = wallet; submit({ to, data: "0x" });`,
+      `import { sendTransaction as submit } from "viem/actions"; submit(client, { to, data: "0x" });`,
+      `wallet["sendTransaction"]({ to, data: "0x" });`,
+    ];
+
+    for (const source of sources) {
+      expect(
+        analyzeSource(source, { builderCodes: ["bc_abc123"], profile: "strict" })[0],
+      ).toMatchObject({
+        marker: "sendTransaction",
+        status: "missing",
+        ruleId: "BAO001",
+        severity: "error",
+      });
+    }
+  });
+
   it("treats dynamic attribution as a warning in CI and an error in strict mode", () => {
     const source = `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
 const dataSuffix = builderCodeDataSuffix(process.env.BUILDER_CODE ?? "");
@@ -351,6 +424,16 @@ wallet.sendTransaction({ to, data: "0x", dataSuffix });`;
 
     expect(ci[0]).toMatchObject({ status: "unresolved", severity: "warning" });
     expect(strict[0]).toMatchObject({ status: "unresolved", severity: "error" });
+  });
+
+  it("fails closed when a source file exceeds the scanner size limit", async () => {
+    const root = await createProject({
+      "src/huge.ts": `// ${"x".repeat(2 * 1024 * 1024)}`,
+    });
+
+    await expect(
+      analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" }),
+    ).rejects.toThrow("2 MiB source file limit");
   });
 
   it("suppresses existing findings with a baseline", async () => {

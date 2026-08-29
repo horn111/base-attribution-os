@@ -1,7 +1,12 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { resolveActionProfile, resolveFailOnMissing } from "../src/options.js";
+import {
+  resolveActionProfile,
+  resolveFailOnMissing,
+  resolveWorkspaceOutput,
+} from "../src/options.js";
 
 describe("@base-attribution-os/github-action", () => {
   it("uses the config profile when the workflow input is omitted", () => {
@@ -24,5 +29,14 @@ describe("@base-attribution-os/github-action", () => {
 
     expect(profileBlock).toBeDefined();
     expect(profileBlock).not.toContain("default:");
+  });
+
+  it("keeps SARIF output inside the repository", () => {
+    expect(resolveWorkspaceOutput("C:\\repo", "reports/bao.sarif")).toBe(
+      path.resolve("C:\\repo", "reports/bao.sarif"),
+    );
+    expect(() => resolveWorkspaceOutput("C:\\repo", "../outside.sarif")).toThrow(
+      "inside the repository",
+    );
   });
 });

@@ -2,6 +2,21 @@ import { assertHex, hexByteLength, sliceHex, type Hex } from "@base-attribution-
 
 const WORD_BYTES = 32;
 const HANDLE_OPS_SELECTORS = new Set(["0x1fad948c", "0x765e827f"]);
+const ENTRY_POINT_BY_SELECTOR = new Map([
+  ["0x1fad948c", "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789"],
+  ["0x765e827f", "0x0000000071727de22e5e9d8baf0edac6f37da032"],
+]);
+
+export function isSupportedErc4337HandleOps(input: Hex, target?: Hex): boolean {
+  try {
+    assertHex(input, "transaction calldata");
+    if (hexByteLength(input) < 4 || !target) return false;
+    const selector = sliceHex(input, 0, 4).toLowerCase();
+    return ENTRY_POINT_BY_SELECTOR.get(selector) === target.toLowerCase();
+  } catch {
+    return false;
+  }
+}
 
 export function extractErc4337UserOperationCalldata(input: Hex): Hex[] {
   try {

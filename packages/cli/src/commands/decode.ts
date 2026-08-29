@@ -1,4 +1,8 @@
-import { decodeAttributionFromCalldata, type Hex } from "@base-attribution-os/core";
+import {
+  decodeAttributionFromCalldata,
+  validateBuilderCodes,
+  type Hex,
+} from "@base-attribution-os/core";
 import type { CommandResult } from "../output.js";
 
 export interface DecodeOptions {
@@ -12,6 +16,14 @@ export function decodeCommand(options: DecodeOptions): CommandResult {
     return {
       ok: false,
       message: "No ERC-8021 attribution suffix found.",
+    };
+  }
+
+  if (validateBuilderCodes(decoded.codes).length > 0) {
+    return {
+      ok: false,
+      message: "ERC-8021 suffix contains invalid Builder Codes.",
+      data: decoded,
     };
   }
 

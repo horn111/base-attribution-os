@@ -30,7 +30,7 @@ proof. Replace examples with your own Builder Code from Base.
 Generate the ERC-8021 suffix with the published CLI:
 
 ```bash
-pnpm dlx @base-attribution-os/cli@0.1.0 encode --code bc_vwmzy653
+pnpm dlx @base-attribution-os/cli@0.2.1 encode --code bc_vwmzy653
 ```
 
 ## Send the transaction
@@ -46,7 +46,7 @@ repository.
 After the transaction is mined:
 
 ```bash
-pnpm dlx @base-attribution-os/cli@0.1.0 check-tx \
+pnpm dlx @base-attribution-os/cli@0.2.1 check-tx \
   --hash 0x6573344cfb346c886806804fb8f8b6cc510c30d7974a1a69c11452a5f8fe4926 \
   --rpc-url https://mainnet.base.org \
   --expect bc_vwmzy653

@@ -2,8 +2,9 @@ import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { appendDataSuffix } from "@base-attribution-os/core";
+import { appendDataSuffix, ERC8021_SUFFIX, type Hex } from "@base-attribution-os/core";
 import { checkCalldataCommand } from "../src/commands/check-calldata.js";
+import { decodeCommand } from "../src/commands/decode.js";
 import { encodeCommand } from "../src/commands/encode.js";
 import { scanRepo } from "../src/commands/scan-repo.js";
 
@@ -20,6 +21,19 @@ describe("@base-attribution-os/cli", () => {
     const result = checkCalldataCommand({ calldata, expect: "baseapp" });
 
     expect(result.ok).toBe(true);
+  });
+
+  it("does not render control characters from malformed Builder Codes", () => {
+    const code = "bad\u001b[31m";
+    const encoded = Buffer.from(code, "utf8").toString("hex");
+    const length = (encoded.length / 2).toString(16).padStart(2, "0");
+    const calldata = `0x${encoded}${length}00${ERC8021_SUFFIX.slice(2)}` as Hex;
+
+    const result = decodeCommand({ calldata });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe("ERC-8021 suffix contains invalid Builder Codes.");
+    expect(result.message).not.toContain("\u001b");
   });
 
   it("finds missing attribution in transaction files", async () => {

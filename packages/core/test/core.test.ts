@@ -149,7 +149,7 @@ describe("@base-attribution-os/core", () => {
     const wrong = appendDataSuffix("0x1234", { codes: ["bc_other"] });
     const report = createAttributionReplayReport(
       [
-        { hash: `0x${"11".repeat(32)}`, calldata: attributed },
+        { hash: `0x${"11".repeat(32)}`, calldata: attributed, verified: true },
         { hash: `0x${"22".repeat(32)}`, calldata: "0x1234" },
         { hash: `0x${"33".repeat(32)}`, calldata: wrong },
       ],
@@ -191,6 +191,19 @@ describe("@base-attribution-os/core", () => {
     expect(report.transactions[0]).toMatchObject({
       status: "unavailable",
       error: "Transaction not found",
+    });
+  });
+
+  it("rejects malformed Builder Codes in replay calldata", () => {
+    const report = createAttributionReplayReport(
+      [{ hash: `0x${"55".repeat(32)}`, calldata: rawDataSuffix("bad-code!", 0) }],
+      { builderCode: "bc_abc123" },
+    );
+
+    expect(report).toMatchObject({ ok: false, invalid: 1, attributed: 0 });
+    expect(report.transactions[0]).toMatchObject({
+      status: "invalid-attribution",
+      codes: ["bad-code!"],
     });
   });
 });

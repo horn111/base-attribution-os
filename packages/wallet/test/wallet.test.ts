@@ -230,6 +230,17 @@ describe("wallet-side UserOperation attribution", () => {
     expect(decoded?.codes).toEqual(["bc_wallet", "bc_app"]);
   });
 
+  it("rejects excessive nested attribution layers", () => {
+    let callData = "0x1234" as Hex;
+    for (let index = 0; index < 65; index += 1) {
+      callData = appendDataSuffix(callData, { codes: ["bc_app"] });
+    }
+
+    expect(() => attributeUserOperation({ callData }, { walletCodes: ["bc_wallet"] })).toThrow(
+      /64-layer attribution limit/,
+    );
+  });
+
   it("rejects incompatible schema and registry combinations", () => {
     const registryA = `0x${"aa".repeat(20)}` as Hex;
     const registryB = `0x${"bb".repeat(20)}` as Hex;

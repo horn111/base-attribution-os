@@ -30,6 +30,8 @@ export interface UserOperationValidationResult extends ValidationResult {
   attributionPath: "userOp.callData";
 }
 
+const MAX_ATTRIBUTION_LAYERS = 64;
+
 export function attributeUserOperation<TUserOperation extends UserOperationLike>(
   userOperation: TUserOperation,
   options: AttributeUserOperationOptions,
@@ -104,6 +106,12 @@ function peelAttribution(callData: Hex): {
   while (true) {
     const decoded = decodeAttributionFromCalldata(remaining);
     if (!decoded) break;
+    if (attributions.length >= MAX_ATTRIBUTION_LAYERS) {
+      throw new WalletAttributionError(
+        "INVALID_USER_OPERATION",
+        `UserOperation callData exceeds the ${MAX_ATTRIBUTION_LAYERS}-layer attribution limit.`,
+      );
+    }
     attributions.unshift(decoded);
     remaining = decoded.transactionData;
   }
