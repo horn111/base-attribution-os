@@ -1,5 +1,17 @@
 # @base-attribution-os/scanner
 
+## 0.4.0
+
+### Minor Changes
+
+- da51f38: Resolve Builder Code evidence across bounded monorepo imports, workspace packages, tsconfig aliases, and re-export chains, including dependency-aware changed-only scans.
+
+### Patch Changes
+
+- 61f0b9f: Reject malformed ERC-8021 code lists and require transaction-linked attribution evidence in strict repository scans.
+- Updated dependencies [61f0b9f]
+  - @base-attribution-os/core@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes

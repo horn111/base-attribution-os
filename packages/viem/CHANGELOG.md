@@ -1,5 +1,13 @@
 # @base-attribution-os/viem
 
+## 0.1.3
+
+### Patch Changes
+
+- 8514766: Preserve ABI-generated calldata in the viem adapter and bound nested wallet attribution parsing.
+- Updated dependencies [61f0b9f]
+  - @base-attribution-os/core@0.3.1
+
 ## 0.1.2
 
 ### Patch Changes

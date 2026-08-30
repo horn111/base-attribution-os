@@ -1,5 +1,12 @@
 # @base-attribution-os/ethers
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [61f0b9f]
+  - @base-attribution-os/core@0.3.1
+
 ## 0.1.2
 
 ### Patch Changes

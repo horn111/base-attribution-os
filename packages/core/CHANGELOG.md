@@ -1,5 +1,11 @@
 # @base-attribution-os/core
 
+## 0.3.1
+
+### Patch Changes
+
+- 61f0b9f: Reject malformed ERC-8021 code lists and require transaction-linked attribution evidence in strict repository scans.
+
 ## 0.3.0
 
 ### Minor Changes

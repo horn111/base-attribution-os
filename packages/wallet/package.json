@@ -1,6 +1,6 @@
 {
   "name": "@base-attribution-os/wallet",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "EIP-5792 and ERC-4337 attribution middleware for smart wallets.",
   "type": "module",
   "license": "MIT",
