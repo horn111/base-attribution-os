@@ -39,9 +39,11 @@ debugging a failed smoke run.
 - Confirm README and workflow snippets use the intended immutable release ref.
 - Run `pnpm changeset status` and review every projected package version against
   the approved release brief.
-- Confirm the maintainer has completed the Stack the Bag deep pilot against the
-  versioned candidate packages. Record the full result privately and include a
-  sanitized summary in the release notes.
+- Confirm the maintainer has completed the approved Stack the Bag pilot scope
+  against the versioned candidate packages. Check every currently enabled
+  transaction path; explicitly list disabled or in-development paths as
+  nonblocking. Record the full result privately and include a sanitized summary
+  in the release notes.
 
 ## Release step
 

@@ -13,7 +13,11 @@ const report = await analyzeProject({
   root: process.cwd(),
   builderCodes: ["bc_example"],
   profile: "strict",
+  workspace: { roots: ["apps/*", "packages/*"] },
 });
 ```
+
+Workspace settings are optional. Standard npm/pnpm workspaces and
+`tsconfig*.json` aliases are discovered automatically.
 
 [Scanner documentation](https://github.com/horn111/base-attribution-os/blob/main/docs/configuration.md) · [Issues](https://github.com/horn111/base-attribution-os/issues)

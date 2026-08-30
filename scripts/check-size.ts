@@ -6,7 +6,7 @@ const MAX_JS_BYTES: Record<string, number> = {
   core: 40 * 1024,
   ethers: 10 * 1024,
   "github-action": 12 * 1024 * 1024,
-  scanner: 40 * 1024,
+  scanner: 48 * 1024,
   viem: 10 * 1024,
   wagmi: 8 * 1024,
   wallet: 40 * 1024,

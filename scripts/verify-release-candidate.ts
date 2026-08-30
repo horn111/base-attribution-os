@@ -58,6 +58,7 @@ try {
         name: "bao-release-candidate-consumer",
         private: true,
         type: "module",
+        workspaces: ["apps/*", "packages/*"],
         dependencies: dependencySpecs,
         pnpm: {
           overrides: dependencySpecs,
@@ -170,6 +171,59 @@ await walletClient.sendTransaction({
 `,
   );
 
+  mkdirSync(path.join(consumerDir, "packages/attribution/src"), { recursive: true });
+  mkdirSync(path.join(consumerDir, "apps/web"), { recursive: true });
+  writeFileSync(
+    path.join(consumerDir, "packages/attribution/package.json"),
+    JSON.stringify(
+      {
+        name: "@smoke/attribution",
+        exports: { ".": "./src/index.ts", "./*": "./src/*.ts" },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFileSync(
+    path.join(consumerDir, "packages/attribution/src/index.ts"),
+    'export { attributedClient } from "./client";\n',
+  );
+  writeFileSync(
+    path.join(consumerDir, "packages/attribution/src/client.ts"),
+    `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+
+export const attributedClient = createWalletClient({
+  dataSuffix: builderCodeDataSuffix("bc_abc123"),
+});
+`,
+  );
+  writeFileSync(
+    path.join(consumerDir, "apps/web/package-import.ts"),
+    `import { attributedClient } from "@smoke/attribution";
+attributedClient.sendTransaction({ to, data: "0x" });
+`,
+  );
+  writeFileSync(
+    path.join(consumerDir, "apps/web/alias-import.ts"),
+    `import { attributedClient } from "@smoke/config/client";
+attributedClient.writeContract({ address, abi, functionName: "mint" });
+`,
+  );
+  writeFileSync(
+    path.join(consumerDir, "tsconfig.json"),
+    JSON.stringify(
+      {
+        compilerOptions: {
+          baseUrl: ".",
+          paths: { "@smoke/config/*": ["packages/attribution/src/*"] },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
   run(
     "pnpm",
     [
@@ -194,11 +248,20 @@ await walletClient.sendTransaction({
       {
         builderCodes: ["bc_abc123"],
         profile: "strict",
-        include: ["attributed.ts"],
+        include: ["attributed.ts", "apps", "packages"],
+        workspace: {
+          roots: ["packages/*"],
+          tsconfig: ["tsconfig.json"],
+        },
       },
       null,
       2,
     ),
+  );
+  run(
+    "pnpm",
+    ["exec", "bao", "scan-repo", "--path", consumerDir, "--config", "bao.config.json"],
+    consumerDir,
   );
   run("pnpm", ["exec", "bao", "doctor"], consumerDir);
 

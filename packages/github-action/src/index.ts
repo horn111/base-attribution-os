@@ -34,6 +34,7 @@ async function main(): Promise<void> {
     profile,
     baseline,
     changedSince,
+    workspace: config?.workspace,
   });
 
   await annotate(report);
@@ -99,7 +100,9 @@ async function writeSummary(report: AttributionReport, changedSince?: string): P
     .addEOL();
 
   if (changedSince) {
-    core.summary.addRaw(`Changed files since \`${changedSince}\` only.`).addEOL();
+    core.summary
+      .addRaw(`Files impacted by workspace dependencies since \`${changedSince}\`.`)
+      .addEOL();
   }
 
   if (familyRows.length > 0) {

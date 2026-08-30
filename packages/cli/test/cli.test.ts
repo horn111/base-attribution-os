@@ -302,6 +302,27 @@ wallet.writeContract({ address, abi, functionName: "mint", dataSuffix });
     expect(result.findings).toHaveLength(1);
   });
 
+  it("loads Builder Codes, profile, and workspace settings from bao.config.json", async () => {
+    const root = await createFixture(`
+import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+const dataSuffix = builderCodeDataSuffix("bc_abc123");
+wallet.sendTransaction({ to, data: "0x", dataSuffix });
+`);
+    await writeFile(
+      path.join(root, "bao.config.json"),
+      JSON.stringify({
+        builderCodes: ["bc_abc123"],
+        profile: "strict",
+        workspace: { roots: ["packages/*"], tsconfig: [] },
+      }),
+    );
+
+    const result = await scanRepo({ path: root });
+
+    expect(result.ok).toBe(true);
+    expect(result.profile).toBe("strict");
+  });
+
   it("requires the expected Builder Code in strict profile candidate files", async () => {
     const root = await createFixture(`
 import { builderCodeDataSuffix } from "@base-attribution-os/viem";

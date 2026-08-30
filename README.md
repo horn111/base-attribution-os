@@ -14,7 +14,7 @@ enforces coverage in CI.
 [Live demo](https://base-attribution-os.vercel.app) ·
 [Attribution Observatory](https://base-attribution-os.vercel.app/observatory) ·
 [Published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653) ·
-[v0.3.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.3.0) ·
+[v0.4.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.4.0) ·
 [npm packages](https://www.npmjs.com/org/base-attribution-os) ·
 [Documentation](docs/attribution-doctor.md)
 
@@ -152,7 +152,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
+      - uses: horn111/base-attribution-os/packages/github-action@v0.4.0
         with:
           builder-code: bc_abc123
           profile: strict
@@ -167,13 +167,17 @@ jobs:
 ```
 
 The Action reports checked files, detected transaction paths, protected paths,
-coverage, and findings. Pin the immutable `v0.3.0` release in production
+coverage, and findings. Pin the immutable `v0.4.0` release in production
 workflows. Moving the floating `v0` ref is a separate release step.
 
 ## Attribution Doctor
 
 Attribution Doctor maps each supported call site to its attribution evidence,
 rule ID, confidence, and suggested fix.
+
+In monorepos it follows bounded workspace imports, package exports, tsconfig
+aliases, and re-export chains. Changed-only scans include affected providers
+and consumers rather than checking the raw Git diff in isolation.
 
 ```bash
 pnpm exec bao doctor

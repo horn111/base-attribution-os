@@ -1,0 +1,7 @@
+{
+  "name": "@fixture/attribution",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  }
+}

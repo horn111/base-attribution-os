@@ -5,6 +5,14 @@ All notable changes to Base Attribution OS will be documented here.
 This project uses Changesets. Each package release should include a short note
 that explains the attribution workflow it improves.
 
+## 0.4.0 - 2026-08-30
+
+- Resolve attribution evidence across workspace packages, tsconfig aliases, package exports, and re-export chains without traversing external dependencies.
+- Expand changed-only scans to the affected dependency and consumer closure.
+- Add strict monorepo fixtures for every supported transaction family, including wrong-code, dynamic, cyclic, and malformed-layout regressions.
+- Load `bao.config.json` from `bao scan-repo` and expose bounded workspace overrides.
+- Include the v0.3 post-release validation, adapter, wallet, CLI, Action, and workflow hardening fixes.
+
 ## 0.3.0 - 2026-08-28
 
 - Enforce the Base Builder Code format and require chain IDs for custom

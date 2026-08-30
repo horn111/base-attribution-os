@@ -7,6 +7,7 @@ import { createDataSuffix, validateBuilderCodes } from "@base-attribution-os/cor
 import ts from "typescript";
 import { readBaseline } from "./baseline.js";
 import { SCAN_PROFILES } from "./types.js";
+import { buildWorkspaceGraph, type WorkspaceGraph } from "./workspace.js";
 import type {
   AnalyzeProjectOptions,
   AttributionEvidence,
@@ -21,7 +22,7 @@ import type {
 } from "./types.js";
 
 const execFile = promisify(execFileCallback);
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
+const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
 const MAX_SOURCE_FILES = 5_000;
 const MAX_SOURCE_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_SOURCE_BYTES = 50 * 1024 * 1024;
@@ -52,6 +53,7 @@ interface ProjectEvidence {
   expected: boolean;
   dynamic: boolean;
   exportedBindings: string[];
+  wrongCode?: string;
 }
 
 interface SourceAnalysisOptions {
@@ -61,6 +63,7 @@ interface SourceAnalysisOptions {
   profile?: ScanProfile | string;
   relativePath?: string;
   rules?: BaoRuleConfig;
+  workspaceGraph?: WorkspaceGraph;
 }
 
 interface Candidate {
@@ -82,8 +85,15 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<At
   const profile = normalizeProfile(options.profile);
   const baseline = await readBaseline(root, options.baseline);
   const files = await resolveFiles(root, options);
-  const records = await readSourceRecords(root, files);
-  const globalEvidence = collectProjectEvidence(records, options.builderCodes);
+  const allRecords = await readSourceRecords(root, files);
+  const workspaceGraph = await buildWorkspaceGraph(root, allRecords, options.workspace);
+  const records = options.changedSince
+    ? filterImpactedRecords(
+        allRecords,
+        workspaceGraph.impactedFiles(await changedFiles(root, options.changedSince)),
+      )
+    : allRecords;
+  const globalEvidence = collectProjectEvidence(allRecords, options.builderCodes);
   const transactionPaths = records.flatMap((record) =>
     analyzeSource(record.source, {
       baseline,
@@ -92,6 +102,7 @@ export async function analyzeProject(options: AnalyzeProjectOptions): Promise<At
       profile,
       relativePath: record.relativePath,
       rules: options.rules,
+      workspaceGraph,
     }),
   );
   const summary = summarize(transactionPaths);
@@ -335,14 +346,28 @@ function evaluateCandidate(
   );
   const familyEvidence =
     options.globalEvidence?.filter((entry) => entry.family === candidate.family) ?? [];
+  const linkedEvidence = familyEvidence.find((entry) =>
+    isProjectEvidenceLinked(
+      sourceFile,
+      candidate,
+      entry,
+      options.builderCodes,
+      options.workspaceGraph,
+    ),
+  );
   const linkedProjectEvidence = familyEvidence.find(
     (entry) =>
       entry.expected &&
-      candidate.family === "privy" &&
-      isPrivyProjectEvidenceLinked(sourceFile, candidate, entry, options.builderCodes),
+      isProjectEvidenceLinked(
+        sourceFile,
+        candidate,
+        entry,
+        options.builderCodes,
+        options.workspaceGraph,
+      ),
   );
   const projectEvidence =
-    linkedProjectEvidence ?? familyEvidence.find((entry) => entry.expected) ?? familyEvidence[0];
+    linkedEvidence ?? familyEvidence.find((entry) => entry.expected) ?? familyEvidence[0];
   const evidence: AttributionEvidence[] = [];
 
   if (localAttribution) {
@@ -362,7 +387,10 @@ function evaluateCandidate(
   let suggestion: string | undefined;
   let confidence = candidate.confidence;
 
-  const wrongCode = wrongDirectCode ?? (localAttribution ? wrongLinkedCode : undefined);
+  const wrongCode =
+    wrongDirectCode ??
+    (localAttribution ? wrongLinkedCode : undefined) ??
+    linkedEvidence?.wrongCode;
   if (wrongCode && !hasExpectedDirectCode && !hasExpectedSuffix) {
     status = "wrong-code";
     ruleId = "BAO002";
@@ -377,12 +405,11 @@ function evaluateCandidate(
     message = `${candidate.marker} is protected by Builder Code attribution.`;
     confidence = hasExpectedDirectCode ? "high" : "medium";
   } else if (
-    projectEvidence?.expected &&
-    candidate.family === "privy" &&
-    (options.profile !== "strict" || linkedProjectEvidence)
+    linkedProjectEvidence ||
+    (projectEvidence?.expected && candidate.family === "privy" && options.profile !== "strict")
   ) {
     status = "protected";
-    message = `${candidate.marker} is covered by the project-level Privy dataSuffix plugin.`;
+    message = `${candidate.marker} is covered by statically linked project-level attribution evidence.`;
     confidence = "medium";
   } else if (projectEvidence?.expected) {
     status = "unresolved";
@@ -634,6 +661,9 @@ function attributionArguments(
 function collectAttributionRoots(candidate: Candidate): ts.Node[] {
   const roots: ts.Node[] = [];
   const seen = new Set<ts.Node>();
+  const sourceFile = candidate.node.getSourceFile();
+  const declarations = collectValueDeclarations(sourceFile);
+  const visitedValues = new Set<ts.Node>();
 
   function add(node: ts.Node): void {
     if (!seen.has(node)) {
@@ -659,6 +689,19 @@ function collectAttributionRoots(candidate: Candidate): ts.Node[] {
   }
 
   function visit(node: ts.Node): void {
+    if (ts.isIdentifier(node) && isReferenceIdentifier(node)) {
+      const declaration = findVisibleDeclaration(
+        declarations,
+        node.text,
+        node.getStart(sourceFile),
+      );
+      const value = declaration ? declarationValue(declaration.node) : undefined;
+      if (value && !visitedValues.has(value)) {
+        visitedValues.add(value);
+        visit(value);
+      }
+      return;
+    }
     if (ts.isPropertyAssignment(node) && propertyName(node.name) === "dataSuffix") {
       add(node.initializer);
       return;
@@ -959,6 +1002,7 @@ function collectProjectConfigNodes(sourceFile: ts.SourceFile): ts.Node[] {
   const nodes: ts.Node[] = [];
   const configCalls = new Set([
     "attributeUserOperation",
+    "builderCodeDataSuffix",
     "createAttributionProvider",
     "createAttributionSigner",
     "dataSuffix",
@@ -966,6 +1010,8 @@ function collectProjectConfigNodes(sourceFile: ts.SourceFile): ts.Node[] {
     "registerExtension",
     "withDataSuffixCapability",
     "withUserOperationAttribution",
+    "withAttributionSuffix",
+    "withViemDataSuffix",
   ]);
 
   function visit(node: ts.Node): void {
@@ -1008,10 +1054,42 @@ function exportedBindingsForNode(node: ts.Node): string[] {
     if (ts.isExportAssignment(current)) {
       return ["default"];
     }
+    if (ts.isFunctionDeclaration(current) && current.name) {
+      const exported = current.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (exported) return [current.name.text];
+    }
     current = current.parent;
   }
 
   return [];
+}
+
+function isProjectEvidenceLinked(
+  sourceFile: ts.SourceFile,
+  candidate: Candidate,
+  evidence: ProjectEvidence,
+  builderCodes: string[],
+  workspaceGraph?: WorkspaceGraph,
+): boolean {
+  if (
+    candidate.family === "privy" &&
+    isPrivyProjectEvidenceLinked(sourceFile, candidate, evidence, builderCodes, workspaceGraph)
+  ) {
+    return true;
+  }
+  if (!workspaceGraph) return false;
+
+  const syntax = collectLinkedSyntax(sourceFile, candidate.node);
+  const bindings = workspaceGraph.linkedBindings(
+    sourceFile.fileName,
+    evidence.evidence.file,
+    evidence.exportedBindings,
+  );
+  return Array.from(bindings).some((binding) =>
+    binding.includes(".") ? syntax.memberAccesses.has(binding) : syntax.identifiers.has(binding),
+  );
 }
 
 function isPrivyProjectEvidenceLinked(
@@ -1019,6 +1097,7 @@ function isPrivyProjectEvidenceLinked(
   candidate: Candidate,
   evidence: ProjectEvidence,
   builderCodes: string[],
+  workspaceGraph?: WorkspaceGraph,
 ): boolean {
   const candidateSyntax = collectLinkedSyntax(sourceFile, candidate.node);
   if (!referencesPrivyHook(sourceFile, candidateSyntax)) {
@@ -1027,6 +1106,13 @@ function isPrivyProjectEvidenceLinked(
 
   const componentName = containingFunctionName(candidate.node);
   const importedBindings = importedBindingsForEvidence(sourceFile, evidence);
+  for (const binding of workspaceGraph?.linkedBindings(
+    sourceFile.fileName,
+    evidence.evidence.file,
+    evidence.exportedBindings,
+  ) ?? []) {
+    importedBindings.add(binding);
+  }
   let linked = false;
 
   function visit(node: ts.Node): void {
@@ -1244,8 +1330,18 @@ function collectProjectEvidence(
       return builderCodes.some((code) => literals.has(code));
     });
     const expected = expectedNodes.length > 0;
+    const discoveredCodes = Array.from(
+      new Set(
+        configNodes.flatMap((node) =>
+          discoverBuilderCodesInLiterals(
+            collectAttributionSyntax(sourceFile, [node], true).literals,
+          ),
+        ),
+      ),
+    );
+    const wrongCode = discoveredCodes.find((code) => !builderCodes.includes(code));
     const exportedBindings = Array.from(
-      new Set(expectedNodes.flatMap((node) => exportedBindingsForNode(node))),
+      new Set(configNodes.flatMap((node) => exportedBindingsForNode(node))),
     );
     const location =
       sourceFile.getLineAndCharacterOfPosition(configNodes[0].getStart(sourceFile)).line + 1;
@@ -1257,6 +1353,7 @@ function collectProjectEvidence(
         expected,
         dynamic: !expected,
         exportedBindings,
+        wrongCode,
         evidence: {
           kind: "config",
           detail: "project-level attribution configuration",
@@ -1284,6 +1381,24 @@ function evidenceFamilies(record: SourceRecord): TransactionFamily[] {
 
   if (families.size === 0 && /\bcreateWalletClient\b/.test(record.source)) {
     families.add("viem");
+  }
+
+  if (
+    /\b(?:builderCodeDataSuffix|createDataSuffix|withAttributionSuffix|withViemDataSuffix)\b/.test(
+      record.source,
+    )
+  ) {
+    families.add("viem");
+    families.add("wagmi");
+    families.add("agent");
+    families.add("rpc");
+  }
+  if (
+    /\b(?:ethersBuilderCodeDataSuffix|createAttributionSigner|withEthersAttribution)\b/.test(
+      record.source,
+    )
+  ) {
+    families.add("ethers");
   }
 
   return Array.from(families);
@@ -1381,13 +1496,20 @@ async function resolveFiles(root: string, options: AnalyzeProjectOptions): Promi
 
   if (options.files && options.files.length > 0) {
     files = options.files.map((file) => path.resolve(root, file));
+    for (const file of files) {
+      const relative = path.relative(root, file);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        throw new Error("Explicit source files must stay inside the scan root.");
+      }
+      const realFile = await fs.realpath(file);
+      const realRoot = await fs.realpath(root);
+      const realRelative = path.relative(realRoot, realFile);
+      if (realRelative.startsWith("..") || path.isAbsolute(realRelative)) {
+        throw new Error("Explicit source files must not resolve outside the scan root.");
+      }
+    }
   } else {
     files = await collectSourceFiles(root);
-  }
-
-  if (options.changedSince) {
-    const changed = await changedFiles(root, options.changedSince);
-    files = files.filter((file) => changed.has(normalizePath(path.relative(root, file))));
   }
 
   return Array.from(new Set(files))
@@ -1395,6 +1517,10 @@ async function resolveFiles(root: string, options: AnalyzeProjectOptions): Promi
     .filter((file) => matchesIncludes(normalizePath(path.relative(root, file)), options.include))
     .filter((file) => !matchesExcludes(normalizePath(path.relative(root, file)), options.exclude))
     .sort();
+}
+
+function filterImpactedRecords(records: SourceRecord[], impacted: Set<string>): SourceRecord[] {
+  return records.filter((record) => impacted.has(record.relativePath));
 }
 
 async function readSourceRecords(root: string, files: string[]): Promise<SourceRecord[]> {

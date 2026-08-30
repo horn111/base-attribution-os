@@ -46,7 +46,7 @@
   and [BAO proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653).
 - Dynamic, grid-free Open Graph proof card.
 
-## v0.3 baseline (merged, unreleased)
+## v0.3 (shipped)
 
 - Enforce the Base Builder Code format and custom-registry chain IDs.
 - Preserve adapter prototypes and method context across viem and ethers.
@@ -55,26 +55,21 @@
 - Verify all eight packed packages and the bundled GitHub Action before release.
 - Publish package-level READMEs and complete npm metadata.
 
-## v0.3 planning
+The `v0.3.0` train shipped the hardening baseline, public x402 seller and
+multi-file wallet fixtures, Base mainnet calldata snapshots, and the first
+deep Stack the Bag production pilot.
 
-The [v0.3.0 release brief](releases/v0.3.0.md) locks the product scope.
-The project uses independent package versions within the `v0.3.0` release
-train, as defined in the [versioning policy](versioning.md).
+## v0.4 planning
 
-Release gate owned by the maintainer:
+The [v0.4.0 release brief](releases/v0.4.0.md) locks the product scope and
+independent package versions.
 
-- Complete one deep production pilot against Stack the Bag using the versioned
-  candidate packages. Keep the full report private and publish a sanitized
-  summary.
-
-Included fixture work:
-
-- Add public x402 seller and multi-file wallet fixtures.
-- Add a public fixture set for real transaction calldata.
-
-Deferred beyond v0.3:
-
-- Tune project-level evidence across more monorepo layouts.
+- Resolve attribution evidence across bounded npm/pnpm workspaces, tsconfig
+  aliases, package exports, and re-export chains.
+- Apply changed-only scans to the affected dependency and consumer closure.
+- Publish broken/fixed monorepo fixtures for all supported transaction families.
+- Qualify candidate packages through a partial Stack the Bag pilot while its
+  sponsored and USDC paths remain in development.
 
 ## Future v0 releases
 
