@@ -661,6 +661,9 @@ function attributionArguments(
 function collectAttributionRoots(candidate: Candidate): ts.Node[] {
   const roots: ts.Node[] = [];
   const seen = new Set<ts.Node>();
+  const sourceFile = candidate.node.getSourceFile();
+  const declarations = collectValueDeclarations(sourceFile);
+  const visitedValues = new Set<ts.Node>();
 
   function add(node: ts.Node): void {
     if (!seen.has(node)) {
@@ -686,6 +689,19 @@ function collectAttributionRoots(candidate: Candidate): ts.Node[] {
   }
 
   function visit(node: ts.Node): void {
+    if (ts.isIdentifier(node) && isReferenceIdentifier(node)) {
+      const declaration = findVisibleDeclaration(
+        declarations,
+        node.text,
+        node.getStart(sourceFile),
+      );
+      const value = declaration ? declarationValue(declaration.node) : undefined;
+      if (value && !visitedValues.has(value)) {
+        visitedValues.add(value);
+        visit(value);
+      }
+      return;
+    }
     if (ts.isPropertyAssignment(node) && propertyName(node.name) === "dataSuffix") {
       add(node.initializer);
       return;

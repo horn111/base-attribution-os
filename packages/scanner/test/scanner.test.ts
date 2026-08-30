@@ -149,6 +149,21 @@ provider.request({
     expect(paths[0]).toMatchObject({ family: "wallet", status: "protected" });
   });
 
+  it("follows a local request alias to a dataSuffix capability helper", () => {
+    const paths = analyzeSource(
+      `import { withDataSuffixCapability } from "@base-attribution-os/wallet";
+const builderCode = "bc_abc123";
+const request = withDataSuffixCapability(
+  { calls: [] },
+  { codes: [builderCode] },
+);
+provider.request({ method: "wallet_sendCalls", params: [request] });`,
+      { builderCodes: ["bc_abc123"], profile: "strict" },
+    );
+
+    expect(paths[0]).toMatchObject({ family: "wallet", status: "protected" });
+  });
+
   it("does not accept an unnegotiated dataSuffix capability", () => {
     const paths = analyzeSource(
       `await wallet.sendCalls({

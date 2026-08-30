@@ -72001,25 +72001,25 @@ ${lanes.join("\n")}
       }
       function isExportsOrModuleExportsOrAlias(sourceFile, node) {
         let i = 0;
-        const q2 = createQueue();
-        q2.enqueue(node);
-        while (!q2.isEmpty() && i < 100) {
+        const q = createQueue();
+        q.enqueue(node);
+        while (!q.isEmpty() && i < 100) {
           i++;
-          node = q2.dequeue();
+          node = q.dequeue();
           if (isExportsIdentifier(node) || isModuleExportsAccessExpression(node)) {
             return true;
           } else if (isIdentifier(node)) {
             const symbol = lookupSymbolForName(sourceFile, node.escapedText);
             if (!!symbol && !!symbol.valueDeclaration && isVariableDeclaration(symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
               const init = symbol.valueDeclaration.initializer;
-              q2.enqueue(init);
+              q.enqueue(init);
               if (isAssignmentExpression(
                 init,
                 /*excludeCompoundAssignment*/
                 true
               )) {
-                q2.enqueue(init.left);
-                q2.enqueue(init.right);
+                q.enqueue(init.left);
+                q.enqueue(init.right);
               }
             }
           }
@@ -186705,9 +186705,9 @@ ${newComment.split("\n").map((c) => ` * ${c}`).join("\n")}
         },
         fixIds: [fixId12],
         getAllCodeActions: (context) => codeFixAll(context, errorCodes13, (changes, diag2) => {
-          const q2 = getQualifiedName(diag2.file, diag2.start);
-          if (q2) {
-            doChange10(changes, diag2.file, q2);
+          const q = getQualifiedName(diag2.file, diag2.start);
+          if (q) {
+            doChange10(changes, diag2.file, q);
           }
         })
       });
@@ -230242,24 +230242,24 @@ var import_path3 = __toESM(require("path"), 1);
 var import_typescript2 = __toESM(require_typescript(), 1);
 var import_fs5 = require("fs");
 var import_path4 = __toESM(require("path"), 1);
-async function H(e, t) {
+async function Y(e, t) {
   if (!t) return /* @__PURE__ */ new Set();
   let i = await import_fs3.promises.readFile(import_path2.default.resolve(e, t), "utf8").catch(() => {
   });
   if (!i) return /* @__PURE__ */ new Set();
-  let r = JSON.parse(i);
-  return new Set(r.findings ?? []);
+  let n = JSON.parse(i);
+  return new Set(n.findings ?? []);
 }
 var M = ["local", "ci", "strict"];
 var Ke = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
-var Y = class {
+var Z = class {
   constructor(t, i = /* @__PURE__ */ new Map()) {
     this.modules = t;
-    for (let r of t.keys()) this.forward.set(r, new Set(t.get(r)?.dependencies)), this.reverse.set(r, /* @__PURE__ */ new Set());
-    for (let [r, n] of i) this.unresolved.set(r, new Set(n));
-    for (let [r, n] of this.forward) for (let o of n) {
+    for (let n of t.keys()) this.forward.set(n, new Set(t.get(n)?.dependencies)), this.reverse.set(n, /* @__PURE__ */ new Set());
+    for (let [n, r] of i) this.unresolved.set(n, new Set(r));
+    for (let [n, r] of this.forward) for (let o of r) {
       let s = this.reverse.get(o);
-      s && s.add(r);
+      s && s.add(n);
     }
   }
   modules;
@@ -230267,26 +230267,26 @@ var Y = class {
   reverse = /* @__PURE__ */ new Map();
   unresolved = /* @__PURE__ */ new Map();
   impactedFiles(t) {
-    let i = /* @__PURE__ */ new Set(), r = Array.from(t).filter((n) => this.modules.has(w(n)));
-    for (; r.length > 0; ) {
-      let n = w(r.shift());
-      if (!i.has(n)) {
-        i.add(n);
-        for (let o of [...this.forward.get(n) ?? [], ...this.reverse.get(n) ?? []]) i.has(o) || r.push(o);
+    let i = /* @__PURE__ */ new Set(), n = Array.from(t).filter((r) => this.modules.has(w(r)));
+    for (; n.length > 0; ) {
+      let r = w(n.shift());
+      if (!i.has(r)) {
+        i.add(r);
+        for (let o of [...this.forward.get(r) ?? [], ...this.reverse.get(r) ?? []]) i.has(o) || n.push(o);
       }
     }
     return i;
   }
-  linkedBindings(t, i, r) {
-    let n = /* @__PURE__ */ new Set(), o = this.modules.get(w(t));
-    if (!o || r.length === 0) return n;
-    let s = new Set(r);
-    for (let c of o.imports) {
-      let f = this.resolveDependency(t, c.specifier);
-      if (f) if (c.namespace) for (let u of s) this.exportReaches(f, u, i, s, /* @__PURE__ */ new Set()) && n.add(`${c.local}.${u}`);
-      else this.exportReaches(f, c.imported, i, s, /* @__PURE__ */ new Set()) && n.add(c.local);
+  linkedBindings(t, i, n) {
+    let r = /* @__PURE__ */ new Set(), o = this.modules.get(w(t));
+    if (!o || n.length === 0) return r;
+    let s = new Set(n);
+    for (let f of o.imports) {
+      let l = this.resolveDependency(t, f.specifier);
+      if (l) if (f.namespace) for (let c of s) this.exportReaches(l, c, i, s, /* @__PURE__ */ new Set()) && r.add(`${f.local}.${c}`);
+      else this.exportReaches(l, f.imported, i, s, /* @__PURE__ */ new Set()) && r.add(f.local);
     }
-    return n;
+    return r;
   }
   hasUnresolvedImport(t) {
     return (this.unresolved.get(w(t))?.size ?? 0) > 0;
@@ -230294,26 +230294,26 @@ var Y = class {
   resolveDependency(t, i) {
     return this.modules.get(w(t))?.resolvedSpecifiers.get(i);
   }
-  exportReaches(t, i, r, n, o) {
+  exportReaches(t, i, n, r, o) {
     let s = `${t}:${i}`;
     if (o.has(s)) return false;
     o.add(s);
-    let c = w(r);
-    if (w(t) === c && n.has(i)) return true;
-    let f = this.modules.get(w(t));
-    if (!f) return false;
-    let u = f.localExports.get(i);
-    if (u) {
-      let l = f.imports.find((d) => d.local === u);
-      if (l) {
-        let d = this.dependencyForSpecifier(f, l.specifier);
-        if (d && this.exportReaches(d, l.imported, r, n, o)) return true;
+    let f = w(n);
+    if (w(t) === f && r.has(i)) return true;
+    let l = this.modules.get(w(t));
+    if (!l) return false;
+    let c = l.localExports.get(i);
+    if (c) {
+      let u = l.imports.find((d) => d.local === c);
+      if (u) {
+        let d = this.dependencyForSpecifier(l, u.specifier);
+        if (d && this.exportReaches(d, u.imported, n, r, o)) return true;
       }
     }
-    for (let l of f.reExports) {
-      if (!l.star && l.exported !== i) continue;
-      let d = this.dependencyForSpecifier(f, l.specifier);
-      if (d && this.exportReaches(d, l.star ? i : l.imported, r, n, o)) return true;
+    for (let u of l.reExports) {
+      if (!u.star && u.exported !== i) continue;
+      let d = this.dependencyForSpecifier(l, u.specifier);
+      if (d && this.exportReaches(d, u.star ? i : u.imported, n, r, o)) return true;
     }
     return false;
   }
@@ -230322,70 +230322,70 @@ var Y = class {
   }
 };
 async function he(e, t, i) {
-  let r = new Set(t.map((u) => w(u.relativePath))), n = await Je(e, i), o = await Xe(e, n), s = await He(e, i, n), c = /* @__PURE__ */ new Map(), f = /* @__PURE__ */ new Map();
-  for (let u of t) {
-    let l = w(u.relativePath), d = Ve(l, u.source), p = /* @__PURE__ */ new Set(), g = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Set([...d.imports.map((h) => h.specifier), ...d.reExports.map((h) => h.specifier)]);
+  let n = new Set(t.map((c) => w(c.relativePath))), r = await Je(e, i), o = await Xe(e, r), s = await He(e, i, r), f = /* @__PURE__ */ new Map(), l = /* @__PURE__ */ new Map();
+  for (let c of t) {
+    let u = w(c.relativePath), d = Ve(u, c.source), p = /* @__PURE__ */ new Set(), g = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Set([...d.imports.map((h) => h.specifier), ...d.reExports.map((h) => h.specifier)]);
     for (let h of x) {
-      let C = qe(e, l, h, r, o, s);
+      let C = qe(e, u, h, n, o, s);
       if (C) p.add(C), g.set(h, C);
       else if (Qe(h, o, s)) {
-        let y = f.get(l) ?? /* @__PURE__ */ new Set();
-        y.add(h), f.set(l, y);
+        let y = l.get(u) ?? /* @__PURE__ */ new Set();
+        y.add(h), l.set(u, y);
       }
     }
-    d.dependencies = p, d.resolvedSpecifiers = g, c.set(l, d);
+    d.dependencies = p, d.resolvedSpecifiers = g, f.set(u, d);
   }
-  return new Y(c, f);
+  return new Z(f, l);
 }
 function Ve(e, t) {
-  let i = import_typescript2.default.createSourceFile(e, t, import_typescript2.default.ScriptTarget.Latest, true, et(e)), r = [], n = /* @__PURE__ */ new Map(), o = [];
+  let i = import_typescript2.default.createSourceFile(e, t, import_typescript2.default.ScriptTarget.Latest, true, et(e)), n = [], r = /* @__PURE__ */ new Map(), o = [];
   for (let s of i.statements) {
     if (import_typescript2.default.isImportDeclaration(s) && import_typescript2.default.isStringLiteral(s.moduleSpecifier)) {
-      let f = s.moduleSpecifier.text;
-      s.importClause?.name && r.push({ imported: "default", local: s.importClause.name.text, namespace: false, specifier: f });
-      let u = s.importClause?.namedBindings;
-      if (u && import_typescript2.default.isNamespaceImport(u)) r.push({ imported: "*", local: u.name.text, namespace: true, specifier: f });
-      else if (u) for (let l of u.elements) r.push({ imported: l.propertyName?.text ?? l.name.text, local: l.name.text, namespace: false, specifier: f });
+      let l = s.moduleSpecifier.text;
+      s.importClause?.name && n.push({ imported: "default", local: s.importClause.name.text, namespace: false, specifier: l });
+      let c = s.importClause?.namedBindings;
+      if (c && import_typescript2.default.isNamespaceImport(c)) n.push({ imported: "*", local: c.name.text, namespace: true, specifier: l });
+      else if (c) for (let u of c.elements) n.push({ imported: u.propertyName?.text ?? u.name.text, local: u.name.text, namespace: false, specifier: l });
     }
     if (import_typescript2.default.isExportDeclaration(s)) {
-      let f = s.moduleSpecifier && import_typescript2.default.isStringLiteral(s.moduleSpecifier) ? s.moduleSpecifier.text : void 0;
-      if (!s.exportClause) f && o.push({ exported: "*", imported: "*", specifier: f, star: true });
-      else if (import_typescript2.default.isNamedExports(s.exportClause)) for (let u of s.exportClause.elements) {
-        let l = u.name.text, d = u.propertyName?.text ?? l;
-        f ? o.push({ exported: l, imported: d, specifier: f, star: false }) : n.set(l, d);
+      let l = s.moduleSpecifier && import_typescript2.default.isStringLiteral(s.moduleSpecifier) ? s.moduleSpecifier.text : void 0;
+      if (!s.exportClause) l && o.push({ exported: "*", imported: "*", specifier: l, star: true });
+      else if (import_typescript2.default.isNamedExports(s.exportClause)) for (let c of s.exportClause.elements) {
+        let u = c.name.text, d = c.propertyName?.text ?? u;
+        l ? o.push({ exported: u, imported: d, specifier: l, star: false }) : r.set(u, d);
       }
     }
-    let c = import_typescript2.default.canHaveModifiers(s) ? import_typescript2.default.getModifiers(s) : void 0;
-    if (c?.some((f) => f.kind === import_typescript2.default.SyntaxKind.ExportKeyword)) {
-      if (import_typescript2.default.isFunctionDeclaration(s) || import_typescript2.default.isClassDeclaration(s)) s.name && n.set(s.name.text, s.name.text);
-      else if (import_typescript2.default.isVariableStatement(s)) for (let f of s.declarationList.declarations) import_typescript2.default.isIdentifier(f.name) && n.set(f.name.text, f.name.text);
-      c.some((f) => f.kind === import_typescript2.default.SyntaxKind.DefaultKeyword) && n.set("default", "default");
+    let f = import_typescript2.default.canHaveModifiers(s) ? import_typescript2.default.getModifiers(s) : void 0;
+    if (f?.some((l) => l.kind === import_typescript2.default.SyntaxKind.ExportKeyword)) {
+      if (import_typescript2.default.isFunctionDeclaration(s) || import_typescript2.default.isClassDeclaration(s)) s.name && r.set(s.name.text, s.name.text);
+      else if (import_typescript2.default.isVariableStatement(s)) for (let l of s.declarationList.declarations) import_typescript2.default.isIdentifier(l.name) && r.set(l.name.text, l.name.text);
+      f.some((l) => l.kind === import_typescript2.default.SyntaxKind.DefaultKeyword) && r.set("default", "default");
     }
-    import_typescript2.default.isExportAssignment(s) && n.set("default", "default");
+    import_typescript2.default.isExportAssignment(s) && r.set("default", "default");
   }
-  return { imports: r, localExports: n, reExports: o, dependencies: /* @__PURE__ */ new Set(), resolvedSpecifiers: /* @__PURE__ */ new Map() };
+  return { imports: n, localExports: r, reExports: o, dependencies: /* @__PURE__ */ new Set(), resolvedSpecifiers: /* @__PURE__ */ new Map() };
 }
 async function Je(e, t) {
-  if (t?.roots) return Z(t.roots, e, "workspace.roots");
-  let i = /* @__PURE__ */ new Set(), n = (await xe(import_path3.default.join(e, "package.json"), true))?.workspaces;
-  if (Array.isArray(n)) for (let c of n) typeof c == "string" && i.add(c);
-  if (n && typeof n == "object" && !Array.isArray(n)) {
-    let c = n.packages;
-    if (Array.isArray(c)) for (let f of c) typeof f == "string" && i.add(f);
+  if (t?.roots) return te(t.roots, e, "workspace.roots");
+  let i = /* @__PURE__ */ new Set(), r = (await xe(import_path3.default.join(e, "package.json"), true))?.workspaces;
+  if (Array.isArray(r)) for (let f of r) typeof f == "string" && i.add(f);
+  if (r && typeof r == "object" && !Array.isArray(r)) {
+    let f = r.packages;
+    if (Array.isArray(f)) for (let l of f) typeof l == "string" && i.add(l);
   }
   let o = import_path3.default.join(e, "pnpm-workspace.yaml"), s = await import_fs4.promises.readFile(o, "utf8").catch(() => {
   });
-  if (s !== void 0) for (let c of Ge(s)) i.add(c);
-  return Z(Array.from(i), e, "workspace roots");
+  if (s !== void 0) for (let f of Ge(s)) i.add(f);
+  return te(Array.from(i), e, "workspace roots");
 }
 function Ge(e) {
-  let t = e.split(/\r?\n/), i = [], r = false, n = -1;
+  let t = e.split(/\r?\n/), i = [], n = false, r = -1;
   for (let o of t) {
     let s = o.replace(/\s+#.*$/, "");
     if (!s.trim()) continue;
-    let c = s.length - s.trimStart().length, f = s.trim();
-    if (!r) {
-      let d = f.match(/^packages\s*:\s*\[(.*)\]\s*$/);
+    let f = s.length - s.trimStart().length, l = s.trim();
+    if (!n) {
+      let d = l.match(/^packages\s*:\s*\[(.*)\]\s*$/);
       if (d) {
         let p = d[1].trim();
         if (!p) return i;
@@ -230396,94 +230396,94 @@ function Ge(e) {
         }
         return i;
       }
-      if (/^packages\s*:\s*$/.test(f)) r = true, n = c;
-      else if (/^packages\s*:/.test(f)) throw new Error("pnpm-workspace.yaml packages must be a YAML string array.");
+      if (/^packages\s*:\s*$/.test(l)) n = true, r = f;
+      else if (/^packages\s*:/.test(l)) throw new Error("pnpm-workspace.yaml packages must be a YAML string array.");
       continue;
     }
-    if (c <= n && !f.startsWith("-")) break;
-    let u = f.match(/^-\s+(.+)$/);
-    if (!u) throw new Error("pnpm-workspace.yaml packages must be a YAML string array.");
-    let l = u[1].trim().replace(/^(?:'([^']*)'|"([^"]*)")$/, "$1$2");
-    if (!l || ["[", "]", "{", "}"].some((d) => l.includes(d))) throw new Error("pnpm-workspace.yaml packages must contain plain string paths.");
-    i.push(l);
+    if (f <= r && !l.startsWith("-")) break;
+    let c = l.match(/^-\s+(.+)$/);
+    if (!c) throw new Error("pnpm-workspace.yaml packages must be a YAML string array.");
+    let u = c[1].trim().replace(/^(?:'([^']*)'|"([^"]*)")$/, "$1$2");
+    if (!u || ["[", "]", "{", "}"].some((d) => u.includes(d))) throw new Error("pnpm-workspace.yaml packages must contain plain string paths.");
+    i.push(u);
   }
-  return r ? i : [];
+  return n ? i : [];
 }
 async function Xe(e, t) {
-  let i = await Ze(e, "package.json"), r = t.filter((c) => !c.startsWith("!")).map(ee), n = t.filter((c) => c.startsWith("!")).map((c) => ee(c.slice(1))), o = [], s = /* @__PURE__ */ new Map();
-  for (let c of i) {
-    let f = w(import_path3.default.relative(e, import_path3.default.dirname(c))) || ".";
-    if (f !== "." && (r.length === 0 || !r.some((d) => d.test(f)) || n.some((d) => d.test(f)))) continue;
-    let u = await xe(c, true);
-    if (typeof u?.name != "string") continue;
-    let l = s.get(u.name);
-    if (l && l !== f) throw new Error(`Duplicate workspace package name ${u.name}: ${l}, ${f}.`);
-    s.set(u.name, f), o.push({ directory: f, exports: u.exports, name: u.name });
+  let i = await Ze(e, "package.json"), n = t.filter((f) => !f.startsWith("!")).map(ie), r = t.filter((f) => f.startsWith("!")).map((f) => ie(f.slice(1))), o = [], s = /* @__PURE__ */ new Map();
+  for (let f of i) {
+    let l = w(import_path3.default.relative(e, import_path3.default.dirname(f))) || ".";
+    if (l !== "." && (n.length === 0 || !n.some((d) => d.test(l)) || r.some((d) => d.test(l)))) continue;
+    let c = await xe(f, true);
+    if (typeof c?.name != "string") continue;
+    let u = s.get(c.name);
+    if (u && u !== l) throw new Error(`Duplicate workspace package name ${c.name}: ${u}, ${l}.`);
+    s.set(c.name, l), o.push({ directory: l, exports: c.exports, name: c.name });
   }
-  return o.sort((c, f) => f.name.length - c.name.length);
+  return o.sort((f, l) => l.name.length - f.name.length);
 }
 async function He(e, t, i) {
-  let r;
+  let n;
   if (t?.tsconfig) {
-    let s = Z(t.tsconfig, e, "workspace.tsconfig"), c = await ge(e), f = s.map(ee);
-    r = c.filter((u) => f.some((l) => l.test(w(import_path3.default.relative(e, u)))));
-  } else r = await ge(e);
-  let n = [], o = /* @__PURE__ */ new Set();
-  for (let s = 0; s < r.length; s += 1) {
-    let c = r[s], f = w(c);
-    if (o.has(f)) continue;
-    o.add(f);
-    let u = await import_fs4.promises.readFile(c, "utf8"), l = import_typescript2.default.parseConfigFileTextToJson(w(c), u);
-    if (l.error) throw new Error(`Invalid tsconfig ${w(import_path3.default.relative(e, c))}.`);
-    let d = l.config?.references;
+    let s = te(t.tsconfig, e, "workspace.tsconfig"), f = await ge(e), l = s.map(ie);
+    n = f.filter((c) => l.some((u) => u.test(w(import_path3.default.relative(e, c)))));
+  } else n = await ge(e);
+  let r = [], o = /* @__PURE__ */ new Set();
+  for (let s = 0; s < n.length; s += 1) {
+    let f = n[s], l = w(f);
+    if (o.has(l)) continue;
+    o.add(l);
+    let c = await import_fs4.promises.readFile(f, "utf8"), u = import_typescript2.default.parseConfigFileTextToJson(w(f), c);
+    if (u.error) throw new Error(`Invalid tsconfig ${w(import_path3.default.relative(e, f))}.`);
+    let d = u.config?.references;
     if (Array.isArray(d)) for (let C of d) {
       let y = C && typeof C == "object" ? C.path : void 0;
-      if (typeof y != "string") throw new Error(`${w(import_path3.default.relative(e, c))} references must contain string paths.`);
-      let $ = import_path3.default.resolve(import_path3.default.dirname(c), y), T = import_path3.default.extname($) ? $ : import_path3.default.join($, "tsconfig.json");
+      if (typeof y != "string") throw new Error(`${w(import_path3.default.relative(e, f))} references must contain string paths.`);
+      let $ = import_path3.default.resolve(import_path3.default.dirname(f), y), T = import_path3.default.extname($) ? $ : import_path3.default.join($, "tsconfig.json");
       if (!be(e, T)) throw new Error("tsconfig references must stay inside the scan root.");
-      await import_fs4.promises.stat(T).then((P) => P.isFile(), () => false) && r.push(T);
+      await import_fs4.promises.stat(T).then((P) => P.isFile(), () => false) && n.push(T);
     }
-    let p = l.config?.compilerOptions;
+    let p = u.config?.compilerOptions;
     if (!p || typeof p != "object") continue;
-    let g = import_path3.default.dirname(c), x = import_path3.default.resolve(g, typeof p.baseUrl == "string" ? p.baseUrl : "."), h = p.paths;
+    let g = import_path3.default.dirname(f), x = import_path3.default.resolve(g, typeof p.baseUrl == "string" ? p.baseUrl : "."), h = p.paths;
     if (!(!h || typeof h != "object" || Array.isArray(h))) for (let [C, y] of Object.entries(h)) {
-      if (!Array.isArray(y) || !y.every(($) => typeof $ == "string")) throw new Error(`${w(import_path3.default.relative(e, c))} compilerOptions.paths.${C} must be an array of strings.`);
-      n.push({ baseDirectory: x, configDirectory: g, pattern: C, targets: y });
+      if (!Array.isArray(y) || !y.every(($) => typeof $ == "string")) throw new Error(`${w(import_path3.default.relative(e, f))} compilerOptions.paths.${C} must be an array of strings.`);
+      r.push({ baseDirectory: x, configDirectory: g, pattern: C, targets: y });
     }
   }
-  return n.sort((s, c) => c.configDirectory.length - s.configDirectory.length);
+  return r.sort((s, f) => f.configDirectory.length - s.configDirectory.length);
 }
-function qe(e, t, i, r, n, o) {
-  if (i.startsWith(".")) return q(import_path3.default.posix.join(import_path3.default.posix.dirname(t), i), r);
-  for (let u of o) {
-    let l = import_path3.default.dirname(import_path3.default.resolve(e, t)), d = import_path3.default.relative(u.configDirectory, l);
-    if (u.configDirectory !== e && (d.startsWith("..") || import_path3.default.isAbsolute(d))) continue;
-    let p = te(u.pattern, i);
-    if (p !== void 0) for (let g of u.targets) {
-      let x = g.replace("*", p), h = w(import_path3.default.relative(e, import_path3.default.resolve(u.baseDirectory, x)));
+function qe(e, t, i, n, r, o) {
+  if (i.startsWith(".")) return Q(import_path3.default.posix.join(import_path3.default.posix.dirname(t), i), n);
+  for (let c of o) {
+    let u = import_path3.default.dirname(import_path3.default.resolve(e, t)), d = import_path3.default.relative(c.configDirectory, u);
+    if (c.configDirectory !== e && (d.startsWith("..") || import_path3.default.isAbsolute(d))) continue;
+    let p = re(c.pattern, i);
+    if (p !== void 0) for (let g of c.targets) {
+      let x = g.replace("*", p), h = w(import_path3.default.relative(e, import_path3.default.resolve(c.baseDirectory, x)));
       if (h.startsWith("../") || import_path3.default.isAbsolute(h)) continue;
-      let C = q(h, r);
+      let C = Q(h, n);
       if (C) return C;
     }
   }
-  let s = n.find((u) => i === u.name || i.startsWith(`${u.name}/`));
+  let s = r.find((c) => i === c.name || i.startsWith(`${c.name}/`));
   if (!s) return;
-  let c = i === s.name ? "" : i.slice(s.name.length + 1), f = Ye(s, c);
-  for (let u of f) {
-    let l = q(u, r);
-    if (l) return l;
+  let f = i === s.name ? "" : i.slice(s.name.length + 1), l = Ye(s, f);
+  for (let c of l) {
+    let u = Q(c, n);
+    if (u) return u;
   }
 }
 function Ye(e, t) {
-  let i = e.directory === "." ? "" : `${e.directory}/`, r = /* @__PURE__ */ new Set(), n = (o) => {
+  let i = e.directory === "." ? "" : `${e.directory}/`, n = /* @__PURE__ */ new Set(), r = (o) => {
     let s = o.replace(/^\.\//, "");
-    r.add(`${i}${s}`), s.startsWith("dist/") && r.add(`${i}src/${s.slice(5)}`);
+    n.add(`${i}${s}`), s.startsWith("dist/") && n.add(`${i}src/${s.slice(5)}`);
   };
-  return _(e.exports, t ? `./${t}` : ".", n), t ? (n(`src/${t}`), n(t)) : (n("src/index"), n("index")), Array.from(r);
+  return _(e.exports, t ? `./${t}` : ".", r), t ? (r(`src/${t}`), r(t)) : (r("src/index"), r("index")), Array.from(n);
 }
 function _(e, t, i) {
   if (Array.isArray(e)) {
-    for (let n of e) _(n, t, i);
+    for (let r of e) _(r, t, i);
     return;
   }
   if (typeof e == "string") {
@@ -230491,20 +230491,20 @@ function _(e, t, i) {
     return;
   }
   if (!e || typeof e != "object" || Array.isArray(e)) return;
-  let r = e;
-  r[t] !== void 0 && _(r[t], ".", i);
-  for (let [n, o] of Object.entries(r)) {
-    let s = te(n, t);
-    s === void 0 || !n.includes("*") || _(Q(o, s), ".", i);
+  let n = e;
+  n[t] !== void 0 && _(n[t], ".", i);
+  for (let [r, o] of Object.entries(n)) {
+    let s = re(r, t);
+    s === void 0 || !r.includes("*") || _(ee(o, s), ".", i);
   }
-  for (let n of ["source", "types", "import", "default", "node", "require"]) r[n] !== void 0 && _(r[n], ".", i);
+  for (let r of ["source", "types", "import", "default", "node", "require"]) n[r] !== void 0 && _(n[r], ".", i);
+}
+function ee(e, t) {
+  return typeof e == "string" ? e.replaceAll("*", t) : Array.isArray(e) ? e.map((i) => ee(i, t)) : !e || typeof e != "object" ? e : Object.fromEntries(Object.entries(e).map(([i, n]) => [i, ee(n, t)]));
 }
 function Q(e, t) {
-  return typeof e == "string" ? e.replaceAll("*", t) : Array.isArray(e) ? e.map((i) => Q(i, t)) : !e || typeof e != "object" ? e : Object.fromEntries(Object.entries(e).map(([i, r]) => [i, Q(r, t)]));
-}
-function q(e, t) {
-  let i = w(import_path3.default.posix.normalize(e)).replace(/^\.\//, ""), r = i.replace(/\.(?:[cm]?[jt]sx?)$/, ""), n = [i, r];
-  for (let o of n) {
+  let i = w(import_path3.default.posix.normalize(e)).replace(/^\.\//, ""), n = i.replace(/\.(?:[cm]?[jt]sx?)$/, ""), r = [i, n];
+  for (let o of r) {
     if (t.has(o)) return o;
     for (let s of Ke) {
       if (t.has(`${o}${s}`)) return `${o}${s}`;
@@ -230513,33 +230513,33 @@ function q(e, t) {
   }
 }
 function Qe(e, t, i) {
-  return e.startsWith(".") || t.some((r) => e === r.name || e.startsWith(`${r.name}/`)) || i.some((r) => te(r.pattern, e) !== void 0);
+  return e.startsWith(".") || t.some((n) => e === n.name || e.startsWith(`${n.name}/`)) || i.some((n) => re(n.pattern, e) !== void 0);
 }
-function te(e, t) {
+function re(e, t) {
   let i = e.indexOf("*");
   if (i < 0) return e === t ? "" : void 0;
-  let r = e.slice(0, i), n = e.slice(i + 1);
-  return t.startsWith(r) && t.endsWith(n) ? t.slice(r.length, t.length - n.length) : void 0;
+  let n = e.slice(0, i), r = e.slice(i + 1);
+  return t.startsWith(n) && t.endsWith(r) ? t.slice(n.length, t.length - r.length) : void 0;
 }
 async function Ze(e, t) {
   let i = [];
-  async function r(n) {
-    let o = await import_fs4.promises.readdir(n, { withFileTypes: true });
+  async function n(r) {
+    let o = await import_fs4.promises.readdir(r, { withFileTypes: true });
     for (let s of o) {
       if ([".git", ".next", ".turbo", "coverage", "dist", "node_modules"].includes(s.name)) continue;
-      let c = import_path3.default.join(n, s.name);
-      if (s.isDirectory() ? await r(c) : s.isFile() && s.name === t && i.push(c), i.length > 5e3) throw new Error("Workspace discovery exceeds the 5000 file limit.");
+      let f = import_path3.default.join(r, s.name);
+      if (s.isDirectory() ? await n(f) : s.isFile() && s.name === t && i.push(f), i.length > 5e3) throw new Error("Workspace discovery exceeds the 5000 file limit.");
     }
   }
-  return await r(e), i.sort();
+  return await n(e), i.sort();
 }
 async function ge(e) {
   let t = [];
-  async function i(r) {
-    let n = await import_fs4.promises.readdir(r, { withFileTypes: true });
-    for (let o of n) {
+  async function i(n) {
+    let r = await import_fs4.promises.readdir(n, { withFileTypes: true });
+    for (let o of r) {
       if ([".git", ".next", ".turbo", "coverage", "dist", "node_modules"].includes(o.name)) continue;
-      let s = import_path3.default.join(r, o.name);
+      let s = import_path3.default.join(n, o.name);
       if (o.isDirectory() ? await i(s) : o.isFile() && /^tsconfig(?:\.[^.]+)*\.json$/.test(o.name) && t.push(s), t.length > 5e3) throw new Error("Workspace discovery exceeds the 5000 file limit.");
     }
   }
@@ -230550,29 +230550,29 @@ async function xe(e, t) {
   });
   if (i !== void 0) try {
     return JSON.parse(i);
-  } catch (r) {
+  } catch (n) {
     if (!t) return;
-    throw new Error(`${w(e)} is invalid JSON: ${r instanceof Error ? r.message : r}`);
+    throw new Error(`${w(e)} is invalid JSON: ${n instanceof Error ? n.message : n}`);
   }
 }
-function Z(e, t, i) {
-  return e.map((r) => {
-    let n = r.startsWith("!") ? r.slice(1) : r;
-    if (!n || import_path3.default.isAbsolute(n) || w(n).split("/").includes("..")) throw new Error(`${i} entries must be relative paths inside the scan root.`);
-    let o = import_path3.default.resolve(t, n.replace(/[?*].*$/, ""));
+function te(e, t, i) {
+  return e.map((n) => {
+    let r = n.startsWith("!") ? n.slice(1) : n;
+    if (!r || import_path3.default.isAbsolute(r) || w(r).split("/").includes("..")) throw new Error(`${i} entries must be relative paths inside the scan root.`);
+    let o = import_path3.default.resolve(t, r.replace(/[?*].*$/, ""));
     if (!be(t, o)) throw new Error(`${i} entries must stay inside the scan root.`);
-    return w(r).replace(/^\.\//, "").replace(/\/$/, "");
+    return w(n).replace(/^\.\//, "").replace(/\/$/, "");
   });
 }
 function be(e, t) {
   let i = import_path3.default.relative(e, t);
   return i === "" || !i.startsWith("..") && !import_path3.default.isAbsolute(i);
 }
-function ee(e) {
+function ie(e) {
   let t = "^";
   for (let i = 0; i < e.length; i += 1) {
-    let r = e[i], n = e[i + 1];
-    r === "*" && n === "*" ? (t += ".*", i += 1) : r === "*" ? t += "[^/]*" : t += r.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+    let n = e[i], r = e[i + 1];
+    n === "*" && r === "*" ? (t += ".*", i += 1) : n === "*" ? t += "[^/]*" : t += n.replace(/[.+^${}()|[\]\\]/g, "\\$&");
   }
   return new RegExp(`${t}$`);
 }
@@ -230583,116 +230583,116 @@ function et(e) {
   return e.endsWith(".tsx") ? import_typescript2.default.ScriptKind.TSX : e.endsWith(".jsx") ? import_typescript2.default.ScriptKind.JSX : e.endsWith(".js") || e.endsWith(".mjs") || e.endsWith(".cjs") ? import_typescript2.default.ScriptKind.JS : import_typescript2.default.ScriptKind.TS;
 }
 var st = (0, import_util.promisify)(import_child_process.execFile);
-var ie = /* @__PURE__ */ new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
+var ne = /* @__PURE__ */ new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]);
 var Se = 5e3;
 var ot = 2 * 1024 * 1024;
 var at = 50 * 1024 * 1024;
-var U = 16;
+var K = 16;
 var ct = /* @__PURE__ */ new Set([".git", ".next", ".turbo", "coverage", "dist", "node_modules"]);
 var ve = /\b(?:appendDataSuffix|attributeSendCalls|attributeUserOperation|Attribution\.toDataSuffix|BuilderCodeClientExtension|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|validateUserOperationAttribution|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\b/;
 var Ee = /\b(?:agentTransactionTool|executeTransaction|onchainAction|sendTransactionTool|transactionTool)\b/;
 async function ft(e) {
   De(e.builderCodes);
-  let t = import_path.default.resolve(e.root), i = oe(e.profile), r = await H(t, e.baseline), n = await It(t, e), o = await Tt(t, n), s = await he(t, o, e.workspace), c = e.changedSince ? Nt(o, s.impactedFiles(await Ft(t, e.changedSince))) : o, f = kt(o, e.builderCodes), u = c.flatMap((d) => ke(d.source, { baseline: r, builderCodes: e.builderCodes, globalEvidence: f, profile: i, relativePath: d.relativePath, rules: e.rules, workspaceGraph: s })), l = Dt(u);
-  return { ok: l.errors === 0, root: t, profile: i, frameworks: Array.from(new Set(c.flatMap((d) => d.frameworks))).sort(), checkedFiles: c.length, transactionPaths: u, summary: l };
+  let t = import_path.default.resolve(e.root), i = ce(e.profile), n = await Y(t, e.baseline), r = await It(t, e), o = await Tt(t, r), s = await he(t, o, e.workspace), f = e.changedSince ? Nt(o, s.impactedFiles(await Ft(t, e.changedSince))) : o, l = kt(o, e.builderCodes), c = f.flatMap((d) => ke(d.source, { baseline: n, builderCodes: e.builderCodes, globalEvidence: l, profile: i, relativePath: d.relativePath, rules: e.rules, workspaceGraph: s })), u = Dt(c);
+  return { ok: u.errors === 0, root: t, profile: i, frameworks: Array.from(new Set(f.flatMap((d) => d.frameworks))).sort(), checkedFiles: f.length, transactionPaths: c, summary: u };
 }
 function ke(e, t) {
   De(t.builderCodes);
-  let i = t.relativePath ?? "source.ts", r = oe(t.profile), n = import_typescript.default.createSourceFile(i, e, import_typescript.default.ScriptTarget.Latest, true, Ne(i)), o = se(e), s = lt(n, e, o), c = /* @__PURE__ */ new Map();
-  return s.map((f) => {
-    let u = [f.family, f.marker, Ie(f.node.getText(n))].join(":"), l = (c.get(u) ?? 0) + 1;
-    return c.set(u, l), dt(n, e, f, l, { ...t, profile: r, relativePath: i });
+  let i = t.relativePath ?? "source.ts", n = ce(t.profile), r = import_typescript.default.createSourceFile(i, e, import_typescript.default.ScriptTarget.Latest, true, Ne(i)), o = ae(e), s = lt(r, e, o), f = /* @__PURE__ */ new Map();
+  return s.map((l) => {
+    let c = [l.family, l.marker, Ie(l.node.getText(r))].join(":"), u = (f.get(c) ?? 0) + 1;
+    return f.set(c, u), dt(r, e, l, u, { ...t, profile: n, relativePath: i });
   });
 }
-function se(e) {
+function ae(e) {
   let t = /* @__PURE__ */ new Set();
   return /from\s+["']@privy-io\/react-auth["']|@privy-io\/react-auth/.test(e) && t.add("privy"), /from\s+["']wagmi["']|from\s+["']wagmi\//.test(e) && t.add("wagmi"), /from\s+["']viem["']|from\s+["']viem\//.test(e) && t.add("viem"), /from\s+["']ethers["']|from\s+["']ethers\//.test(e) && t.add("ethers"), /@x402\//.test(e) && t.add("x402"), /\b(?:createAttributionProvider|eth_sendUserOperation|sendAttributedCalls|sendCalls|sendUserOperation|wallet_getCapabilities|wallet_sendCalls|useSendCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(e) && t.add("smart-wallet"), /\b(?:window\.ethereum|eth_sendTransaction)\b/.test(e) && t.add("raw-rpc"), Ee.test(e) && t.add("agent"), Array.from(t).sort();
 }
-function oe(e) {
+function ce(e) {
   if (!e) return "ci";
   if (M.includes(e)) return e;
   throw new Error(`Unknown scan profile: ${e}`);
 }
 function lt(e, t, i) {
-  let r = [], n = /* @__PURE__ */ new Set();
-  function o(c) {
-    let f = `${c.node.pos}:${c.marker}:${c.family}`;
-    n.has(f) || (n.add(f), r.push(c));
+  let n = [], r = /* @__PURE__ */ new Set();
+  function o(f) {
+    let l = `${f.node.pos}:${f.marker}:${f.family}`;
+    r.has(l) || (r.add(l), n.push(f));
   }
-  function s(c) {
-    if (import_typescript.default.isNewExpression(c) && k(c.expression) === "x402Client" && o({ family: "x402", marker: "x402Client", node: c, confidence: "high" }), import_typescript.default.isCallExpression(c)) {
-      let f = Re(e, c.expression), u = f === "request" ? Mt(c) : void 0, l = u ?? f, d = ut(f, u, t, i);
-      d && l && o({ family: d, marker: l, node: c, confidence: zt(d, i) });
+  function s(f) {
+    if (import_typescript.default.isNewExpression(f) && k(f.expression) === "x402Client" && o({ family: "x402", marker: "x402Client", node: f, confidence: "high" }), import_typescript.default.isCallExpression(f)) {
+      let l = Re(e, f.expression), c = l === "request" ? Mt(f) : void 0, u = c ?? l, d = ut(l, c, t, i);
+      d && u && o({ family: d, marker: u, node: f, confidence: zt(d, i) });
     }
-    import_typescript.default.forEachChild(c, s);
+    import_typescript.default.forEachChild(f, s);
   }
-  return s(e), r.sort((c, f) => c.node.getStart(e) - f.node.getStart(e));
+  return s(e), n.sort((f, l) => f.node.getStart(e) - l.node.getStart(e));
 }
-function ut(e, t, i, r) {
+function ut(e, t, i, n) {
   if (t === "wallet_sendCalls" || t === "eth_sendUserOperation") return "wallet";
   if (t === "eth_sendTransaction") return "rpc";
   if (e === "paymentMiddleware" || e === "wrapFetchWithPayment") return "x402";
   if (e === "sendCalls" || e === "useSendCalls" || e === "sendAttributedCalls" || e === "sendUserOperation") return "wallet";
-  if (!(!e || !["sendTransaction", "writeContract", "prepareTransactionRequest", "sendRawTransaction"].includes(e))) return Ee.test(i) ? "agent" : r.includes("privy") ? "privy" : r.includes("ethers") ? "ethers" : r.includes("wagmi") ? "wagmi" : r.includes("raw-rpc") ? "rpc" : "viem";
+  if (!(!e || !["sendTransaction", "writeContract", "prepareTransactionRequest", "sendRawTransaction"].includes(e))) return Ee.test(i) ? "agent" : n.includes("privy") ? "privy" : n.includes("ethers") ? "ethers" : n.includes("wagmi") ? "wagmi" : n.includes("raw-rpc") ? "rpc" : "viem";
 }
-function dt(e, t, i, r, n) {
-  let o = e.getLineAndCharacterOfPosition(i.node.getStart(e)), s = i.node.getText(e), c = gt(i), f = N(e, c, false), u = N(e, c, true), l = i.family === "x402" ? ht(e, i) : { found: false, literals: /* @__PURE__ */ new Set() };
-  for (let b of l.literals) u.literals.add(b);
-  let d = n.builderCodes.map((b) => createDataSuffix({ codes: [b] }).slice(2).toLowerCase()), p = ne(f.literals), g = ne(u.literals), x = n.builderCodes.some((b) => f.literals.has(b)), h = n.builderCodes.some((b) => u.literals.has(b)), C = d.some((b) => Array.from(u.literals).some((_e) => _e.toLowerCase().replace(/^0x/, "").endsWith(b))), y = p.find((b) => !n.builderCodes.includes(b)), $ = g.find((b) => !n.builderCodes.includes(b)), T = je(s, t), P = pt(i, s, t, l.found), z = n.globalEvidence?.filter((b) => b.family === i.family) ?? [], le = z.find((b) => ye(e, i, b, n.builderCodes, n.workspaceGraph)), Le = z.find((b) => b.expected && ye(e, i, b, n.builderCodes, n.workspaceGraph)), F = le ?? z.find((b) => b.expected) ?? z[0], X = [];
-  P ? X.push({ kind: P.kind, detail: P.detail, file: n.relativePath, line: o.line + 1 }) : F && X.push(F.evidence);
+function dt(e, t, i, n, r) {
+  let o = e.getLineAndCharacterOfPosition(i.node.getStart(e)), s = i.node.getText(e), f = gt(i), l = N(e, f, false), c = N(e, f, true), u = i.family === "x402" ? ht(e, i) : { found: false, literals: /* @__PURE__ */ new Set() };
+  for (let b of u.literals) c.literals.add(b);
+  let d = r.builderCodes.map((b) => createDataSuffix({ codes: [b] }).slice(2).toLowerCase()), p = oe(l.literals), g = oe(c.literals), x = r.builderCodes.some((b) => l.literals.has(b)), h = r.builderCodes.some((b) => c.literals.has(b)), C = d.some((b) => Array.from(c.literals).some((_e) => _e.toLowerCase().replace(/^0x/, "").endsWith(b))), y = p.find((b) => !r.builderCodes.includes(b)), $ = g.find((b) => !r.builderCodes.includes(b)), T = je(s, t), P = pt(i, s, t, u.found), U = r.globalEvidence?.filter((b) => b.family === i.family) ?? [], le = U.find((b) => ye(e, i, b, r.builderCodes, r.workspaceGraph)), Le = U.find((b) => b.expected && ye(e, i, b, r.builderCodes, r.workspaceGraph)), F = le ?? U.find((b) => b.expected) ?? U[0], q = [];
+  P ? q.push({ kind: P.kind, detail: P.detail, file: r.relativePath, line: o.line + 1 }) : F && q.push(F.evidence);
   let B, R, O, L, W = i.confidence, ue = y ?? (P ? $ : void 0) ?? le?.wrongCode;
-  ue && !x && !C ? (B = "wrong-code", R = "BAO002", O = `${i.marker} uses ${ue}, which is not configured for this project.`, L = "Replace it with a Builder Code from bao.config.json.") : P && !T && (x || h || C) ? (B = "protected", O = `${i.marker} is protected by Builder Code attribution.`, W = x ? "high" : "medium") : Le || F?.expected && i.family === "privy" && n.profile !== "strict" ? (B = "protected", O = `${i.marker} is covered by statically linked project-level attribution evidence.`, W = "medium") : F?.expected ? (B = "unresolved", R = "BAO004", O = `${i.marker} has project-level Builder Code configuration, but this call site is not statically linked to it.`, L = "Pass dataSuffix at this call site or expose an import path the scanner can verify.", W = "medium") : P || F?.dynamic ? (B = "unresolved", R = "BAO003", O = `${i.marker} uses dynamic attribution that cannot be matched to a configured Builder Code.`, L = "Expose the configured Builder Code to CI or use strict-verifiable configuration.", W = "medium") : (B = "missing", R = $t(i.family), O = Rt(i), L = Ot(i.family));
-  let We = jt(B, R, n.profile, n.rules), de = Ut(R ?? "protected", n.relativePath, i.family, i.marker, Ie(s), r), Me = n.baseline?.has(de) ?? false;
-  return { file: n.relativePath, line: o.line + 1, column: o.character + 1, family: i.family, marker: i.marker, status: B, ruleId: R, message: O, suggestion: L, evidence: X, confidence: W, severity: We, fingerprint: de, baseline: Me };
+  ue && !x && !C ? (B = "wrong-code", R = "BAO002", O = `${i.marker} uses ${ue}, which is not configured for this project.`, L = "Replace it with a Builder Code from bao.config.json.") : P && !T && (x || h || C) ? (B = "protected", O = `${i.marker} is protected by Builder Code attribution.`, W = x ? "high" : "medium") : Le || F?.expected && i.family === "privy" && r.profile !== "strict" ? (B = "protected", O = `${i.marker} is covered by statically linked project-level attribution evidence.`, W = "medium") : F?.expected ? (B = "unresolved", R = "BAO004", O = `${i.marker} has project-level Builder Code configuration, but this call site is not statically linked to it.`, L = "Pass dataSuffix at this call site or expose an import path the scanner can verify.", W = "medium") : P || F?.dynamic ? (B = "unresolved", R = "BAO003", O = `${i.marker} uses dynamic attribution that cannot be matched to a configured Builder Code.`, L = "Expose the configured Builder Code to CI or use strict-verifiable configuration.", W = "medium") : (B = "missing", R = $t(i.family), O = Rt(i), L = Ot(i.family));
+  let We = jt(B, R, r.profile, r.rules), de = Ut(R ?? "protected", r.relativePath, i.family, i.marker, Ie(s), n), Me = r.baseline?.has(de) ?? false;
+  return { file: r.relativePath, line: o.line + 1, column: o.character + 1, family: i.family, marker: i.marker, status: B, ruleId: R, message: O, suggestion: L, evidence: q, confidence: W, severity: We, fingerprint: de, baseline: Me };
 }
-function pt(e, t, i, r = false) {
+function pt(e, t, i, n = false) {
   if (e.family === "x402") {
-    let n = (e.marker === "x402Client" || e.marker === "wrapFetchWithPayment") && r, o = e.marker === "paymentMiddleware" && /\bdeclareBuilderCodeExtension\s*\(/.test(i);
-    return n || o ? { kind: "helper", detail: "official x402 Builder Code extension" } : void 0;
+    let r = (e.marker === "x402Client" || e.marker === "wrapFetchWithPayment") && n, o = e.marker === "paymentMiddleware" && /\bdeclareBuilderCodeExtension\s*\(/.test(i);
+    return r || o ? { kind: "helper", detail: "official x402 Builder Code extension" } : void 0;
   }
   if (e.family === "wallet") return /\b(?:attributeUserOperation|sendAttributedCalls|withDataSuffixCapability|withUserOperationAttribution)\b/.test(t) || /\b(?:attributeUserOperation|createAttributionProvider|withDataSuffixCapability|withUserOperationAttribution)\b/.test(i) ? { kind: "helper", detail: "Smart Wallet Attribution Kit middleware" } : /\bcapabilities\b[\s\S]*\bdataSuffix\b/.test(t) && /\bwallet_getCapabilities\b/.test(i) && _t(e.node) ? { kind: "config", detail: "negotiated EIP-5792 dataSuffix capability" } : void 0;
   if (/\bdataSuffix\b/.test(t)) return { kind: "config", detail: "transaction dataSuffix" };
   if (ve.test(t) && !je(t, i)) return { kind: "helper", detail: "Builder Code attribution helper" };
   if (/\bdata\b\s*:\s*[^,}\n]+(?:suffix|Suffix|DATA_SUFFIX)/.test(t)) return { kind: "suffix", detail: "suffix appended to transaction calldata" };
 }
-function re(e, t) {
-  let i = { identifiers: /* @__PURE__ */ new Set(), literals: /* @__PURE__ */ new Set(), memberAccesses: /* @__PURE__ */ new Set() }, r = K(e), n = /* @__PURE__ */ new Set();
+function se(e, t) {
+  let i = { identifiers: /* @__PURE__ */ new Set(), literals: /* @__PURE__ */ new Set(), memberAccesses: /* @__PURE__ */ new Set() }, n = z(e), r = /* @__PURE__ */ new Set();
   function o(s) {
-    if (Pe(s) && i.literals.add(s.text), import_typescript.default.isIdentifier(s) && ce(s)) {
+    if (Pe(s) && i.literals.add(s.text), import_typescript.default.isIdentifier(s) && J(s)) {
       i.identifiers.add(s.text);
-      let c = D(r, s.text, s.getStart(e)), f = c ? ae(c.node) : void 0;
-      f && !n.has(f) && (n.add(f), o(f));
+      let f = j(n, s.text, s.getStart(e)), l = f ? V(f.node) : void 0;
+      l && !r.has(l) && (r.add(l), o(l));
     }
     import_typescript.default.isPropertyAccessExpression(s) && i.memberAccesses.add(s.getText(e)), import_typescript.default.forEachChild(s, o);
   }
   return o(t), i;
 }
 function N(e, t, i) {
-  let r = { identifiers: /* @__PURE__ */ new Set(), literals: /* @__PURE__ */ new Set(), memberAccesses: /* @__PURE__ */ new Set() }, n = i ? K(e) : [], o = /* @__PURE__ */ new Set(), s = /* @__PURE__ */ new Set(["appDataSuffix", "capabilities", "codes", "dataSuffix", "value", "walletCodes"]);
-  function c(f) {
-    if (Pe(f) && r.literals.add(f.text), import_typescript.default.isPropertyAccessExpression(f) && r.memberAccesses.add(f.getText(e)), import_typescript.default.isIdentifier(f) && ce(f)) {
-      if (r.identifiers.add(f.text), i) {
-        let u = D(n, f.text, f.getStart(e)), l = u ? ae(u.node) : void 0;
-        l && !o.has(l) && (o.add(l), c(l));
+  let n = { identifiers: /* @__PURE__ */ new Set(), literals: /* @__PURE__ */ new Set(), memberAccesses: /* @__PURE__ */ new Set() }, r = i ? z(e) : [], o = /* @__PURE__ */ new Set(), s = /* @__PURE__ */ new Set(["appDataSuffix", "capabilities", "codes", "dataSuffix", "value", "walletCodes"]);
+  function f(l) {
+    if (Pe(l) && n.literals.add(l.text), import_typescript.default.isPropertyAccessExpression(l) && n.memberAccesses.add(l.getText(e)), import_typescript.default.isIdentifier(l) && J(l)) {
+      if (n.identifiers.add(l.text), i) {
+        let c = j(r, l.text, l.getStart(e)), u = c ? V(c.node) : void 0;
+        u && !o.has(u) && (o.add(u), f(u));
       }
       return;
     }
-    if (import_typescript.default.isObjectLiteralExpression(f)) {
-      for (let u of f.properties) {
-        let l = import_typescript.default.isPropertyAssignment(u) || import_typescript.default.isShorthandPropertyAssignment(u) ? v(u.name) : void 0;
-        !l || !s.has(l) || (import_typescript.default.isPropertyAssignment(u) ? c(u.initializer) : import_typescript.default.isShorthandPropertyAssignment(u) && c(u.name));
+    if (import_typescript.default.isObjectLiteralExpression(l)) {
+      for (let c of l.properties) {
+        let u = import_typescript.default.isPropertyAssignment(c) || import_typescript.default.isShorthandPropertyAssignment(c) ? v(c.name) : void 0;
+        !u || !s.has(u) || (import_typescript.default.isPropertyAssignment(c) ? f(c.initializer) : import_typescript.default.isShorthandPropertyAssignment(c) && f(c.name));
       }
       return;
     }
-    if (import_typescript.default.isCallExpression(f) || import_typescript.default.isNewExpression(f)) {
-      let u = k(f.expression);
-      for (let l of mt(u, f.arguments ?? [])) c(l);
+    if (import_typescript.default.isCallExpression(l) || import_typescript.default.isNewExpression(l)) {
+      let c = k(l.expression);
+      for (let u of mt(c, l.arguments ?? [])) f(u);
       return;
     }
-    import_typescript.default.forEachChild(f, c);
+    import_typescript.default.forEachChild(l, f);
   }
-  for (let f of t) c(f);
-  return r;
+  for (let l of t) f(l);
+  return n;
 }
 function mt(e, t) {
   switch (e) {
@@ -230726,80 +230726,85 @@ function mt(e, t) {
   }
 }
 function gt(e) {
-  let t = [], i = /* @__PURE__ */ new Set();
-  function r(s) {
-    i.has(s) || (i.add(s), t.push(s));
+  let t = [], i = /* @__PURE__ */ new Set(), n = e.node.getSourceFile(), r = z(n), o = /* @__PURE__ */ new Set();
+  function s(c) {
+    i.has(c) || (i.add(c), t.push(c));
   }
-  if (e.marker === "sendAttributedCalls") return r(e.node), t;
-  function n(s) {
-    if (import_typescript.default.isCallExpression(s) && k(s.expression) === "declareBuilderCodeExtension") {
-      r(s);
+  if (e.marker === "sendAttributedCalls") return s(e.node), t;
+  function f(c) {
+    if (import_typescript.default.isCallExpression(c) && k(c.expression) === "declareBuilderCodeExtension") {
+      s(c);
       return;
     }
-    import_typescript.default.forEachChild(s, n);
+    import_typescript.default.forEachChild(c, f);
   }
-  function o(s) {
-    if (import_typescript.default.isPropertyAssignment(s) && v(s.name) === "dataSuffix") {
-      r(s.initializer);
+  function l(c) {
+    if (import_typescript.default.isIdentifier(c) && J(c)) {
+      let u = j(r, c.text, c.getStart(n)), d = u ? V(u.node) : void 0;
+      d && !o.has(d) && (o.add(d), l(d));
       return;
     }
-    if (import_typescript.default.isShorthandPropertyAssignment(s) && s.name.text === "dataSuffix") {
-      r(s.name);
+    if (import_typescript.default.isPropertyAssignment(c) && v(c.name) === "dataSuffix") {
+      s(c.initializer);
       return;
     }
-    if (e.family === "x402" && import_typescript.default.isPropertyAssignment(s) && v(s.name) === "extensions") {
-      n(s.initializer);
+    if (import_typescript.default.isShorthandPropertyAssignment(c) && c.name.text === "dataSuffix") {
+      s(c.name);
       return;
     }
-    if (e.marker === "eth_sendUserOperation" && import_typescript.default.isPropertyAssignment(s) && v(s.name) === "params" && import_typescript.default.isArrayLiteralExpression(s.initializer) && s.initializer.elements[0]) {
-      r(s.initializer.elements[0]);
+    if (e.family === "x402" && import_typescript.default.isPropertyAssignment(c) && v(c.name) === "extensions") {
+      f(c.initializer);
       return;
     }
-    if (import_typescript.default.isPropertyAssignment(s) && v(s.name) === "data" && /(?:suffix|Suffix|DATA_SUFFIX)/.test(s.initializer.getText())) {
-      r(s.initializer);
+    if (e.marker === "eth_sendUserOperation" && import_typescript.default.isPropertyAssignment(c) && v(c.name) === "params" && import_typescript.default.isArrayLiteralExpression(c.initializer) && c.initializer.elements[0]) {
+      s(c.initializer.elements[0]);
       return;
     }
-    if (import_typescript.default.isPropertyAssignment(s) && (v(s.name) === "capabilities" || v(s.name) === "params")) {
-      o(s.initializer);
+    if (import_typescript.default.isPropertyAssignment(c) && v(c.name) === "data" && /(?:suffix|Suffix|DATA_SUFFIX)/.test(c.initializer.getText())) {
+      s(c.initializer);
       return;
     }
-    if (import_typescript.default.isPropertyAssignment(s) && (import_typescript.default.isObjectLiteralExpression(s.initializer) || import_typescript.default.isArrayLiteralExpression(s.initializer))) {
-      o(s.initializer);
+    if (import_typescript.default.isPropertyAssignment(c) && (v(c.name) === "capabilities" || v(c.name) === "params")) {
+      l(c.initializer);
       return;
     }
-    if (import_typescript.default.isCallExpression(s) && s !== e.node) {
-      let c = k(s.expression);
-      c && ve.test(c) && r(s);
+    if (import_typescript.default.isPropertyAssignment(c) && (import_typescript.default.isObjectLiteralExpression(c.initializer) || import_typescript.default.isArrayLiteralExpression(c.initializer))) {
+      l(c.initializer);
       return;
     }
-    if (import_typescript.default.isObjectLiteralExpression(s)) {
-      for (let c of s.properties) o(c);
+    if (import_typescript.default.isCallExpression(c) && c !== e.node) {
+      let u = k(c.expression);
+      u && ve.test(u) && s(c);
       return;
     }
-    if (import_typescript.default.isArrayLiteralExpression(s)) for (let c of s.elements) o(c);
+    if (import_typescript.default.isObjectLiteralExpression(c)) {
+      for (let u of c.properties) l(u);
+      return;
+    }
+    if (import_typescript.default.isArrayLiteralExpression(c)) for (let u of c.elements) l(u);
   }
-  if (import_typescript.default.isCallExpression(e.node)) for (let s of e.node.arguments) o(s);
+  if (import_typescript.default.isCallExpression(e.node)) for (let c of e.node.arguments) l(c);
   return t;
 }
-function K(e) {
+function z(e) {
   let t = [];
-  function i(n, o) {
-    if (import_typescript.default.isIdentifier(n)) {
-      t.push({ name: n.text, node: o, scope: we(o, e) });
+  function i(r, o) {
+    if (import_typescript.default.isIdentifier(r)) {
+      t.push({ name: r.text, node: o, scope: we(o, e) });
       return;
     }
-    for (let s of n.elements) import_typescript.default.isBindingElement(s) && i(s.name, o);
+    for (let s of r.elements) import_typescript.default.isBindingElement(s) && i(s.name, o);
   }
-  function r(n) {
-    import_typescript.default.isVariableDeclaration(n) || import_typescript.default.isParameter(n) ? i(n.name, n) : import_typescript.default.isFunctionDeclaration(n) && n.name ? t.push({ name: n.name.text, node: n, scope: we(n, e) }) : import_typescript.default.isImportClause(n) && n.name ? t.push({ name: n.name.text, node: n, scope: e }) : import_typescript.default.isImportSpecifier(n) ? t.push({ name: n.name.text, node: n, scope: e }) : import_typescript.default.isNamespaceImport(n) && t.push({ name: n.name.text, node: n, scope: e }), import_typescript.default.forEachChild(n, r);
+  function n(r) {
+    import_typescript.default.isVariableDeclaration(r) || import_typescript.default.isParameter(r) ? i(r.name, r) : import_typescript.default.isFunctionDeclaration(r) && r.name ? t.push({ name: r.name.text, node: r, scope: we(r, e) }) : import_typescript.default.isImportClause(r) && r.name ? t.push({ name: r.name.text, node: r, scope: e }) : import_typescript.default.isImportSpecifier(r) ? t.push({ name: r.name.text, node: r, scope: e }) : import_typescript.default.isNamespaceImport(r) && t.push({ name: r.name.text, node: r, scope: e }), import_typescript.default.forEachChild(r, n);
   }
-  return r(e), t;
+  return n(e), t;
 }
-function D(e, t, i) {
-  return e.filter((r) => {
-    let n = r.scope.getStart(), o = r.scope.getEnd(), s = import_typescript.default.isFunctionDeclaration(r.node) || import_typescript.default.isImportClause(r.node) || import_typescript.default.isImportSpecifier(r.node) || import_typescript.default.isNamespaceImport(r.node);
-    return r.name === t && n <= i && i <= o && (s || r.node.getStart() <= i);
-  }).sort((r, n) => r.scope.getEnd() - r.scope.getStart() - (n.scope.getEnd() - n.scope.getStart()) || n.node.getStart() - r.node.getStart())[0];
+function j(e, t, i) {
+  return e.filter((n) => {
+    let r = n.scope.getStart(), o = n.scope.getEnd(), s = import_typescript.default.isFunctionDeclaration(n.node) || import_typescript.default.isImportClause(n.node) || import_typescript.default.isImportSpecifier(n.node) || import_typescript.default.isNamespaceImport(n.node);
+    return n.name === t && r <= i && i <= o && (s || n.node.getStart() <= i);
+  }).sort((n, r) => n.scope.getEnd() - n.scope.getStart() - (r.scope.getEnd() - r.scope.getStart()) || r.node.getStart() - n.node.getStart())[0];
 }
 function we(e, t) {
   let i = e.parent;
@@ -230809,11 +230814,11 @@ function we(e, t) {
   }
   return t;
 }
-function ae(e) {
+function V(e) {
   if (import_typescript.default.isVariableDeclaration(e) || import_typescript.default.isParameter(e)) return e.initializer;
   if (import_typescript.default.isFunctionDeclaration(e)) return e.body;
 }
-function ce(e) {
+function J(e) {
   let t = e.parent;
   return !(import_typescript.default.isPropertyAccessExpression(t) && t.name === e || import_typescript.default.isPropertyAssignment(t) && t.name === e || import_typescript.default.isMethodDeclaration(t) && t.name === e || import_typescript.default.isVariableDeclaration(t) && t.name === e || import_typescript.default.isParameter(t) && t.name === e || import_typescript.default.isBindingElement(t) && t.name === e || import_typescript.default.isFunctionDeclaration(t) && t.name === e || import_typescript.default.isImportClause(t) || import_typescript.default.isImportSpecifier(t) || import_typescript.default.isNamespaceImport(t) || import_typescript.default.isJsxAttribute(t) && t.name === e);
 }
@@ -230823,7 +230828,7 @@ function Pe(e) {
   return !(import_typescript.default.isPropertyAssignment(t) && t.name === e || import_typescript.default.isMethodDeclaration(t) && t.name === e || import_typescript.default.isImportDeclaration(t) && t.moduleSpecifier === e || import_typescript.default.isExportDeclaration(t) && t.moduleSpecifier === e);
 }
 function ht(e, t) {
-  let i = /* @__PURE__ */ new Set(), r = false, n = K(e), o = /* @__PURE__ */ new Set(), s = t.node;
+  let i = /* @__PURE__ */ new Set(), n = false, r = z(e), o = /* @__PURE__ */ new Set(), s = t.node;
   for (; s && s !== e; ) {
     if (import_typescript.default.isVariableDeclaration(s) && import_typescript.default.isIdentifier(s.name)) {
       import_typescript.default.isNewExpression(t.node) && k(t.node.expression) === "x402Client" && o.add(s);
@@ -230831,52 +230836,52 @@ function ht(e, t) {
     }
     s = s.parent;
   }
-  function c(l, d = []) {
-    if (d.includes(l.node)) return false;
-    let p = ae(l.node), g = [...d, l.node];
+  function f(u, d = []) {
+    if (d.includes(u.node)) return false;
+    let p = V(u.node), g = [...d, u.node];
     if (p && import_typescript.default.isNewExpression(p) && k(p.expression) === "x402Client") {
       for (let x of g) o.add(x);
       return true;
     }
     if (p && import_typescript.default.isIdentifier(p)) {
-      let x = D(n, p.text, p.getStart(e));
-      if (x && c(x, g)) {
+      let x = j(r, p.text, p.getStart(e));
+      if (x && f(x, g)) {
         for (let h of g) o.add(h);
         return true;
       }
     }
     return false;
   }
-  function f(l) {
-    if (import_typescript.default.isIdentifier(l) && ce(l)) {
-      let d = D(n, l.text, l.getStart(e));
-      d && c(d);
+  function l(u) {
+    if (import_typescript.default.isIdentifier(u) && J(u)) {
+      let d = j(r, u.text, u.getStart(e));
+      d && f(d);
     }
-    import_typescript.default.forEachChild(l, f);
+    import_typescript.default.forEachChild(u, l);
   }
-  f(t.node);
-  function u(l) {
-    if (import_typescript.default.isCallExpression(l) && import_typescript.default.isPropertyAccessExpression(l.expression) && l.expression.name.text === "registerExtension" && import_typescript.default.isIdentifier(l.expression.expression)) {
-      let d = D(n, l.expression.expression.text, l.expression.expression.getStart(e));
+  l(t.node);
+  function c(u) {
+    if (import_typescript.default.isCallExpression(u) && import_typescript.default.isPropertyAccessExpression(u.expression) && u.expression.name.text === "registerExtension" && import_typescript.default.isIdentifier(u.expression.expression)) {
+      let d = j(r, u.expression.expression.text, u.expression.expression.getStart(e));
       if (d && o.has(d.node)) {
-        r = true;
-        for (let p of N(e, [l], true).literals) i.add(p);
+        n = true;
+        for (let p of N(e, [u], true).literals) i.add(p);
       }
     }
-    import_typescript.default.forEachChild(l, u);
+    import_typescript.default.forEachChild(u, c);
   }
-  return u(e), { found: r, literals: i };
+  return c(e), { found: n, literals: i };
 }
 function xt(e) {
   let t = [], i = /* @__PURE__ */ new Set(["attributeUserOperation", "builderCodeDataSuffix", "createAttributionProvider", "createAttributionSigner", "dataSuffix", "declareBuilderCodeExtension", "registerExtension", "withDataSuffixCapability", "withUserOperationAttribution", "withAttributionSuffix", "withViemDataSuffix"]);
-  function r(n) {
-    if (import_typescript.default.isCallExpression(n)) {
-      let o = k(n.expression);
-      (o && i.has(o) || (o === "createWalletClient" || o === "createConfig") && /\bdataSuffix\b/.test(n.getText(e))) && t.push(n);
-    } else import_typescript.default.isNewExpression(n) && k(n.expression) === "BuilderCodeClientExtension" && t.push(n);
-    import_typescript.default.forEachChild(n, r);
+  function n(r) {
+    if (import_typescript.default.isCallExpression(r)) {
+      let o = k(r.expression);
+      (o && i.has(o) || (o === "createWalletClient" || o === "createConfig") && /\bdataSuffix\b/.test(r.getText(e))) && t.push(r);
+    } else import_typescript.default.isNewExpression(r) && k(r.expression) === "BuilderCodeClientExtension" && t.push(r);
+    import_typescript.default.forEachChild(r, n);
   }
-  return r(e), t.sort((n, o) => n.getStart(e) - o.getStart(e));
+  return n(e), t.sort((r, o) => r.getStart(e) - o.getStart(e));
 }
 function bt(e) {
   let t = e;
@@ -230884,40 +230889,40 @@ function bt(e) {
     if (import_typescript.default.isVariableDeclaration(t) && import_typescript.default.isIdentifier(t.name)) {
       let i = t.parent;
       for (; i && !import_typescript.default.isVariableStatement(i); ) i = i.parent;
-      return i && import_typescript.default.isVariableStatement(i) && i.modifiers?.some((n) => n.kind === import_typescript.default.SyntaxKind.ExportKeyword) ? [t.name.text] : [];
+      return i && import_typescript.default.isVariableStatement(i) && i.modifiers?.some((r) => r.kind === import_typescript.default.SyntaxKind.ExportKeyword) ? [t.name.text] : [];
     }
     if (import_typescript.default.isExportAssignment(t)) return ["default"];
-    if (import_typescript.default.isFunctionDeclaration(t) && t.name && t.modifiers?.some((r) => r.kind === import_typescript.default.SyntaxKind.ExportKeyword)) return [t.name.text];
+    if (import_typescript.default.isFunctionDeclaration(t) && t.name && t.modifiers?.some((n) => n.kind === import_typescript.default.SyntaxKind.ExportKeyword)) return [t.name.text];
     t = t.parent;
   }
   return [];
 }
-function ye(e, t, i, r, n) {
-  if (t.family === "privy" && St(e, t, i, r, n)) return true;
-  if (!n) return false;
-  let o = re(e, t.node), s = n.linkedBindings(e.fileName, i.evidence.file, i.exportedBindings);
-  return Array.from(s).some((c) => c.includes(".") ? o.memberAccesses.has(c) : o.identifiers.has(c));
+function ye(e, t, i, n, r) {
+  if (t.family === "privy" && St(e, t, i, n, r)) return true;
+  if (!r) return false;
+  let o = se(e, t.node), s = r.linkedBindings(e.fileName, i.evidence.file, i.exportedBindings);
+  return Array.from(s).some((f) => f.includes(".") ? o.memberAccesses.has(f) : o.identifiers.has(f));
 }
-function St(e, t, i, r, n) {
-  let o = re(e, t.node);
+function St(e, t, i, n, r) {
+  let o = se(e, t.node);
   if (!vt(e, o)) return false;
-  let s = wt(t.node), c = At(e, i);
-  for (let l of n?.linkedBindings(e.fileName, i.evidence.file, i.exportedBindings) ?? []) c.add(l);
-  let f = false;
-  function u(l) {
-    if (f || !import_typescript.default.isJsxElement(l) || Ct(l.openingElement) !== "PrivyProvider") {
-      import_typescript.default.forEachChild(l, u);
+  let s = wt(t.node), f = At(e, i);
+  for (let u of r?.linkedBindings(e.fileName, i.evidence.file, i.exportedBindings) ?? []) f.add(u);
+  let l = false;
+  function c(u) {
+    if (l || !import_typescript.default.isJsxElement(u) || Ct(u.openingElement) !== "PrivyProvider") {
+      import_typescript.default.forEachChild(u, c);
       return;
     }
-    let d = l.openingElement.attributes.properties.find((y) => import_typescript.default.isJsxAttribute(y) && y.name.getText(e) === "config"), p = d?.initializer && import_typescript.default.isJsxExpression(d.initializer) ? d.initializer.expression : void 0;
+    let d = u.openingElement.attributes.properties.find((y) => import_typescript.default.isJsxAttribute(y) && y.name.getText(e) === "config"), p = d?.initializer && import_typescript.default.isJsxExpression(d.initializer) ? d.initializer.expression : void 0;
     if (!p) {
-      import_typescript.default.forEachChild(l, u);
+      import_typescript.default.forEachChild(u, c);
       return;
     }
-    let g = re(e, p), x = N(e, [p], true), h = E(i.evidence.file) === E(e.fileName) && r.some((y) => x.literals.has(y)) || Array.from(c).some((y) => y.includes(".") ? g.memberAccesses.has(y) : g.identifiers.has(y)), C = t.node.getStart(e) >= l.getStart(e) && t.node.getEnd() <= l.getEnd() || (s ? yt(l, s, e) : false);
-    f = h && C, f || import_typescript.default.forEachChild(l, u);
+    let g = se(e, p), x = N(e, [p], true), h = E(i.evidence.file) === E(e.fileName) && n.some((y) => x.literals.has(y)) || Array.from(f).some((y) => y.includes(".") ? g.memberAccesses.has(y) : g.identifiers.has(y)), C = t.node.getStart(e) >= u.getStart(e) && t.node.getEnd() <= u.getEnd() || (s ? yt(u, s, e) : false);
+    l = h && C, l || import_typescript.default.forEachChild(u, c);
   }
-  return u(e), f;
+  return c(e), l;
 }
 function wt(e) {
   let t = e.parent;
@@ -230928,71 +230933,71 @@ function wt(e) {
   }
 }
 function yt(e, t, i) {
-  let r = false;
-  function n(o) {
-    if (!r) {
+  let n = false;
+  function r(o) {
+    if (!n) {
       if ((import_typescript.default.isJsxOpeningElement(o) || import_typescript.default.isJsxSelfClosingElement(o)) && o.tagName.getText(i) === t) {
-        r = true;
+        n = true;
         return;
       }
-      import_typescript.default.forEachChild(o, n);
+      import_typescript.default.forEachChild(o, r);
     }
   }
-  for (let o of e.children) n(o);
-  return r;
+  for (let o of e.children) r(o);
+  return n;
 }
 function Ct(e) {
   return import_typescript.default.isIdentifier(e.tagName) ? e.tagName.text : e.tagName.getText();
 }
 function At(e, t) {
-  let i = /* @__PURE__ */ new Set(), r = new Set(t.exportedBindings);
-  for (let n of e.statements) {
-    if (!import_typescript.default.isImportDeclaration(n) || !import_typescript.default.isStringLiteral(n.moduleSpecifier) || !n.importClause || !Et(e.fileName, n.moduleSpecifier.text, t.evidence.file)) continue;
-    n.importClause.name && r.has("default") && i.add(n.importClause.name.text);
-    let o = n.importClause.namedBindings;
-    if (o && import_typescript.default.isNamespaceImport(o)) for (let s of r) s !== "default" && i.add(`${o.name.text}.${s}`);
+  let i = /* @__PURE__ */ new Set(), n = new Set(t.exportedBindings);
+  for (let r of e.statements) {
+    if (!import_typescript.default.isImportDeclaration(r) || !import_typescript.default.isStringLiteral(r.moduleSpecifier) || !r.importClause || !Et(e.fileName, r.moduleSpecifier.text, t.evidence.file)) continue;
+    r.importClause.name && n.has("default") && i.add(r.importClause.name.text);
+    let o = r.importClause.namedBindings;
+    if (o && import_typescript.default.isNamespaceImport(o)) for (let s of n) s !== "default" && i.add(`${o.name.text}.${s}`);
     else if (o) for (let s of o.elements) {
-      let c = s.propertyName?.text ?? s.name.text;
-      r.has(c) && i.add(s.name.text);
+      let f = s.propertyName?.text ?? s.name.text;
+      n.has(f) && i.add(s.name.text);
     }
   }
   return i;
 }
 function vt(e, t) {
-  let i = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set();
-  for (let n of e.statements) {
-    if (!import_typescript.default.isImportDeclaration(n) || !import_typescript.default.isStringLiteral(n.moduleSpecifier) || n.moduleSpecifier.text !== "@privy-io/react-auth" || !n.importClause?.namedBindings) continue;
-    let o = n.importClause.namedBindings;
+  let i = /* @__PURE__ */ new Set(), n = /* @__PURE__ */ new Set();
+  for (let r of e.statements) {
+    if (!import_typescript.default.isImportDeclaration(r) || !import_typescript.default.isStringLiteral(r.moduleSpecifier) || r.moduleSpecifier.text !== "@privy-io/react-auth" || !r.importClause?.namedBindings) continue;
+    let o = r.importClause.namedBindings;
     if (import_typescript.default.isNamespaceImport(o)) {
-      r.add(`${o.name.text}.usePrivy`), r.add(`${o.name.text}.useWallets`);
+      n.add(`${o.name.text}.usePrivy`), n.add(`${o.name.text}.useWallets`);
       continue;
     }
     for (let s of o.elements) {
-      let c = s.propertyName?.text ?? s.name.text;
-      (c === "usePrivy" || c === "useWallets") && i.add(s.name.text);
+      let f = s.propertyName?.text ?? s.name.text;
+      (f === "usePrivy" || f === "useWallets") && i.add(s.name.text);
     }
   }
-  return Array.from(i).some((n) => t.identifiers.has(n)) || Array.from(r).some((n) => t.memberAccesses.has(n));
+  return Array.from(i).some((r) => t.identifiers.has(r)) || Array.from(n).some((r) => t.memberAccesses.has(r));
 }
 function Et(e, t, i) {
   if (!t.startsWith(".")) return false;
-  let r = E(import_path.default.posix.normalize(import_path.default.posix.join(import_path.default.posix.dirname(E(e)), t)));
-  return Ce(r) === Ce(E(i));
+  let n = E(import_path.default.posix.normalize(import_path.default.posix.join(import_path.default.posix.dirname(E(e)), t)));
+  return Ce(n) === Ce(E(i));
 }
 function Ce(e) {
   return e.replace(/\.(?:[cm]?[jt]sx?)$/, "").replace(/\/index$/, "");
 }
 function kt(e, t) {
   let i = [];
-  for (let r of e) {
-    if (!Bt(r.source)) continue;
-    let n = import_typescript.default.createSourceFile(r.relativePath, r.source, import_typescript.default.ScriptTarget.Latest, true, Ne(r.relativePath)), o = xt(n);
+  for (let n of e) {
+    if (!Bt(n.source)) continue;
+    let r = import_typescript.default.createSourceFile(n.relativePath, n.source, import_typescript.default.ScriptTarget.Latest, true, Ne(n.relativePath)), o = xt(r);
     if (o.length === 0) continue;
-    let c = o.filter((g) => {
-      let x = N(n, [g], true).literals;
+    let f = o.filter((g) => {
+      let x = N(r, [g], true).literals;
       return t.some((h) => x.has(h));
-    }).length > 0, u = Array.from(new Set(o.flatMap((g) => ne(N(n, [g], true).literals)))).find((g) => !t.includes(g)), l = Array.from(new Set(o.flatMap((g) => bt(g)))), d = n.getLineAndCharacterOfPosition(o[0].getStart(n)).line + 1, p = Pt(r);
-    for (let g of p) i.push({ family: g, expected: c, dynamic: !c, exportedBindings: l, wrongCode: u, evidence: { kind: "config", detail: "project-level attribution configuration", file: r.relativePath, line: d } });
+    }).length > 0, c = Array.from(new Set(o.flatMap((g) => oe(N(r, [g], true).literals)))).find((g) => !t.includes(g)), u = Array.from(new Set(o.flatMap((g) => bt(g)))), d = r.getLineAndCharacterOfPosition(o[0].getStart(r)).line + 1, p = Pt(n);
+    for (let g of p) i.push({ family: g, expected: f, dynamic: !f, exportedBindings: u, wrongCode: c, evidence: { kind: "config", detail: "project-level attribution configuration", file: n.relativePath, line: d } });
   }
   return i;
 }
@@ -231023,27 +231028,27 @@ function Ot(e) {
       return "Add a BAO SDK helper or dataSuffix configuration to this transaction path.";
   }
 }
-function jt(e, t, i, r) {
+function jt(e, t, i, n) {
   if (e === "protected") return "off";
-  let n = t === "BAO004" ? r?.["ambiguous-path"] : e === "missing" ? r?.["missing-attribution"] : e === "wrong-code" ? r?.["wrong-builder-code"] : r?.["dynamic-attribution"];
-  return n || (i === "local" ? "warning" : i === "strict" ? "error" : e === "unresolved" ? "warning" : "error");
+  let r = t === "BAO004" ? n?.["ambiguous-path"] : e === "missing" ? n?.["missing-attribution"] : e === "wrong-code" ? n?.["wrong-builder-code"] : n?.["dynamic-attribution"];
+  return r || (i === "local" ? "warning" : i === "strict" ? "error" : e === "unresolved" ? "warning" : "error");
 }
 function Dt(e) {
-  let t = e.filter((r) => r.status === "protected").length, i = e.filter((r) => r.baseline).length;
-  return { total: e.length, protected: t, missing: e.filter((r) => r.status === "missing").length, wrongCode: e.filter((r) => r.status === "wrong-code").length, unresolved: e.filter((r) => r.status === "unresolved").length, errors: e.filter((r) => r.severity === "error" && !r.baseline).length, warnings: e.filter((r) => r.severity === "warning" && !r.baseline).length, baseline: i, coverage: e.length === 0 ? 100 : Math.round(t / e.length * 100) };
+  let t = e.filter((n) => n.status === "protected").length, i = e.filter((n) => n.baseline).length;
+  return { total: e.length, protected: t, missing: e.filter((n) => n.status === "missing").length, wrongCode: e.filter((n) => n.status === "wrong-code").length, unresolved: e.filter((n) => n.status === "unresolved").length, errors: e.filter((n) => n.severity === "error" && !n.baseline).length, warnings: e.filter((n) => n.severity === "warning" && !n.baseline).length, baseline: i, coverage: e.length === 0 ? 100 : Math.round(t / e.length * 100) };
 }
 async function It(e, t) {
   let i;
   if (t.files && t.files.length > 0) {
-    i = t.files.map((r) => import_path.default.resolve(e, r));
-    for (let r of i) {
-      let n = import_path.default.relative(e, r);
-      if (n.startsWith("..") || import_path.default.isAbsolute(n)) throw new Error("Explicit source files must stay inside the scan root.");
-      let o = await import_fs2.promises.realpath(r), s = await import_fs2.promises.realpath(e), c = import_path.default.relative(s, o);
-      if (c.startsWith("..") || import_path.default.isAbsolute(c)) throw new Error("Explicit source files must not resolve outside the scan root.");
+    i = t.files.map((n) => import_path.default.resolve(e, n));
+    for (let n of i) {
+      let r = import_path.default.relative(e, n);
+      if (r.startsWith("..") || import_path.default.isAbsolute(r)) throw new Error("Explicit source files must stay inside the scan root.");
+      let o = await import_fs2.promises.realpath(n), s = await import_fs2.promises.realpath(e), f = import_path.default.relative(s, o);
+      if (f.startsWith("..") || import_path.default.isAbsolute(f)) throw new Error("Explicit source files must not resolve outside the scan root.");
     }
   } else i = await Be(e);
-  return Array.from(new Set(i)).filter((r) => ie.has(import_path.default.extname(r))).filter((r) => Lt(E(import_path.default.relative(e, r)), t.include)).filter((r) => !Wt(E(import_path.default.relative(e, r)), t.exclude)).sort();
+  return Array.from(new Set(i)).filter((n) => ne.has(import_path.default.extname(n))).filter((n) => Lt(E(import_path.default.relative(e, n)), t.include)).filter((n) => !Wt(E(import_path.default.relative(e, n)), t.exclude)).sort();
 }
 function Nt(e, t) {
   return e.filter((i) => t.has(i.relativePath));
@@ -231051,40 +231056,40 @@ function Nt(e, t) {
 async function Tt(e, t) {
   if (t.length > Se) throw new Error(`Source scan exceeds the ${Se} file limit.`);
   let i = 0;
-  for (let n = 0; n < t.length; n += U) {
-    let o = t.slice(n, n + U), s = await Promise.all(o.map((c) => import_fs2.promises.stat(c)));
-    for (let c = 0; c < o.length; c += 1) {
-      let f = s[c].size;
-      if (f > ot) throw new Error(`${E(import_path.default.relative(e, o[c]))} exceeds the 2 MiB source file limit.`);
-      if (i += f, i > at) throw new Error("Source scan exceeds the 50 MiB aggregate limit.");
+  for (let r = 0; r < t.length; r += K) {
+    let o = t.slice(r, r + K), s = await Promise.all(o.map((f) => import_fs2.promises.stat(f)));
+    for (let f = 0; f < o.length; f += 1) {
+      let l = s[f].size;
+      if (l > ot) throw new Error(`${E(import_path.default.relative(e, o[f]))} exceeds the 2 MiB source file limit.`);
+      if (i += l, i > at) throw new Error("Source scan exceeds the 50 MiB aggregate limit.");
     }
   }
-  let r = [];
-  for (let n = 0; n < t.length; n += U) {
-    let o = t.slice(n, n + U);
-    r.push(...await Promise.all(o.map(async (s) => {
-      let c = await import_fs2.promises.readFile(s, "utf8");
-      return { absolutePath: s, relativePath: E(import_path.default.relative(e, s)), source: c, frameworks: se(c) };
+  let n = [];
+  for (let r = 0; r < t.length; r += K) {
+    let o = t.slice(r, r + K);
+    n.push(...await Promise.all(o.map(async (s) => {
+      let f = await import_fs2.promises.readFile(s, "utf8");
+      return { absolutePath: s, relativePath: E(import_path.default.relative(e, s)), source: f, frameworks: ae(f) };
     })));
   }
-  return r;
+  return n;
 }
 async function Be(e) {
   let t = await import_fs2.promises.stat(e).catch(() => {
   });
   if (!t) return [];
-  if (t.isFile()) return ie.has(import_path.default.extname(e)) ? [e] : [];
-  let i = await import_fs2.promises.readdir(e, { withFileTypes: true }), r = [];
-  for (let n of i) {
-    if (n.isDirectory() && ct.has(n.name)) continue;
-    let o = import_path.default.join(e, n.name);
-    n.isDirectory() ? r.push(...await Be(o)) : n.isFile() && ie.has(import_path.default.extname(n.name)) && r.push(o);
+  if (t.isFile()) return ne.has(import_path.default.extname(e)) ? [e] : [];
+  let i = await import_fs2.promises.readdir(e, { withFileTypes: true }), n = [];
+  for (let r of i) {
+    if (r.isDirectory() && ct.has(r.name)) continue;
+    let o = import_path.default.join(e, r.name);
+    r.isDirectory() ? n.push(...await Be(o)) : r.isFile() && ne.has(import_path.default.extname(r.name)) && n.push(o);
   }
-  return r;
+  return n;
 }
 async function Ft(e, t) {
   let { stdout: i } = await st("git", ["diff", "--name-only", "--end-of-options", `${t}...HEAD`, "--"], { cwd: e });
-  return new Set(i.split(/\r?\n/).map((r) => E(r.trim())).filter(Boolean));
+  return new Set(i.split(/\r?\n/).map((n) => E(n.trim())).filter(Boolean));
 }
 function Lt(e, t) {
   return !t || t.length === 0 ? true : t.some((i) => $e(e, i));
@@ -231095,12 +231100,12 @@ function Wt(e, t) {
 function $e(e, t) {
   let i = E(t).replace(/^\.\//, "").replace(/\/$/, "");
   if (!i.includes("*")) return e === i || e.startsWith(`${i}/`);
-  let r = "";
-  for (let n = 0; n < i.length; n += 1) {
-    let o = i[n], s = i[n + 1], c = i[n + 2];
-    o === "*" && s === "*" && c === "/" ? (r += "(?:.*/)?", n += 2) : o === "*" && s === "*" ? (r += ".*", n += 1) : o === "*" ? r += "[^/]*" : r += o.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+  let n = "";
+  for (let r = 0; r < i.length; r += 1) {
+    let o = i[r], s = i[r + 1], f = i[r + 2];
+    o === "*" && s === "*" && f === "/" ? (n += "(?:.*/)?", r += 2) : o === "*" && s === "*" ? (n += ".*", r += 1) : o === "*" ? n += "[^/]*" : n += o.replace(/[.+^${}()|[\]\\]/g, "\\$&");
   }
-  return new RegExp(`^${r}$`).test(e);
+  return new RegExp(`^${n}$`).test(e);
 }
 function Mt(e) {
   let t = e.arguments[0];
@@ -231114,46 +231119,46 @@ function k(e) {
   if (import_typescript.default.isElementAccessExpression(e) && e.argumentExpression && import_typescript.default.isStringLiteralLike(e.argumentExpression)) return e.argumentExpression.text;
 }
 function Re(e, t, i = /* @__PURE__ */ new Set()) {
-  let r = k(t);
-  if (!import_typescript.default.isIdentifier(t)) return r;
-  let n = K(e), o = D(n, t.text, t.getStart(e));
-  if (!o || i.has(o.node)) return r;
+  let n = k(t);
+  if (!import_typescript.default.isIdentifier(t)) return n;
+  let r = z(e), o = j(r, t.text, t.getStart(e));
+  if (!o || i.has(o.node)) return n;
   if (i.add(o.node), import_typescript.default.isImportSpecifier(o.node)) return o.node.propertyName?.text ?? o.node.name.text;
   if (import_typescript.default.isVariableDeclaration(o.node)) {
     let s = Oe(o.node.name, t.text);
     if (s) return s;
-    if (o.node.initializer) return Re(e, o.node.initializer, i) ?? r;
+    if (o.node.initializer) return Re(e, o.node.initializer, i) ?? n;
   }
-  return r;
+  return n;
 }
 function Oe(e, t) {
   if (import_typescript.default.isObjectBindingPattern(e)) for (let i of e.elements) {
     if (import_typescript.default.isIdentifier(i.name) && i.name.text === t) return v(i.propertyName ?? i.name);
-    let r = Oe(i.name, t);
-    if (r) return r;
+    let n = Oe(i.name, t);
+    if (n) return n;
   }
 }
 function v(e) {
   if (import_typescript.default.isIdentifier(e) || import_typescript.default.isStringLiteralLike(e)) return e.text;
 }
-function ne(e) {
+function oe(e) {
   return Array.from(new Set(Array.from(e).filter((t) => validateBuilderCodes([t]).length === 0)));
 }
 function _t(e) {
   let t = false;
-  function i(r) {
-    if (import_typescript.default.isPropertyAssignment(r) && v(r.name) === "dataSuffix" && import_typescript.default.isObjectLiteralExpression(r.initializer)) {
-      t = r.initializer.properties.some((n) => import_typescript.default.isPropertyAssignment(n) && v(n.name) === "optional" && n.initializer.kind === import_typescript.default.SyntaxKind.FalseKeyword);
+  function i(n) {
+    if (import_typescript.default.isPropertyAssignment(n) && v(n.name) === "dataSuffix" && import_typescript.default.isObjectLiteralExpression(n.initializer)) {
+      t = n.initializer.properties.some((r) => import_typescript.default.isPropertyAssignment(r) && v(r.name) === "optional" && r.initializer.kind === import_typescript.default.SyntaxKind.FalseKeyword);
       return;
     }
-    import_typescript.default.forEachChild(r, i);
+    import_typescript.default.forEachChild(n, i);
   }
   return i(e), t;
 }
 function je(e, t) {
-  return Array.from(e.matchAll(/\b(appendDataSuffix|attributeSendCalls|attributeUserOperation|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\s*\(/g), (r) => r[1]).some((r) => {
-    let n = r.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`\\b(?:function|class|const|let|var)\\s+${n}\\b`).test(t);
+  return Array.from(e.matchAll(/\b(appendDataSuffix|attributeSendCalls|attributeUserOperation|builderCodeDataSuffix|createAttributionProvider|createAttributionSigner|createDataSuffix|dataSuffix|declareBuilderCodeExtension|ethersBuilderCodeDataSuffix|sendAttributedCalls|useAttributionSuffix|withAttributionSuffix|withDataSuffixCapability|withEthersAttribution|withUserOperationAttribution|withViemDataSuffix)\s*\(/g), (n) => n[1]).some((n) => {
+    let r = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b(?:function|class|const|let|var)\\s+${r}\\b`).test(t);
   });
 }
 function De(e) {
@@ -231186,52 +231191,52 @@ function Ne(e) {
 function E(e) {
   return e.replaceAll("\\", "/");
 }
-var J = "bao.config.json";
-async function Vt(e, t = J) {
-  let i = import_path4.default.resolve(e, t), r = await import_fs5.promises.readFile(i, "utf8").catch(() => {
+var X = "bao.config.json";
+async function Vt(e, t = X) {
+  let i = import_path4.default.resolve(e, t), n = await import_fs5.promises.readFile(i, "utf8").catch(() => {
   });
-  if (r === void 0) return;
-  let n = import_path4.default.basename(i), o;
+  if (n === void 0) return;
+  let r = import_path4.default.basename(i), o;
   try {
-    o = JSON.parse(r);
+    o = JSON.parse(n);
   } catch (s) {
-    throw new Error(`${n} is not valid JSON: ${s instanceof Error ? s.message : s}`);
+    throw new Error(`${r} is not valid JSON: ${s instanceof Error ? s.message : s}`);
   }
-  return Jt(o, n), { config: o, path: i };
+  return Jt(o, r), { config: o, path: i };
 }
 function Jt(e, t) {
   if (!e || typeof e != "object" || Array.isArray(e)) throw new Error(`${t} must contain a JSON object.`);
-  let i = e, r = /* @__PURE__ */ new Set(["$schema", "builderCodes", "profile", "include", "exclude", "rules", "baseline", "workspace"]), n = Object.keys(i).filter((s) => !r.has(s));
-  if (n.length > 0) throw new Error(`${t} contains unsupported field(s): ${n.join(", ")}.`);
+  let i = e, n = /* @__PURE__ */ new Set(["$schema", "builderCodes", "profile", "include", "exclude", "rules", "baseline", "workspace"]), r = Object.keys(i).filter((s) => !n.has(s));
+  if (r.length > 0) throw new Error(`${t} contains unsupported field(s): ${r.join(", ")}.`);
   if (!Array.isArray(i.builderCodes) || !i.builderCodes.every(Fe)) throw new Error(`${t} must define builderCodes as a non-empty string array.`);
   let o = validateBuilderCodes(i.builderCodes);
   if (o.length > 0) throw new Error(`${t}: ${o.join("; ")}`);
   if (i.$schema !== void 0 && typeof i.$schema != "string") throw new Error(`${t}.$schema must be a string.`);
   if (i.profile !== void 0 && (typeof i.profile != "string" || !M.some((s) => s === i.profile))) throw new Error(`${t}.profile must be local, ci, or strict.`);
-  if (G(i.include, `${t}.include`), G(i.exclude, `${t}.exclude`), i.baseline !== void 0 && typeof i.baseline != "string") throw new Error(`${t}.baseline must be a string.`);
+  if (H(i.include, `${t}.include`), H(i.exclude, `${t}.exclude`), i.baseline !== void 0 && typeof i.baseline != "string") throw new Error(`${t}.baseline must be a string.`);
   Xt(i.rules, t), Gt(i.workspace, t);
 }
 function Gt(e, t) {
   if (e === void 0) return;
   if (!e || typeof e != "object" || Array.isArray(e)) throw new Error(`${t}.workspace must be an object.`);
-  let i = e, r = Object.keys(i).filter((n) => n !== "roots" && n !== "tsconfig");
-  if (r.length > 0) throw new Error(`${t}.workspace contains unsupported field(s): ${r.join(", ")}.`);
-  G(i.roots, `${t}.workspace.roots`), G(i.tsconfig, `${t}.workspace.tsconfig`);
-  for (let [n, o] of Object.entries(i)) if (Array.isArray(o)) for (let s of o) {
-    let c = s.replaceAll("\\", "/");
-    if (!s || import_path4.default.isAbsolute(s) || c.split("/").includes("..")) throw new Error(`${t}.workspace.${n} entries must be relative paths inside the scan root.`);
+  let i = e, n = Object.keys(i).filter((r) => r !== "roots" && r !== "tsconfig");
+  if (n.length > 0) throw new Error(`${t}.workspace contains unsupported field(s): ${n.join(", ")}.`);
+  H(i.roots, `${t}.workspace.roots`), H(i.tsconfig, `${t}.workspace.tsconfig`);
+  for (let [r, o] of Object.entries(i)) if (Array.isArray(o)) for (let s of o) {
+    let f = s.replaceAll("\\", "/");
+    if (!s || import_path4.default.isAbsolute(s) || f.split("/").includes("..")) throw new Error(`${t}.workspace.${r} entries must be relative paths inside the scan root.`);
   }
 }
-function G(e, t) {
+function H(e, t) {
   if (e !== void 0 && (!Array.isArray(e) || !e.every(Fe))) throw new Error(`${t} must be an array of strings.`);
 }
 function Xt(e, t) {
   if (e === void 0) return;
   if (!e || typeof e != "object" || Array.isArray(e)) throw new Error(`${t}.rules must be an object.`);
   let i = /* @__PURE__ */ new Set(["missing-attribution", "wrong-builder-code", "dynamic-attribution", "ambiguous-path"]);
-  for (let [r, n] of Object.entries(e)) {
-    if (!i.has(r)) throw new Error(`${t}.rules contains unsupported rule ${r}.`);
-    if (!["error", "warning", "off"].includes(String(n))) throw new Error(`${t}.rules.${r} must be error, warning, or off.`);
+  for (let [n, r] of Object.entries(e)) {
+    if (!i.has(n)) throw new Error(`${t}.rules contains unsupported rule ${n}.`);
+    if (!["error", "warning", "off"].includes(String(r))) throw new Error(`${t}.rules.${n} must be error, warning, or off.`);
   }
 }
 function Fe(e) {
@@ -231240,7 +231245,7 @@ function Fe(e) {
 var qt = { BAO001: { name: "missing-attribution", description: "A transaction path does not include Builder Code attribution." }, BAO002: { name: "wrong-builder-code", description: "A transaction path contains a Builder Code that is not configured for this project." }, BAO003: { name: "dynamic-attribution", description: "Attribution is configured dynamically and cannot be proven statically." }, BAO004: { name: "ambiguous-path", description: "Project-level attribution evidence cannot be linked to a transaction path with high confidence." }, BAO005: { name: "smart-wallet-data-suffix", description: "A smart-wallet call is missing negotiated EIP-5792 or ERC-4337 attribution middleware." }, BAO006: { name: "x402-builder-code-extension", description: "An x402 payment path is missing a Builder Code extension." } };
 function Yt(e) {
   let t = e.transactionPaths.filter((i) => i.status !== "protected" && i.ruleId !== void 0 && i.severity !== "off" && !i.baseline);
-  return { version: "2.1.0", $schema: "https://json.schemastore.org/sarif-2.1.0.json", runs: [{ tool: { driver: { name: "Base Attribution OS", informationUri: "https://github.com/horn111/base-attribution-os", rules: Object.entries(qt).map(([i, r]) => ({ id: i, name: r.name, shortDescription: { text: r.description } })) } }, results: t.map((i) => ({ ruleId: i.ruleId, level: i.severity === "error" ? "error" : "warning", message: { text: i.message }, locations: [{ physicalLocation: { artifactLocation: { uri: i.file.replaceAll("\\", "/") }, region: { startLine: i.line, startColumn: i.column } } }], partialFingerprints: { primaryLocationLineHash: i.fingerprint } })) }] };
+  return { version: "2.1.0", $schema: "https://json.schemastore.org/sarif-2.1.0.json", runs: [{ tool: { driver: { name: "Base Attribution OS", informationUri: "https://github.com/horn111/base-attribution-os", rules: Object.entries(qt).map(([i, n]) => ({ id: i, name: n.name, shortDescription: { text: n.description } })) } }, results: t.map((i) => ({ ruleId: i.ruleId, level: i.severity === "error" ? "error" : "warning", message: { text: i.message }, locations: [{ physicalLocation: { artifactLocation: { uri: i.file.replaceAll("\\", "/") }, region: { startLine: i.line, startColumn: i.column } } }], partialFingerprints: { primaryLocationLineHash: i.fingerprint } })) }] };
 }
 
 // src/options.ts
