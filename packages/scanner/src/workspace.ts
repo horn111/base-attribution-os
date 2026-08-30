@@ -333,6 +333,19 @@ function parsePnpmWorkspacePackages(source: string): string[] {
     const indent = withoutComment.length - withoutComment.trimStart().length;
     const trimmed = withoutComment.trim();
     if (!inPackages) {
+      const inline = trimmed.match(/^packages\s*:\s*\[(.*)\]\s*$/);
+      if (inline) {
+        const values = inline[1].trim();
+        if (!values) return packages;
+        for (const item of values.split(",")) {
+          const value = item.trim().replace(/^(?:'([^']*)'|"([^"]*)")$/, "$1$2");
+          if (!value || ["[", "]", "{", "}", ":"].some((token) => value.includes(token))) {
+            throw new Error("pnpm-workspace.yaml packages must contain plain string paths.");
+          }
+          packages.push(value);
+        }
+        return packages;
+      }
       if (/^packages\s*:\s*$/.test(trimmed)) {
         inPackages = true;
         packagesIndent = indent;

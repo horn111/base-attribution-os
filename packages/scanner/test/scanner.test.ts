@@ -768,6 +768,16 @@ client.sendTransaction({ to, data: "0x" });`,
     );
   });
 
+  it("accepts an empty inline pnpm workspace package array", async () => {
+    const root = await createProject({
+      "pnpm-workspace.yaml": "packages: []\n\noverrides:\n  example: 1.0.0",
+      "src/index.ts": "export {};",
+    });
+
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"] });
+    expect(report.checkedFiles).toBe(1);
+  });
+
   it("rejects explicitly scoped files outside the scan root", async () => {
     const root = await createProject({ "src/index.ts": "export {};" });
     await expect(
