@@ -5,7 +5,7 @@ Command-line validation for Base Builder Code attribution in source code, callda
 ```bash
 pnpm add -D @base-attribution-os/cli
 pnpm exec bao init --builder-code bc_example
-pnpm exec bao scan-repo --builder-code bc_example --profile strict
+pnpm exec bao scan-repo --config bao.config.json --profile strict
 pnpm exec bao doctor
 ```
 

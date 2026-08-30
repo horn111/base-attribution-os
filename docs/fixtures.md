@@ -9,8 +9,8 @@ transaction paths. They serve three purposes:
 
 Current coverage includes Wagmi, Privy, raw RPC, Base Account and EIP-5792
 smart-wallet calls, ERC-4337 UserOperations, app/wallet multi-code attribution,
-x402 buyers and sellers, multi-file wallet wrappers, and agent transaction
-tools. The calldata fixture set anchors decoder tests to public Base mainnet
+x402 buyers and sellers, multi-file wallet wrappers, agent transaction tools,
+and monorepo evidence links for all eight scanner families. The calldata fixture set anchors decoder tests to public Base mainnet
 data while keeping derived negative cases explicit.
 
 Run the fixture suite:

@@ -201,9 +201,15 @@ async function run(argv: string[]): Promise<void> {
   }
 
   if (command === "scan-repo") {
+    const builderCodes = (options["builder-codes"] ?? options["builder-code"])
+      ?.split(",")
+      .map((code) => code.trim())
+      .filter(Boolean);
     const result = await scanRepoCommand({
       path: options.path ?? ".",
-      builderCode: required(options["builder-code"], "--builder-code"),
+      builderCodes,
+      config: options.config,
+      changedSince: options["changed-since"],
       failOnMissing:
         options["fail-on-missing"] === undefined
           ? undefined
@@ -287,7 +293,7 @@ Usage:
   bao proof --hash 0x... --rpc-url https://... --expect bc_abc123 --output proof.md
   bao replay --builder-code bc_abc123 --input dune-export.csv
   bao replay --builder-code bc_abc123 --hashes 0x...,0x... --rpc-url https://...
-  bao scan-repo --path . --builder-code bc_abc123 --profile ci
+  bao scan-repo --path . [--builder-code bc_abc123] [--config bao.config.json] --profile ci
 
 Options:
   --json                  Print machine-readable JSON

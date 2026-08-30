@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - uses: horn111/base-attribution-os/packages/github-action@v0.3.0
+      - uses: horn111/base-attribution-os/packages/github-action@v0.4.0
         with:
           builder-code: bc_abc123
           profile: "strict"
@@ -61,3 +61,7 @@ Findings include:
 For large existing repos, use `changed-only` or a baseline only as an explicit rollout mode. See
 [incremental-adoption.md](incremental-adoption.md). The Action also writes a
 coverage table to GitHub Step Summary and can emit SARIF.
+
+For monorepos, the Action uses the same workspace resolver as the CLI. With
+`changed-only: "true"`, it scans the dependency/consumer closure of the Git
+diff and reports the number of impacted source files.

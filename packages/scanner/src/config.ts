@@ -51,6 +51,7 @@ function assertBaoConfig(value: unknown, fileName: string): asserts value is Bao
     "exclude",
     "rules",
     "baseline",
+    "workspace",
   ]);
   const unknownKeys = Object.keys(config).filter((key) => !allowed.has(key));
   if (unknownKeys.length > 0) {
@@ -79,6 +80,32 @@ function assertBaoConfig(value: unknown, fileName: string): asserts value is Bao
     throw new Error(`${fileName}.baseline must be a string.`);
   }
   assertRules(config.rules, fileName);
+  assertWorkspace(config.workspace, fileName);
+}
+
+function assertWorkspace(value: unknown, fileName: string): void {
+  if (value === undefined) return;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${fileName}.workspace must be an object.`);
+  }
+  const workspace = value as Record<string, unknown>;
+  const unknown = Object.keys(workspace).filter((key) => key !== "roots" && key !== "tsconfig");
+  if (unknown.length > 0) {
+    throw new Error(`${fileName}.workspace contains unsupported field(s): ${unknown.join(", ")}.`);
+  }
+  assertOptionalStringArray(workspace.roots, `${fileName}.workspace.roots`);
+  assertOptionalStringArray(workspace.tsconfig, `${fileName}.workspace.tsconfig`);
+  for (const [key, entries] of Object.entries(workspace)) {
+    if (!Array.isArray(entries)) continue;
+    for (const entry of entries as string[]) {
+      const normalized = entry.replaceAll("\\", "/");
+      if (!entry || path.isAbsolute(entry) || normalized.split("/").includes("..")) {
+        throw new Error(
+          `${fileName}.workspace.${key} entries must be relative paths inside the scan root.`,
+        );
+      }
+    }
+  }
 }
 
 function assertOptionalStringArray(value: unknown, field: string): void {

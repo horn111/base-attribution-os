@@ -1,7 +1,9 @@
+import { execFile as execFileCallback } from "node:child_process";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import {
   analyzeProject,
@@ -12,6 +14,8 @@ import {
   type RuleId,
   type ScanProfile,
 } from "../src/index.js";
+
+const execFile = promisify(execFileCallback);
 
 describe("@base-attribution-os/scanner", () => {
   it("reports every transaction path in a source file", () => {
@@ -544,6 +548,237 @@ wallet.sendTransaction({ to, data: "0x" });`,
     expect(report.checkedFiles).toBe(0);
   });
 
+  it("links workspace package evidence through a re-export barrel", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["apps/*", "packages/*"] }),
+      "apps/web/src/send.ts": `import { attributedClient } from "@acme/attribution";
+attributedClient.sendTransaction({ to, data: "0x" });`,
+      "packages/attribution/package.json": JSON.stringify({
+        name: "@acme/attribution",
+        exports: { ".": "./src/index.ts" },
+      }),
+      "packages/attribution/src/index.ts": `export { attributedClient } from "./client";`,
+      "packages/attribution/src/client.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const attributedClient = createWalletClient({
+  dataSuffix: builderCodeDataSuffix("bc_abc123"),
+});`,
+    });
+
+    const report = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "strict",
+    });
+
+    expect(report.transactionPaths).toHaveLength(1);
+    expect(report.transactionPaths[0]).toMatchObject({ status: "protected", family: "viem" });
+    expect(report.transactionPaths[0].evidence[0].file).toBe("packages/attribution/src/client.ts");
+  });
+
+  it("links project evidence through a tsconfig path alias", async () => {
+    const root = await createProject({
+      "tsconfig.json": JSON.stringify({
+        compilerOptions: { baseUrl: ".", paths: { "@config/*": ["packages/config/src/*"] } },
+      }),
+      "src/send.ts": `import { attributedClient } from "@config/client";
+attributedClient.writeContract({ address, abi, functionName: "mint" });`,
+      "packages/config/src/client.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const attributedClient = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_abc123") });`,
+    });
+
+    const report = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "strict",
+    });
+
+    expect(report.transactionPaths[0]).toMatchObject({ status: "protected", family: "viem" });
+  });
+
+  it("rejects workspace overrides that escape the scan root", async () => {
+    const root = await createProject({ "src/index.ts": "export {};" });
+
+    await expect(
+      analyzeProject({
+        root,
+        builderCodes: ["bc_abc123"],
+        workspace: { roots: ["../outside"] },
+      }),
+    ).rejects.toThrow("inside the scan root");
+  });
+
+  it("expands changed-since to workspace dependencies and consumers", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "src/send.ts": `import { attributedClient } from "@acme/config";
+attributedClient.sendTransaction({ to, data: "0x" });`,
+      "packages/config/package.json": JSON.stringify({
+        name: "@acme/config",
+        exports: { ".": "./src/index.ts" },
+      }),
+      "packages/config/src/index.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const attributedClient = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_abc123") });`,
+      "src/unrelated.ts": "export const unrelated = 1;",
+    });
+    await initializeGit(root);
+    await writeFile(
+      path.join(root, "packages/config/src/index.ts"),
+      `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const attributedClient = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_abc123") });
+export const revision = 2;`,
+    );
+    await git(root, "add", ".");
+    await git(root, "commit", "-m", "change shared config");
+
+    const dependencyReport = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "strict",
+      changedSince: "HEAD~1",
+    });
+    expect(dependencyReport.checkedFiles).toBe(2);
+    expect(dependencyReport.transactionPaths[0]).toMatchObject({ status: "protected" });
+
+    await writeFile(path.join(root, "src/unrelated.ts"), "export const unrelated = 2;");
+    await git(root, "add", ".");
+    await git(root, "commit", "-m", "change unrelated file");
+    const unrelatedReport = await analyzeProject({
+      root,
+      builderCodes: ["bc_abc123"],
+      profile: "strict",
+      changedSince: "HEAD~1",
+    });
+    expect(unrelatedReport.checkedFiles).toBe(1);
+    expect(unrelatedReport.transactionPaths).toEqual([]);
+  });
+
+  it("reports a linked workspace configuration with the wrong Builder Code as BAO002", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "packages/config/package.json": JSON.stringify({
+        name: "@acme/config",
+        exports: "./src/index.ts",
+      }),
+      "packages/config/src/index.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const client = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_wrong") });`,
+      "src/send.ts": `import { client } from "@acme/config";
+client.sendTransaction({ to, data: "0x" });`,
+    });
+
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+    expect(report.transactionPaths[0]).toMatchObject({ status: "wrong-code", ruleId: "BAO002" });
+  });
+
+  it("keeps linked dynamic workspace evidence fail-closed", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "packages/config/package.json": JSON.stringify({
+        name: "@acme/config",
+        exports: "./src/index.ts",
+      }),
+      "packages/config/src/index.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const client = createWalletClient({ dataSuffix: builderCodeDataSuffix(process.env.CODE ?? "") });`,
+      "src/send.ts": `import { client } from "@acme/config";
+client.sendTransaction({ to, data: "0x" });`,
+    });
+
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+    expect(report.transactionPaths[0]).toMatchObject({ status: "unresolved", ruleId: "BAO003" });
+  });
+
+  it("handles cyclic star re-exports without losing linked evidence", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "packages/config/package.json": JSON.stringify({
+        name: "@acme/config",
+        exports: "./src/a.ts",
+      }),
+      "packages/config/src/a.ts": `export * from "./b";`,
+      "packages/config/src/b.ts": `export * from "./a";
+export { client } from "./client";`,
+      "packages/config/src/client.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const client = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_abc123") });`,
+      "src/send.ts": `import { client } from "@acme/config";
+client.sendTransaction({ to, data: "0x" });`,
+    });
+
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+    expect(report.transactionPaths[0]).toMatchObject({ status: "protected" });
+  });
+
+  it("rejects duplicate workspace package names", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "packages/a/package.json": JSON.stringify({ name: "@acme/duplicate" }),
+      "packages/a/src/index.ts": "export {};",
+      "packages/b/package.json": JSON.stringify({ name: "@acme/duplicate" }),
+      "packages/b/src/index.ts": "export {};",
+    });
+
+    await expect(analyzeProject({ root, builderCodes: ["bc_abc123"] })).rejects.toThrow(
+      "Duplicate workspace package name",
+    );
+  });
+
+  it("rejects malformed discovered tsconfig files", async () => {
+    const root = await createProject({
+      "tsconfig.json": "{ invalid",
+      "src/index.ts": "export {};",
+    });
+
+    await expect(analyzeProject({ root, builderCodes: ["bc_abc123"] })).rejects.toThrow(
+      "Invalid tsconfig",
+    );
+  });
+
+  it("reports computed workspace imports as BAO004 in strict mode", async () => {
+    const root = await createProject({
+      "package.json": JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      "packages/config/package.json": JSON.stringify({
+        name: "@acme/config",
+        exports: "./src/index.ts",
+      }),
+      "packages/config/src/index.ts": `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+import { createWalletClient } from "viem";
+export const client = createWalletClient({ dataSuffix: builderCodeDataSuffix("bc_abc123") });`,
+      "src/send.ts": `const moduleName = "@acme/config";
+const { client } = await import(moduleName);
+client.sendTransaction({ to, data: "0x" });`,
+    });
+
+    const report = await analyzeProject({ root, builderCodes: ["bc_abc123"], profile: "strict" });
+    expect(report.transactionPaths[0]).toMatchObject({ status: "unresolved", ruleId: "BAO004" });
+  });
+
+  it("rejects malformed pnpm workspace package declarations", async () => {
+    const root = await createProject({
+      "pnpm-workspace.yaml": "packages: { invalid: true }",
+      "src/index.ts": "export {};",
+    });
+
+    await expect(analyzeProject({ root, builderCodes: ["bc_abc123"] })).rejects.toThrow(
+      "YAML string array",
+    );
+  });
+
+  it("rejects explicitly scoped files outside the scan root", async () => {
+    const root = await createProject({ "src/index.ts": "export {};" });
+    await expect(
+      analyzeProject({
+        root,
+        builderCodes: ["bc_abc123"],
+        files: [path.join(root, "..", "outside.ts")],
+      }),
+    ).rejects.toThrow("inside the scan root");
+  });
+
   const publicFixtures: Array<{
     fixture: string;
     profile: ScanProfile;
@@ -560,6 +795,7 @@ wallet.sendTransaction({ to, data: "0x" });`,
     { fixture: "x402-buyer", profile: "ci", expectedRule: "BAO006" },
     { fixture: "x402-seller", profile: "ci", expectedRule: "BAO006" },
     { fixture: "agent-transaction-tool", profile: "ci", expectedRule: "BAO001" },
+    { fixture: "monorepo-evidence", profile: "strict", expectedRule: "BAO004" },
   ];
 
   it.each(publicFixtures)("validates the $fixture public fixture", async (fixtureCase) => {
@@ -595,4 +831,16 @@ async function createProject(files: Record<string, string>): Promise<string> {
   }
 
   return root;
+}
+
+async function initializeGit(root: string): Promise<void> {
+  await git(root, "init");
+  await git(root, "config", "user.email", "scanner@example.test");
+  await git(root, "config", "user.name", "BAO Scanner Tests");
+  await git(root, "add", ".");
+  await git(root, "commit", "-m", "initial");
+}
+
+async function git(root: string, ...args: string[]): Promise<void> {
+  await execFile("git", args, { cwd: root });
 }

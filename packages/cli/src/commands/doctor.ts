@@ -43,6 +43,7 @@ export async function doctorCommand(options: DoctorOptions): Promise<CommandResu
     rules: config?.rules,
     baseline: options.baseline ?? config?.baseline,
     changedSince: options.changedSince,
+    workspace: config?.workspace,
   });
 
   if (options.writeBaseline) {

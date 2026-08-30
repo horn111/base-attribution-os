@@ -12,6 +12,7 @@ export type {
   BaoBaseline,
   BaoConfig,
   BaoRuleConfig,
+  BaoWorkspaceConfig,
   Confidence,
   FindingSeverity,
   RuleId,

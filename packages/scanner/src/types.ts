@@ -71,6 +71,11 @@ export interface BaoRuleConfig {
   "ambiguous-path"?: FindingSeverity;
 }
 
+export interface BaoWorkspaceConfig {
+  roots?: string[];
+  tsconfig?: string[];
+}
+
 export interface BaoConfig {
   $schema?: string;
   builderCodes: string[];
@@ -79,6 +84,7 @@ export interface BaoConfig {
   exclude?: string[];
   rules?: BaoRuleConfig;
   baseline?: string;
+  workspace?: BaoWorkspaceConfig;
 }
 
 export interface AnalyzeProjectOptions {
@@ -91,6 +97,7 @@ export interface AnalyzeProjectOptions {
   baseline?: string;
   changedSince?: string;
   files?: string[];
+  workspace?: BaoWorkspaceConfig;
 }
 
 export interface BaoBaseline {

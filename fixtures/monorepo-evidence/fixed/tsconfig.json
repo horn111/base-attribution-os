@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@fixture/alias/*": ["packages/attribution/src/*"] },
+    "jsx": "react-jsx"
+  }
+}
