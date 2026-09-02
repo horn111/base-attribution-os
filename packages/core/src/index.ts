@@ -41,6 +41,18 @@ export {
   type CreateAttributionReplayOptions,
 } from "./replay.js";
 export {
+  ATTRIBUTION_PROOF_SET_SCHEMA_URL,
+  ATTRIBUTION_PROOF_SET_SCHEMA_VERSION,
+  MAX_ATTRIBUTION_PROOF_SET_REPORTS,
+  MAX_ATTRIBUTION_PROOF_SET_TRANSACTIONS,
+  createAttributionProofSet,
+  parseAttributionProofSet,
+  type AttributionProofSet,
+  type AttributionProofSetNetworkSummary,
+  type AttributionProofSetSummary,
+  type CreateAttributionProofSetOptions,
+} from "./proof-set.js";
+export {
   assertHex,
   concatHex,
   hasErc8021Marker,

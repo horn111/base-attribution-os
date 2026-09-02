@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "../_components/site-header";
-import { featuredProof, shortHash } from "../proof-data";
+import {
+  getPublishedProofTransactions,
+  observatorySummary,
+  publishedProofSets,
+  shortHash,
+} from "../proof-data";
 
 export const metadata: Metadata = {
   title: "Attribution Observatory",
-  description: "Follow Base Builder Code attribution from source audit to verified onchain proof.",
+  description: "Explore reproducible Base Builder Code proof sets and onchain evidence.",
 };
 
 const loop = [
@@ -13,8 +18,16 @@ const loop = [
   { step: "02", title: "Enforce", detail: "Block attribution regressions in pull requests." },
   { step: "03", title: "Ship", detail: "Append ERC-8021 data to real Base transactions." },
   { step: "04", title: "Replay", detail: "Decode Dune exports or fetch calldata over RPC." },
-  { step: "05", title: "Prove", detail: "Publish a durable report with explorer links." },
+  { step: "05", title: "Aggregate", detail: "Combine replay reports into a proof set." },
 ] as const;
+
+const ledger = publishedProofSets.flatMap((proofSet) =>
+  getPublishedProofTransactions(proofSet).map((entry) => ({
+    ...entry,
+    builderCode: proofSet.builderCode,
+    title: proofSet.title,
+  })),
+);
 
 export default function ObservatoryPage() {
   return (
@@ -23,30 +36,39 @@ export default function ObservatoryPage() {
 
       <section className="hero observatory-hero">
         <div className="hero-meta">
-          <p className="eyebrow">Update 7 · Source to Mainnet</p>
+          <p className="eyebrow">v0.5 · Reproducible Proof Sets</p>
           <h1>Attribution Observatory</h1>
         </div>
         <div className="hero-controls">
           <p className="lede">
-            Attribution Proof Loop connects pre-deploy coverage with the transactions that reached
-            Base. Audit the path, replay the calldata, and publish evidence that survives a
-            screenshot.
+            Static proof sets connect source audits with explorer-verifiable Base transactions. No
+            hosted ingestion, private telemetry, or mutable analytics backend.
           </p>
-          <code className="hero-command">bao replay --builder-code bc_... --input dune.csv</code>
+          <code className="hero-command">
+            bao proof-set --builder-code bc_... --input proof-a.json,proof-b.json
+          </code>
         </div>
       </section>
 
-      <section className="coverage-strip" aria-label="Published attribution proof coverage">
+      <section className="coverage-strip" aria-label="Published proof set coverage">
         <div>
-          <p className="card-kicker">Published proof coverage</p>
+          <p className="card-kicker">Published evidence coverage</p>
           <p className="coverage-value">
-            {featuredProof.attributed}/{featuredProof.total} transactions attributed
+            {observatorySummary.verifiedAttributed}/{observatorySummary.transactions} transactions
+            verified and attributed
           </p>
         </div>
         <div className="coverage-track" aria-hidden="true">
-          <span style={{ width: `${featuredProof.coverage}%` }} />
+          <span style={{ width: `${observatorySummary.coverage}%` }} />
         </div>
-        <strong>{featuredProof.coverage}%</strong>
+        <strong>{observatorySummary.coverage}%</strong>
+      </section>
+
+      <section className="observatory-stats" aria-label="Observatory totals">
+        <Metric label="proof sets" value={observatorySummary.proofSets} />
+        <Metric label="replay reports" value={observatorySummary.reports} />
+        <Metric label="verified txs" value={observatorySummary.verified} />
+        <Metric label="networks" value={observatorySummary.networks.length} />
       </section>
 
       <section className="proof-loop" aria-labelledby="proof-loop-title">
@@ -65,48 +87,41 @@ export default function ObservatoryPage() {
         </div>
       </section>
 
-      <div className="observatory-grid">
-        <section className="bento-card proof-summary-card">
-          <div className="card-header result-heading">
-            <div>
-              <p className="card-kicker">Featured public proof</p>
-              <h2>{featuredProof.builderCode}</h2>
-            </div>
-            <div className="status-badge passing">
-              <span className="status-dot" />
-              <span>verified</span>
-            </div>
-          </div>
-          <div className="metrics-row proof-metrics">
-            <Metric label="network" value="Base" />
-            <Metric label="chain" value={featuredProof.chainId} />
-            <Metric label="proofs" value={featuredProof.total} />
-            <Metric label="coverage" value={`${featuredProof.coverage}%`} />
-          </div>
-          <Link className="primary-link" href={`/proof/${featuredProof.builderCode}`}>
-            Open published proof
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </section>
-
-        <section className="bento-card replay-card">
-          <div className="card-header">
-            <p className="card-kicker">Replay inputs</p>
-            <h2>Dune export or RPC batch</h2>
-          </div>
-          <p>
-            Use the included Dune queries for a public dataset, or pass transaction hashes and let
-            BAO fetch calldata with one JSON-RPC batch.
-          </p>
-          <pre className="compact-code">
-            <code>
-              {
-                "bao proof --hash 0x... --rpc-url https://mainnet.base.org --expect bc_... --output proof.md"
-              }
-            </code>
-          </pre>
-        </section>
-      </div>
+      <section className="proof-set-section" aria-labelledby="proof-sets-title">
+        <div className="section-heading">
+          <p className="card-kicker">Static registry</p>
+          <h2 id="proof-sets-title">Published proof sets</h2>
+        </div>
+        <div className="proof-set-list">
+          {publishedProofSets.map((proofSet) => (
+            <article className="bento-card proof-set-card" key={proofSet.builderCode}>
+              <div className="card-header result-heading">
+                <div>
+                  <p className="card-kicker">{proofSet.title}</p>
+                  <h2>{proofSet.builderCode}</h2>
+                </div>
+                <div className="status-badge passing">
+                  <span className="status-dot" />
+                  <span>verified</span>
+                </div>
+              </div>
+              <div className="metrics-row proof-metrics">
+                <Metric label="reports" value={proofSet.summary.reports} />
+                <Metric label="proofs" value={proofSet.summary.total} />
+                <Metric label="networks" value={proofSet.summary.networks.length} />
+                <Metric label="coverage" value={`${proofSet.summary.coverage}%`} />
+              </div>
+              <div className="proof-set-progress" aria-hidden="true">
+                <span style={{ width: `${proofSet.summary.coverage}%` }} />
+              </div>
+              <Link className="primary-link" href={`/proof/${proofSet.builderCode}`}>
+                Open proof set
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="bento-card transaction-card">
         <div className="output-header">
@@ -114,30 +129,36 @@ export default function ObservatoryPage() {
             <p className="card-kicker">Verified transaction ledger</p>
             <h2>Published evidence</h2>
           </div>
-          <span className="ledger-count">{featuredProof.transactions.length} proof</span>
+          <span className="ledger-count">{ledger.length} proofs</span>
         </div>
         <div className="table-scroll">
           <table className="proof-table">
             <thead>
               <tr>
                 <th>Transaction</th>
-                <th>Source</th>
+                <th>Project</th>
+                <th>Network</th>
                 <th>Builder Code</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {featuredProof.transactions.map((transaction) => (
-                <tr key={transaction.hash}>
+              {ledger.map(({ builderCode, chainId, network, title, transaction }) => (
+                <tr key={`${builderCode}:${chainId}:${transaction.hash}`}>
                   <td>
-                    <a href={transaction.explorerUrl}>{shortHash(transaction.hash)}</a>
+                    {transaction.explorerUrl ? (
+                      <a href={transaction.explorerUrl}>{shortHash(transaction.hash)}</a>
+                    ) : (
+                      <code>{shortHash(transaction.hash)}</code>
+                    )}
                   </td>
-                  <td>{transaction.source}</td>
+                  <td>{title}</td>
+                  <td>{network}</td>
                   <td>
-                    <code>{transaction.codes.join(", ")}</code>
+                    <code>{builderCode}</code>
                   </td>
                   <td>
-                    <span className="table-status">attributed</span>
+                    <span className="table-status">{transaction.status}</span>
                   </td>
                 </tr>
               ))}

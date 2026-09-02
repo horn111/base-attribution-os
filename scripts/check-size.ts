@@ -2,8 +2,8 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 const MAX_JS_BYTES: Record<string, number> = {
-  cli: 40 * 1024,
-  core: 40 * 1024,
+  cli: 48 * 1024,
+  core: 64 * 1024,
   ethers: 10 * 1024,
   "github-action": 12 * 1024 * 1024,
   scanner: 48 * 1024,

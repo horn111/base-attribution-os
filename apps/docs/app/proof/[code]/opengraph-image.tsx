@@ -10,7 +10,7 @@ type ImageProps = { params: Promise<{ code: string }> };
 export default async function Image({ params }: ImageProps) {
   const { code } = await params;
   const proof = getPublishedProof(code);
-  const coverage = proof?.coverage ?? 0;
+  const coverage = proof?.summary.coverage ?? 0;
 
   return new ImageResponse(
     <div
@@ -28,10 +28,12 @@ export default async function Image({ params }: ImageProps) {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", fontSize: 28, fontWeight: 700 }}>Base Attribution OS</div>
-        <div style={{ display: "flex", color: "#787774", fontSize: 22 }}>Attribution Proof</div>
+        <div style={{ display: "flex", color: "#787774", fontSize: 22 }}>Attribution Proof Set</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ display: "flex", color: "#787774", fontSize: 24 }}>BUILDER CODE</div>
+        <div style={{ display: "flex", color: "#787774", fontSize: 24 }}>
+          {proof?.title ?? "BUILDER CODE"}
+        </div>
         <div style={{ display: "flex", fontSize: 76, fontWeight: 700 }}>{code}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 28 }}>
           <span style={{ color: proof ? "#346538" : "#956400" }}>
@@ -40,9 +42,18 @@ export default async function Image({ params }: ImageProps) {
           <span style={{ color: "#787774" }}>·</span>
           <span>{coverage}% coverage</span>
         </div>
+        {proof ? (
+          <div style={{ display: "flex", color: "#787774", fontSize: 22, gap: 20 }}>
+            <span>{proof.summary.verified} verified transactions</span>
+            <span>·</span>
+            <span>{proof.summary.reports} replay reports</span>
+            <span>·</span>
+            <span>{proof.summary.networks.map((network) => network.network).join(" + ")}</span>
+          </div>
+        ) : null}
       </div>
       <div style={{ display: "flex", color: "#0052ff", fontSize: 22 }}>
-        Source → CI → Mainnet → Proof
+        Source → CI → Base → Proof Set
       </div>
     </div>,
     size,

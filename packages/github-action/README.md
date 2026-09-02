@@ -3,7 +3,7 @@
 Scan pull requests for Base transaction paths that are missing the expected Builder Code attribution.
 
 ```yaml
-- uses: horn111/base-attribution-os/packages/github-action@v0.4.0
+- uses: horn111/base-attribution-os/packages/github-action@v0.5.0
   with:
     builder-code: bc_example
     profile: strict

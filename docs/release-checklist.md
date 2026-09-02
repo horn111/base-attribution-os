@@ -17,7 +17,7 @@ The script:
 - creates a temporary external consumer project;
 - wires unpublished internal packages through temporary `pnpm.overrides`;
 - installs the packed tarballs;
-- runs `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`;
+- runs `bao encode`, `bao check-calldata`, `bao proof-set`, `bao scan-repo`, and `bao doctor`;
 - runs the packed GitHub Action bundle with the candidate configuration;
 - removes the temporary workspace unless `BAO_KEEP_RELEASE_SMOKE=1` is set.
 
@@ -59,6 +59,7 @@ Only after an explicit release decision:
 ## Post-release proof
 
 - Install packages in a fresh external project from npm.
-- Run `bao encode`, `bao check-calldata`, `bao scan-repo`, and `bao doctor`.
+- Run `bao encode`, `bao check-calldata`, `bao proof-set`, `bao scan-repo`, and `bao doctor`.
+- Parse the published BAO and Stack manifests and build the static Observatory.
 - Record the result in the GitHub Release notes.
 - Share the release post and invite pilot teams to open integration requests.

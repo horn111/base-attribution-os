@@ -13,8 +13,8 @@ enforces coverage in CI.
 
 [Live demo](https://base-attribution-os.vercel.app) ·
 [Attribution Observatory](https://base-attribution-os.vercel.app/observatory) ·
-[Published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653) ·
-[v0.4.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.4.0) ·
+[Published proof sets](https://base-attribution-os.vercel.app/observatory) ·
+[v0.5.0 release](https://github.com/horn111/base-attribution-os/releases/tag/v0.5.0) ·
 [npm packages](https://www.npmjs.com/org/base-attribution-os) ·
 [Documentation](docs/attribution-doctor.md)
 
@@ -28,7 +28,8 @@ flowchart LR
   F --> G["Pull request policy"]
   D --> H["bao check-tx"]
   D --> I["bao replay"]
-  I --> J["Public proof"]
+  I --> J["bao proof-set"]
+  J --> K["Public proof set"]
 ```
 
 ## One policy from source code to onchain proof
@@ -42,6 +43,7 @@ transaction. BAO gives teams a repeatable control at each stage of the path.
 | Audit     | AST-backed analysis for supported TypeScript transaction paths       |
 | Verify    | ERC-8021 encode, decode, calldata, and Base transaction checks       |
 | Enforce   | GitHub Action annotations, changed-only checks, baselines, and SARIF |
+| Prove     | Reproducible multi-report proof sets and local Observatory analytics |
 
 BAO also recognizes attribution patterns around Privy, raw RPC calls, smart
 wallet batches, agent transaction tools, and x402 Builder Code extensions.
@@ -152,7 +154,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: horn111/base-attribution-os/packages/github-action@v0.4.0
+      - uses: horn111/base-attribution-os/packages/github-action@v0.5.0
         with:
           builder-code: bc_abc123
           profile: strict
@@ -167,7 +169,7 @@ jobs:
 ```
 
 The Action reports checked files, detected transaction paths, protected paths,
-coverage, and findings. Pin the immutable `v0.4.0` release in production
+coverage, and findings. Pin the immutable `v0.5.0` release in production
 workflows. Moving the floating `v0` ref is a separate release step.
 
 ## Attribution Doctor
@@ -236,30 +238,36 @@ pnpm exec bao proof \
   --rpc-url https://mainnet.base.org \
   --expect bc_abc123 \
   --output proof.md
+
+pnpm exec bao proof-set \
+  --builder-code bc_abc123 \
+  --title "Example project" \
+  --input proof-a.json,proof-b.json \
+  --output proof-set.json
 ```
 
 Use the included [Dune query templates](dune/) to find attributed Base
 transactions. The [Attribution Proof Loop guide](docs/attribution-proof-loop.md)
-documents JSON and CSV inputs, RPC replay, report statuses, and publication
-safety. Explore the workflow in the
+documents JSON and CSV inputs, RPC replay, Proof Set manifests, report statuses,
+and publication safety. Explore BAO and Stack the Bag evidence in the
 [Attribution Observatory](https://base-attribution-os.vercel.app/observatory)
 and inspect BAO's
-[published proof](https://base-attribution-os.vercel.app/proof/bc_vwmzy653).
+[published Proof Sets](https://base-attribution-os.vercel.app/observatory).
 
 ## Packages
 
 The release contains eight public packages.
 
-| Package                                                                                                  | Role                                            |
-| -------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [`@base-attribution-os/core`](https://www.npmjs.com/package/@base-attribution-os/core)                   | ERC-8021 encode, decode, validation, and replay |
-| [`@base-attribution-os/viem`](https://www.npmjs.com/package/@base-attribution-os/viem)                   | viem `dataSuffix` and client helpers            |
-| [`@base-attribution-os/wagmi`](https://www.npmjs.com/package/@base-attribution-os/wagmi)                 | wagmi config and React hook helpers             |
-| [`@base-attribution-os/ethers`](https://www.npmjs.com/package/@base-attribution-os/ethers)               | ethers transaction and signer helpers           |
-| [`@base-attribution-os/wallet`](https://www.npmjs.com/package/@base-attribution-os/wallet)               | EIP-5792 and ERC-4337 attribution middleware    |
-| [`@base-attribution-os/scanner`](https://www.npmjs.com/package/@base-attribution-os/scanner)             | AST rules, configuration, baselines, and SARIF  |
-| [`@base-attribution-os/cli`](https://www.npmjs.com/package/@base-attribution-os/cli)                     | `bao` audit, replay, and proof commands         |
-| [`@base-attribution-os/github-action`](https://www.npmjs.com/package/@base-attribution-os/github-action) | CI annotations, summaries, outputs, and SARIF   |
+| Package                                                                                                  | Role                                           |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [`@base-attribution-os/core`](https://www.npmjs.com/package/@base-attribution-os/core)                   | ERC-8021 validation, replay, and Proof Sets    |
+| [`@base-attribution-os/viem`](https://www.npmjs.com/package/@base-attribution-os/viem)                   | viem `dataSuffix` and client helpers           |
+| [`@base-attribution-os/wagmi`](https://www.npmjs.com/package/@base-attribution-os/wagmi)                 | wagmi config and React hook helpers            |
+| [`@base-attribution-os/ethers`](https://www.npmjs.com/package/@base-attribution-os/ethers)               | ethers transaction and signer helpers          |
+| [`@base-attribution-os/wallet`](https://www.npmjs.com/package/@base-attribution-os/wallet)               | EIP-5792 and ERC-4337 attribution middleware   |
+| [`@base-attribution-os/scanner`](https://www.npmjs.com/package/@base-attribution-os/scanner)             | AST rules, configuration, baselines, and SARIF |
+| [`@base-attribution-os/cli`](https://www.npmjs.com/package/@base-attribution-os/cli)                     | `bao` audit, replay, proof, and proof-set      |
+| [`@base-attribution-os/github-action`](https://www.npmjs.com/package/@base-attribution-os/github-action) | CI annotations, summaries, outputs, and SARIF  |
 
 The release verification script builds and packs all eight packages, installs
 their tarballs into a clean consumer project, compares adapter output, and runs
@@ -298,7 +306,7 @@ code path before deploy and verify the result afterward.
 | [SARIF and code scanning](docs/sarif-and-code-scanning.md) | GitHub code scanning output                    |
 | [Incremental adoption](docs/incremental-adoption.md)       | Baselines for existing attribution debt        |
 | [Architecture](docs/architecture.md)                       | Package boundaries and trust model             |
-| [Attribution Proof Loop](docs/attribution-proof-loop.md)   | Dune and RPC replay with public proof reports  |
+| [Attribution Proof Loop](docs/attribution-proof-loop.md)   | Dune/RPC replay and public Proof Sets          |
 | [Versioning](docs/versioning.md)                           | Release trains, package versions, and tags     |
 | [Roadmap](docs/roadmap.md)                                 | Shipped work and planned milestones            |
 

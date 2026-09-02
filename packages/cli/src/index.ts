@@ -10,6 +10,7 @@ import { doctorCommand } from "./commands/doctor.js";
 import { encodeCommand } from "./commands/encode.js";
 import { initCommand } from "./commands/init.js";
 import { proofTransactionCommand } from "./commands/proof.js";
+import { proofSetCommand } from "./commands/proof-set.js";
 import { replayCommand } from "./commands/replay.js";
 import { scanRepoCommand } from "./commands/scan-repo.js";
 import { CliError, printResult, required } from "./output.js";
@@ -26,6 +27,14 @@ export { doctorCommand, formatDoctorReport } from "./commands/doctor.js";
 export { encodeCommand } from "./commands/encode.js";
 export { initCommand } from "./commands/init.js";
 export { proofTransactionCommand } from "./commands/proof.js";
+export {
+  MAX_PROOF_SET_INPUT_BYTES,
+  formatProofSet,
+  proofSetCommand,
+  readReplayReport,
+  type ProofSetFormat,
+  type ProofSetOptions,
+} from "./commands/proof-set.js";
 export {
   formatReplayReport,
   readReplayInput,
@@ -128,6 +137,28 @@ async function run(argv: string[]): Promise<void> {
       chainId: parseChainId(options["chain-id"]),
       format,
       output: options.output,
+    });
+
+    if (format === "json" && !options.output) {
+      console.log(JSON.stringify(result.data, null, 2));
+    } else {
+      console.log(result.message);
+    }
+    return setExitCode(result.ok);
+  }
+
+  if (command === "proof-set") {
+    const format = options.format ?? "json";
+    const result = await proofSetCommand({
+      title: required(options.title, "--title"),
+      builderCode: required(options["builder-code"], "--builder-code"),
+      inputs: required(options.input, "--input")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+      format,
+      output: options.output,
+      failOnMissing: options["fail-on-missing"] !== "false",
     });
 
     if (format === "json" && !options.output) {
@@ -291,6 +322,7 @@ Usage:
   bao check-tx --hash 0x... --rpc-url https://... --expect bc_abc123
   bao check-user-op --input user-op.json --expect bc_app,bc_wallet
   bao proof --hash 0x... --rpc-url https://... --expect bc_abc123 --output proof.md
+  bao proof-set --builder-code bc_abc123 --title "Example project" --input proof-a.json,proof-b.json
   bao replay --builder-code bc_abc123 --input dune-export.csv
   bao replay --builder-code bc_abc123 --hashes 0x...,0x... --rpc-url https://...
   bao scan-repo --path . [--builder-code bc_abc123] [--config bao.config.json] --profile ci
@@ -304,8 +336,8 @@ Options:
   --changed-since ref      Audit only files changed since a Git ref
   --baseline path          Ignore findings recorded in a baseline
   --write-baseline path    Write current findings as a baseline
-  --format human|json|sarif
-  --input path             Read replay transactions from Dune JSON or CSV
+  --format human|json|markdown|sarif
+  --input path[,path]      Read replay input, or replay JSON files for proof-set
   --hashes hash,...        Fetch transaction calldata from an RPC endpoint
   --chain-id number        Set replay network (defaults to Base mainnet 8453)
   --output path            Write SARIF or replay proof output to a file

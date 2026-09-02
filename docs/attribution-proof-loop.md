@@ -69,6 +69,29 @@ The command exits with a non-zero status when the transaction is unavailable,
 the ERC-8021 suffix is missing or invalid, or a different Builder Code is
 decoded.
 
+## Combine reports into a Proof Set
+
+Proof Sets combine up to 100 replay JSON reports for one Builder Code into a
+self-contained, schema-versioned manifest:
+
+```bash
+pnpm exec bao proof-set \
+  --builder-code bc_abc123 \
+  --title "Example project" \
+  --input mainnet.json,sepolia.json \
+  --output proof-set.json
+```
+
+BAO re-decodes transaction calldata and recalculates every status and counter.
+Transactions are identified by chain ID and lowercase hash; identical evidence
+is deduplicated and conflicting calldata, statuses, or decoded codes fail the
+command. A set passes only when every unique transaction is RPC verified and
+carries the expected Builder Code.
+
+Use `--format markdown` for a public summary without calldata. Use
+`--fail-on-missing false` to write an observational report while preserving
+`ok: false` inside the manifest.
+
 ## Input contract
 
 JSON input may be an array or an object containing `transactions`, `rows`, or
@@ -100,11 +123,12 @@ until every supplied transaction is attributed.
 
 ## Public proof pages
 
-The demo publishes verified reports at `/proof/<builder-code>` and links them
-from `/observatory`. Public reports should contain only transaction hashes,
-decoded Builder Codes, timestamps, network metadata, and explorer URLs. Never
-include RPC credentials, private keys, unpublished customer data, or internal
-repository paths.
+The demo publishes statically registered Proof Sets at `/proof/<builder-code>`
+and aggregates them in `/observatory`. It performs no hosted ingestion or
+runtime RPC requests. Public reports should contain only public calldata,
+transaction hashes, decoded Builder Codes, timestamps, network metadata, and
+explorer URLs. Never include RPC credentials, private keys, unpublished
+customer data, or internal repository paths.
 
 BAO's own published example is:
 
@@ -112,5 +136,5 @@ BAO's own published example is:
 https://base-attribution-os.vercel.app/proof/bc_vwmzy653
 ```
 
-The dynamic Open Graph image for each proof page is designed for a shareable
-verification card.
+The dynamic Open Graph image for each proof page summarizes reports, verified
+transactions, networks, and coverage as a shareable verification card.

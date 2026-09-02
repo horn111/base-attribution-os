@@ -5,6 +5,14 @@ All notable changes to Base Attribution OS will be documented here.
 This project uses Changesets. Each package release should include a short note
 that explains the attribution workflow it improves.
 
+## 0.5.0 - 2026-09-02
+
+- Add canonical Proof Set manifests that revalidate and aggregate multiple replay reports.
+- Add `bao proof-set` with deterministic JSON and calldata-free Markdown output.
+- Publish BAO mainnet and Stack the Bag Sepolia proof sets through a static Observatory registry.
+- Add local Observatory totals, per-report progress, deduplicated ledgers, and shareable proof cards.
+- Extend the eight-package release smoke with the public Proof Set API, schema parsing, and CLI output.
+
 ## 0.4.0 - 2026-08-30
 
 - Resolve attribution evidence across workspace packages, tsconfig aliases, package exports, and re-export chains without traversing external dependencies.
