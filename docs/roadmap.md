@@ -59,10 +59,10 @@ The `v0.3.0` train shipped the hardening baseline, public x402 seller and
 multi-file wallet fixtures, Base mainnet calldata snapshots, and the first
 deep Stack the Bag production pilot.
 
-## v0.4 planning
+## v0.4 (shipped)
 
-The [v0.4.0 release brief](releases/v0.4.0.md) locks the product scope and
-independent package versions.
+The [v0.4.0 release brief](releases/v0.4.0.md) records the shipped package
+versions and Stack the Bag qualification.
 
 - Resolve attribution evidence across bounded npm/pnpm workspaces, tsconfig
   aliases, package exports, and re-export chains.
@@ -71,11 +71,20 @@ independent package versions.
 - Qualify candidate packages through a partial Stack the Bag pilot while its
   sponsored and USDC paths remain in development.
 
+## v0.5 planning
+
+The [v0.5.0 release brief](releases/v0.5.0.md) adds reproducible Proof Sets and
+local Observatory analytics without introducing a hosted ingestion service.
+
+- Combine multiple replay reports into a validated, schema-versioned manifest.
+- Publish BAO mainnet and Stack the Bag Sepolia evidence through a static registry.
+- Add shareable proof cards and per-report progress without telemetry or runtime RPC calls.
+- Verify the public Proof Set API and CLI from all eight packed packages.
+
 ## Future v0 releases
 
-- Expand the Attribution Observatory with local analytics.
-- Add shareable progress cards for broader proof sets.
-- Pilot integration reports.
+- Additional public pilot integration reports.
+- Broader transaction evidence after sponsored and USDC paths ship.
 
 ## v1
 

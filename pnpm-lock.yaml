@@ -53,6 +53,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@base-attribution-os/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       next:
         specifier: ^16.3.1
         version: 16.3.3(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

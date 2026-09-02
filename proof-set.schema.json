@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/horn111/base-attribution-os/main/proof-set.schema.json",
+  "title": "Base Attribution OS Attribution Proof Set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "title",
+    "builderCode",
+    "generatedAt",
+    "ok",
+    "reports",
+    "summary"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://raw.githubusercontent.com/horn111/base-attribution-os/main/proof-set.schema.json"
+    },
+    "schemaVersion": { "const": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "builderCode": { "$ref": "#/$defs/builderCode" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "ok": { "type": "boolean" },
+    "reports": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/replayReport" }
+    },
+    "summary": { "$ref": "#/$defs/summary" }
+  },
+  "$defs": {
+    "builderCode": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{1,32}$"
+    },
+    "hex": {
+      "type": "string",
+      "pattern": "^0x(?:[0-9a-fA-F]{2})*$"
+    },
+    "transactionHash": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "networkSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chainId", "network", "reports", "transactions"],
+      "properties": {
+        "chainId": { "type": "integer", "minimum": 1 },
+        "network": { "type": "string", "minLength": 1 },
+        "reports": { "$ref": "#/$defs/nonNegativeInteger" },
+        "transactions": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reports",
+        "networks",
+        "total",
+        "attributed",
+        "missing",
+        "wrongCode",
+        "invalid",
+        "unavailable",
+        "verified",
+        "unverified",
+        "coverage"
+      ],
+      "properties": {
+        "reports": { "$ref": "#/$defs/nonNegativeInteger" },
+        "networks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/networkSummary" }
+        },
+        "total": { "$ref": "#/$defs/nonNegativeInteger" },
+        "attributed": { "$ref": "#/$defs/nonNegativeInteger" },
+        "missing": { "$ref": "#/$defs/nonNegativeInteger" },
+        "wrongCode": { "$ref": "#/$defs/nonNegativeInteger" },
+        "invalid": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unavailable": { "$ref": "#/$defs/nonNegativeInteger" },
+        "verified": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unverified": { "$ref": "#/$defs/nonNegativeInteger" },
+        "coverage": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "replayReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "builderCode",
+        "chainId",
+        "network",
+        "generatedAt",
+        "total",
+        "attributed",
+        "missing",
+        "wrongCode",
+        "invalid",
+        "unavailable",
+        "verified",
+        "unverified",
+        "coverage",
+        "transactions"
+      ],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "builderCode": { "$ref": "#/$defs/builderCode" },
+        "chainId": { "type": "integer", "minimum": 1 },
+        "network": { "type": "string", "minLength": 1 },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "total": { "$ref": "#/$defs/nonNegativeInteger" },
+        "attributed": { "$ref": "#/$defs/nonNegativeInteger" },
+        "missing": { "$ref": "#/$defs/nonNegativeInteger" },
+        "wrongCode": { "$ref": "#/$defs/nonNegativeInteger" },
+        "invalid": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unavailable": { "$ref": "#/$defs/nonNegativeInteger" },
+        "verified": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unverified": { "$ref": "#/$defs/nonNegativeInteger" },
+        "coverage": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "transactions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10000,
+          "items": { "$ref": "#/$defs/transaction" }
+        }
+      }
+    },
+    "transaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hash", "status", "codes"],
+      "properties": {
+        "hash": { "$ref": "#/$defs/transactionHash" },
+        "calldata": { "$ref": "#/$defs/hex" },
+        "verified": { "type": "boolean" },
+        "blockNumber": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "minLength": 1 }
+          ]
+        },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" },
+        "error": { "type": "string" },
+        "status": {
+          "enum": [
+            "attributed",
+            "invalid-attribution",
+            "missing-attribution",
+            "unavailable",
+            "wrong-builder-code"
+          ]
+        },
+        "codes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/builderCode" }
+        },
+        "schemaId": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "explorerUrl": { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

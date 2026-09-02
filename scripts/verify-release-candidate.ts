@@ -72,7 +72,13 @@ try {
   run("pnpm", ["install"], consumerDir);
   writeFileSync(
     path.join(consumerDir, "sdk-smoke.mjs"),
-    `import { builderCodeDataSuffix } from "@base-attribution-os/viem";
+    `import { writeFileSync } from "node:fs";
+import {
+  createAttributionProofSet,
+  createAttributionReplayReport,
+  parseAttributionProofSet,
+} from "@base-attribution-os/core";
+import { builderCodeDataSuffix } from "@base-attribution-os/viem";
 import { ethersBuilderCodeDataSuffix } from "@base-attribution-os/ethers";
 import { createAttributionConfig } from "@base-attribution-os/wagmi";
 import { attributeUserOperation, sendAttributedCalls } from "@base-attribution-os/wallet";
@@ -119,6 +125,24 @@ if (
   throw new Error("Smart Wallet Attribution Kit smoke failed");
 }
 
+const proofA = createAttributionReplayReport(
+  [{ hash: \`0x\${"11".repeat(32)}\`, calldata: viemSuffix, verified: true }],
+  { builderCode: code, generatedAt: "2026-09-01T00:00:00Z" },
+);
+const proofB = createAttributionReplayReport(
+  [{ hash: \`0x\${"22".repeat(32)}\`, calldata: viemSuffix, verified: true }],
+  { builderCode: code, chainId: 84532, generatedAt: "2026-09-02T00:00:00Z" },
+);
+const proofSet = createAttributionProofSet([proofB, proofA], {
+  title: "Release candidate",
+  builderCode: code,
+});
+if (parseAttributionProofSet(JSON.parse(JSON.stringify(proofSet))).summary.total !== 2) {
+  throw new Error("Proof Set SDK smoke failed");
+}
+writeFileSync("proof-a.json", JSON.stringify(proofA, null, 2));
+writeFileSync("proof-b.json", JSON.stringify(proofB, null, 2));
+
 console.log("SDK adapter smoke passed");
 `,
   );
@@ -154,6 +178,59 @@ console.log("SDK adapter smoke passed");
     ["exec", "bao", "check-user-op", "--input", "user-op.json", "--expect", "bc_abc123"],
     consumerDir,
   );
+  run(
+    "pnpm",
+    [
+      "exec",
+      "bao",
+      "proof-set",
+      "--builder-code",
+      "bc_abc123",
+      "--title",
+      "Release candidate",
+      "--input",
+      "proof-b.json,proof-a.json",
+      "--output",
+      "proof-set.json",
+    ],
+    consumerDir,
+  );
+  run(
+    "pnpm",
+    [
+      "exec",
+      "bao",
+      "proof-set",
+      "--builder-code",
+      "bc_abc123",
+      "--title",
+      "Release candidate",
+      "--input",
+      "proof-a.json,proof-b.json",
+      "--format",
+      "markdown",
+      "--output",
+      "proof-set.md",
+    ],
+    consumerDir,
+  );
+  writeFileSync(
+    path.join(consumerDir, "proof-set-smoke.mjs"),
+    `import { readFileSync } from "node:fs";
+import { parseAttributionProofSet } from "@base-attribution-os/core";
+
+const manifest = parseAttributionProofSet(JSON.parse(readFileSync("proof-set.json", "utf8")));
+const markdown = readFileSync("proof-set.md", "utf8");
+if (!manifest.ok || manifest.summary.total !== 2 || manifest.summary.networks.length !== 2) {
+  throw new Error("Packed Proof Set manifest smoke failed");
+}
+if (!markdown.includes("Attribution Proof Set: Release candidate") || markdown.includes(manifest.reports[0].transactions[0].calldata)) {
+  throw new Error("Packed Proof Set Markdown smoke failed");
+}
+console.log("Proof Set package smoke passed");
+`,
+  );
+  run("node", ["proof-set-smoke.mjs"], consumerDir);
 
   writeFileSync(
     path.join(consumerDir, "attributed.ts"),
