@@ -1,5 +1,12 @@
 # @base-attribution-os/wallet
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [a9fe1ee]
+  - @base-attribution-os/core@0.4.0
+
 ## 0.1.2
 
 ### Patch Changes
