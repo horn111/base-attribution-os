@@ -1,5 +1,12 @@
 # @base-attribution-os/scanner
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [a9fe1ee]
+  - @base-attribution-os/core@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes

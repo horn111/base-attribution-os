@@ -1,5 +1,18 @@
 # @base-attribution-os/cli
 
+## 0.4.0
+
+### Minor Changes
+
+- a9fe1ee: Add canonical multi-report Proof Sets, strict manifest parsing, deterministic aggregation, and the `bao proof-set` command with JSON and calldata-free Markdown output.
+
+### Patch Changes
+
+- Updated dependencies [a9fe1ee]
+  - @base-attribution-os/core@0.4.0
+  - @base-attribution-os/scanner@0.4.1
+  - @base-attribution-os/wallet@0.1.3
+
 ## 0.3.0
 
 ### Minor Changes
