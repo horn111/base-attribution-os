@@ -71,10 +71,10 @@ versions and Stack the Bag qualification.
 - Qualify candidate packages through a partial Stack the Bag pilot while its
   sponsored and USDC paths remain in development.
 
-## v0.5 planning
+## v0.5 (shipped)
 
-The [v0.5.0 release brief](releases/v0.5.0.md) adds reproducible Proof Sets and
-local Observatory analytics without introducing a hosted ingestion service.
+The [v0.5.0 release brief](releases/v0.5.0.md) records the shipped reproducible
+Proof Sets and local Observatory analytics without a hosted ingestion service.
 
 - Combine multiple replay reports into a validated, schema-versioned manifest.
 - Publish BAO mainnet and Stack the Bag Sepolia evidence through a static registry.
