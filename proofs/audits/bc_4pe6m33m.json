@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "builderCode": "bc_4pe6m33m",
+  "generatedAt": "2026-09-08T11:03:12.160Z",
+  "profile": "strict",
+  "sourceRevision": "ba9c458a4412936eb6c94dc65f5ae7df07d31dae",
+  "workingTreeDirty": false,
+  "checkedFiles": 263,
+  "summary": {
+    "total": 3,
+    "protected": 3,
+    "missing": 0,
+    "wrongCode": 0,
+    "unresolved": 0,
+    "errors": 0,
+    "warnings": 0,
+    "baseline": 0,
+    "coverage": 100
+  },
+  "families": [
+    {
+      "family": "viem",
+      "total": 1,
+      "protected": 1,
+      "missing": 0,
+      "wrongCode": 0,
+      "unresolved": 0
+    },
+    {
+      "family": "wallet",
+      "total": 2,
+      "protected": 2,
+      "missing": 0,
+      "wrongCode": 0,
+      "unresolved": 0
+    }
+  ]
+}
