@@ -3,7 +3,7 @@ import Link from "next/link";
 import wordmark from "../_assets/bao-wordmark.png";
 
 export function SiteHeader(props: {
-  current?: "doctor" | "observatory" | "proof" | "smart-wallets";
+  current?: "doctor" | "observatory" | "proof" | "smart-wallets" | "dashboard";
 }) {
   return (
     <header className="topbar">
@@ -20,6 +20,9 @@ export function SiteHeader(props: {
         <span>Base Attribution OS</span>
       </Link>
       <nav className="nav-links" aria-label="Primary navigation">
+        <Link aria-current={props.current === "dashboard" ? "page" : undefined} href="/dashboard">
+          Dashboard
+        </Link>
         <Link aria-current={props.current === "doctor" ? "page" : undefined} href="/">
           Doctor
         </Link>
